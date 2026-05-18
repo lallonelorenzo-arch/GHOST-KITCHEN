@@ -1,115 +1,103 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../Foundation/FPersistentManager.php';
+
 /**
- * UC1 - Navigazione e Ricerca
- * Operazioni di sistema derivate da SSD:
- * 1) avviaRicerca()
- * 2) cercaChef(localita, tipologia, budget, valutazione)
+ * Control per UC1 - Navigazione e Ricerca.
  */
+
 class CRicerca
 {
-    /**
-     * Mostra il form iniziale di ricerca (Boundary: VRicerca).
-     */
-    public static function avviaRicerca(): void
+    
+    public static function avviaRicerca(): array
     {
-        if (class_exists('VRicerca') && method_exists('VRicerca', 'mostraFormRicerca')) {
-            VRicerca::mostraFormRicerca();
-            return;
-        }
-
-        // Fallback utile durante lo sviluppo iniziale senza View pronta.
-        self::jsonResponse([
-            'status' => 'ok',
-            'message' => 'Form ricerca non ancora collegato alla View VRicerca.',
-        ]);
-    }
-
-    /**
-     * Applica i filtri e restituisce chef + ghost kitchens.
-     */
-    public static function cercaChef(
-        ?string $localita,
-        ?string $tipologia,
-        ?float $budget,
-        ?float $valutazione
-    ): void {
-        $localita = self::normalizeString($localita);
-        $tipologia = self::normalizeString($tipologia);
-        $budget = self::normalizeNonNegative($budget);
-        $valutazione = self::normalizeRating($valutazione);
-
-        $listaChef = [];
-        $listaKitchen = [];
-
-        if (class_exists('FChef') && method_exists('FChef', 'ricercaPerFiltri')) {
-            $listaChef = FChef::ricercaPerFiltri($localita, $tipologia, $budget, $valutazione);
-        }
-
-        if (class_exists('FGhostKitchen') && method_exists('FGhostKitchen', 'ricercaPerFiltri')) {
-            $listaKitchen = FGhostKitchen::ricercaPerFiltri($localita, $tipologia, $budget, $valutazione);
-        }
-
-        if (class_exists('VRicerca') && method_exists('VRicerca', 'mostraRisultati')) {
-            VRicerca::mostraRisultati($listaChef, $listaKitchen);
-            return;
-        }
-
-        // Fallback per test rapido del Controller anche senza View.
-        self::jsonResponse([
-            'status' => 'ok',
-            'filters' => [
-                'localita' => $localita,
-                'tipologia' => $tipologia,
-                'budget' => $budget,
-                'valutazione' => $valutazione,
+        return [
+            'campi' => [
+                'localita' => '',
+                'tipologiaCucina' => '',
+                'budgetMax' => 0.0,
+                'valutazioneMin' => 0,
+                'tipoRisultato' => 'tutti'
             ],
-            'listaChef' => $listaChef,
-            'listaKitchen' => $listaKitchen,
-        ]);
+            'opzioniTipoRisultato' => ['chef', 'ghost_kitchen', 'tutti'],
+            'url' => [
+                'avviaRicerca' => '/Ricerca/avviaRicerca',
+                'cercaOfferte' => '/Ricerca/cercaOfferte'
+            ]
+        ];
     }
 
-    private static function normalizeString(?string $value): ?string
+    /**
+     * Normalizza i filtri e richiede i risultati al PersistentManager fittizio.
+     */
+    public static function cercaOfferte(array $filtri): array
     {
-        if ($value === null) {
-            return null;
+        $filtriNormalizzati = self::normalizzaFiltri($filtri);
+
+        $risultatiChef = [];
+        $risultatiGhostKitchen = [];
+
+        if (
+            $filtriNormalizzati['tipoRisultato'] === 'chef' ||
+            $filtriNormalizzati['tipoRisultato'] === 'tutti'
+        ) {
+            $risultatiChef = FPersistentManager::cercaChef(
+                $filtriNormalizzati['localita'],
+                $filtriNormalizzati['tipologiaCucina'],
+                $filtriNormalizzati['budgetMax'],
+                $filtriNormalizzati['valutazioneMin']
+            );
         }
 
-        $value = trim($value);
-        return $value === '' ? null : $value;
+        if (
+            $filtriNormalizzati['tipoRisultato'] === 'ghost_kitchen' ||
+            $filtriNormalizzati['tipoRisultato'] === 'tutti'
+        ) {
+            $risultatiGhostKitchen = FPersistentManager::cercaGhostKitchen(
+                $filtriNormalizzati['localita'],
+                $filtriNormalizzati['budgetMax'],
+                $filtriNormalizzati['valutazioneMin']
+            );
+        }
+
+        return [
+            'filtri' => $filtriNormalizzati,
+            'chef' => $risultatiChef,
+            'ghostKitchen' => $risultatiGhostKitchen
+        ];
     }
 
-    private static function normalizeNonNegative(?float $value): ?float
+    private static function normalizzaFiltri(array $filtri): array
     {
-        if ($value === null) {
-            return null;
+        $localita = trim((string) ($filtri['localita'] ?? ''));
+        $tipologiaCucina = trim((string) ($filtri['tipologiaCucina'] ?? ''));
+
+        $budgetMax = (float) ($filtri['budgetMax'] ?? 0);
+        if ($budgetMax < 0) {
+            $budgetMax = 0.0;
         }
 
-        return $value < 0 ? 0.0 : $value;
-    }
-
-    private static function normalizeRating(?float $value): ?float
-    {
-        if ($value === null) {
-            return null;
+        $valutazioneMin = (int) ($filtri['valutazioneMin'] ?? 0);
+        if ($valutazioneMin < 0) {
+            $valutazioneMin = 0;
+        }
+        if ($valutazioneMin > 5) {
+            $valutazioneMin = 5;
         }
 
-        if ($value < 0) {
-            return 0.0;
+        $tipoRisultato = strtolower(trim((string) ($filtri['tipoRisultato'] ?? 'tutti')));
+        $tipiAmmessi = ['chef', 'ghost_kitchen', 'tutti'];
+        if (!in_array($tipoRisultato, $tipiAmmessi, true)) {
+            $tipoRisultato = 'tutti';
         }
 
-        if ($value > 5) {
-            return 5.0;
-        }
-
-        return $value;
-    }
-
-    private static function jsonResponse(array $payload): void
-    {
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        return [
+            'localita' => $localita,
+            'tipologiaCucina' => $tipologiaCucina,
+            'budgetMax' => $budgetMax,
+            'valutazioneMin' => $valutazioneMin,
+            'tipoRisultato' => $tipoRisultato
+        ];
     }
 }
-
