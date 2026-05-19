@@ -18,14 +18,6 @@ require_once __DIR__ . '/../Entity/EPrenotazioneChef.php';
 require_once __DIR__ . '/../Entity/EPrenotazioneGhostKitchen.php';
 require_once __DIR__ . '/../Entity/EPagamento.php';
 require_once __DIR__ . '/../Entity/EMetodoPagamento.php';
-
-require_once __DIR__ . '/../Entity/EDisponibilitaChef.php';
-require_once __DIR__ . '/../Entity/EDisponibilitaGhostKitchen.php';
-require_once __DIR__ . '/../Entity/EPrenotazione.php';
-require_once __DIR__ . '/../Entity/EPrenotazioneChef.php';
-require_once __DIR__ . '/../Entity/EPrenotazioneGhostKitchen.php';
-require_once __DIR__ . '/../Entity/EPagamento.php';
-require_once __DIR__ . '/../Entity/EMetodoPagamento.php';
 require_once __DIR__ . '/../Entity/ECancellazione.php';
 require_once __DIR__ . '/../Entity/ERimborso.php';
 require_once __DIR__ . '/../Entity/ERecensione.php';
@@ -35,185 +27,57 @@ require_once __DIR__ . '/../Entity/ESegnalazione.php';
 
 class FPersistentManager
 {
-    private static bool $initialized = false;
+    private static $initialized = false;
 
     /** @var ECliente[] */
-    private static array $clienti = [];
+    private static $clienti = [];
     /** @var EChef[] */
-    private static array $chef = [];
+    private static $chef = [];
     /** @var EGestore[] */
-    private static array $gestori = [];
+    private static $gestori = [];
     /** @var EGhostKitchen[] */
-    private static array $ghostKitchens = [];
+    private static $ghostKitchens = [];
     /** @var EMenu[] */
-    private static array $menu = [];
+    private static $menu = [];
     /** @var EPiatto[] */
-    private static array $piatti = [];
+    private static $piatti = [];
     /** @var EMedia[] */
-    private static array $media = [];
+    private static $media = [];
     /** @var EAttrezzatura[] */
-    private static array $attrezzature = [];
+    private static $attrezzature = [];
     /** @var ECertificazione[] */
-    private static array $certificazioni = [];
+    private static $certificazioni = [];
     /** @var EDisponibilitaChef[] */
-    private static array $disponibilitaChef = [];
+    private static $disponibilitaChef = [];
     /** @var EDisponibilitaGhostKitchen[] */
-    private static array $disponibilitaGhostKitchen = [];
+    private static $disponibilitaGhostKitchen = [];
     /** @var EPrenotazioneChef[] */
-    private static array $prenotazioniChef = [];
+    private static $prenotazioniChef = [];
     /** @var EPrenotazioneGhostKitchen[] */
-    private static array $prenotazioniGhostKitchen = [];
+    private static $prenotazioniGhostKitchen = [];
     /** @var EMetodoPagamento[] */
-    private static array $metodiPagamento = [];
+    private static $metodiPagamento = [];
     /** @var EPagamento[] */
-    private static array $pagamenti = [];
-
-    private static int $nextIdDisponibilitaChef = 800;
-    private static int $nextIdDisponibilitaGhostKitchen = 900;
-    private static int $nextIdPrenotazioneChef = 1000;
-    private static int $nextIdPrenotazioneGhostKitchen = 1100;
-    private static int $nextIdPagamento = 1200;
-
-    private static function init(): void
-    {
-        if (self::$initialized) {
-            return;
-        }
-
-        self::$clienti = [
-            new ECliente(10, 'Anna', 'Neri', 'anna.neri@example.com', 'hash-anna', '+39061230001', EUtente::STATO_ATTIVO),
-            new ECliente(11, 'Luca', 'Galli', 'luca.galli@example.com', 'hash-luca', '+39061230002', EUtente::STATO_ATTIVO)
-        ];
-
-        self::$chef = [
-            new EChef(1, 'Marco', 'Rossi', 'marco.rossi@example.com', 'hash-marco', '+39061234567', EUtente::STATO_ATTIVO, 'Chef giapponese.', 'Sushi chef', 'sushi', 90.0, 8, EChef::STATO_VERIFICA_VERIFICATO, 4.7, 52),
-            new EChef(2, 'Laura', 'Bianchi', 'laura.bianchi@example.com', 'hash-laura', '+39069876543', EUtente::STATO_ATTIVO, 'Chef fusion.', 'Chef fusion', 'fusion', 110.0, 10, EChef::STATO_VERIFICA_VERIFICATO, 4.8, 41)
-        ];
-
-        self::$gestori = [
-            new EGestore(21, 'Paolo', 'Romani', 'paolo.romani@example.com', 'hash-paolo', '+39061239991', EUtente::STATO_ATTIVO),
-            new EGestore(22, 'Sara', 'Conti', 'sara.conti@example.com', 'hash-sara', '+39061239992', EUtente::STATO_ATTIVO)
-        ];
-
-        self::$ghostKitchens = [
-            new EGhostKitchen(101, 21, 'Ghost Roma Centro', 'Spazio attrezzato.', 'Via Nazionale 10', 'Roma', '00184', 35.0, 20, 80.0, EGhostKitchen::STATO_ATTIVA, 4.5, 34),
-            new EGhostKitchen(102, 22, 'Milano Lab Kitchen', 'Cucina professionale.', 'Via Torino 20', 'Milano', '20123', 55.0, 30, 120.0, EGhostKitchen::STATO_ATTIVA, 4.9, 27)
-        ];
-
-        self::$menu = [
-            new EMenu(301, 1, 'Percorso Sushi Signature', 'Menu degustazione sushi.', 55.0, true),
-            new EMenu(302, 1, 'Japanese Dinner Experience', 'Menu completo.', 75.0, true),
-            new EMenu(303, 2, 'Fusion Experience', 'Menu fusion.', 68.0, true)
-        ];
-
-        self::$piatti = [
-            new EPiatto(401, 301, 'Nigiri Selection', EPiatto::CATEGORIA_SECONDO, 'Selezione nigiri.', 'Riso, pesce', 'Pesce, soia', 0.0, 1),
-            new EPiatto(402, 301, 'Uramaki Crunch', EPiatto::CATEGORIA_SECONDO, 'Uramaki croccante.', 'Riso, gambero', 'Crostacei, glutine', 4.5, 2),
-            new EPiatto(403, 302, 'Miso Soup', EPiatto::CATEGORIA_PRIMO, 'Zuppa miso.', 'Miso, tofu', 'Soia', 0.0, 1)
-        ];
-
-        self::$media = [
-            new EMedia(201, EMedia::OWNER_CHEF, 1, EMedia::TIPO_MEDIA_FOTO_PROFILO, 'chef-marco.jpg', '/media/chef/chef-marco.jpg', 'image/jpeg', 'Foto profilo chef', '2026-05-18', 0, EMedia::STATO_ATTIVO),
-            new EMedia(202, EMedia::OWNER_GHOST_KITCHEN, 101, EMedia::TIPO_MEDIA_FOTO_AMBIENTE, 'ghost-roma-centro.jpg', '/media/ghost-kitchen/ghost-roma-centro.jpg', 'image/jpeg', 'Immagine principale', '2026-05-18', 0, EMedia::STATO_ATTIVO),
-            new EMedia(206, EMedia::OWNER_GHOST_KITCHEN, 101, EMedia::TIPO_MEDIA_PLANIMETRIA, 'ghost-roma-planimetria.jpg', '/media/ghost-kitchen/ghost-roma-planimetria.jpg', 'image/jpeg', 'Planimetria', '2026-05-18', 1, EMedia::STATO_ATTIVO),
-            new EMedia(207, EMedia::OWNER_GHOST_KITCHEN, 102, EMedia::TIPO_MEDIA_FOTO_AMBIENTE, 'ghost-milano.jpg', '/media/ghost-kitchen/ghost-milano.jpg', 'image/jpeg', 'Ambiente Milano', '2026-05-18', 0, EMedia::STATO_ATTIVO)
-        ];
-
-        self::$attrezzature = [
-            new EAttrezzatura(601, 101, 'Forno combinato', 'cottura', 'Forno professionale', 2),
-            new EAttrezzatura(602, 101, 'Abbattitore', 'conservazione', 'Abbattitore rapido', 1),
-            new EAttrezzatura(603, 102, 'Piano induzione', 'cottura', 'Piano a 6 fuochi', 3)
-        ];
-
-        self::$certificazioni = [
-            new ECertificazione(501, 1, 'HACCP', 'haccp-marco.pdf', '/certificazioni/haccp-marco.pdf', ECertificazione::STATO_APPROVATA, '2026-04-10', '2026-04-15', 'Verificata')
-        ];
-
-        self::$disponibilitaChef = [
-            new EDisponibilitaChef(701, 1, '2026-06-10', '18:00', '22:00', EDisponibilitaChef::STATO_LIBERA),
-            new EDisponibilitaChef(702, 2, '2026-06-11', '19:00', '23:00', EDisponibilitaChef::STATO_LIBERA)
-        ];
-
-        self::$disponibilitaGhostKitchen = [
-            new EDisponibilitaGhostKitchen(801, 101, '2026-06-12', '10:00', '14:00', EDisponibilitaGhostKitchen::STATO_LIBERA),
-            new EDisponibilitaGhostKitchen(802, 102, '2026-06-13', '15:00', '20:00', EDisponibilitaGhostKitchen::STATO_LIBERA)
-        ];
-
-        self::$prenotazioniChef = [
-            new EPrenotazioneChef(901, 10, '2026-05-19', '2026-06-10', '18:00', '22:00', EPrenotazione::STATO_IN_ATTESA, 220.0, 'Richiesta iniziale', 1, 301, 'Via Appia 12, Roma', 4, 'No crostacei')
-        ];
-
-        self::$prenotazioniGhostKitchen = [
-            new EPrenotazioneGhostKitchen(902, 1, '2026-05-19', '2026-06-12', '10:00', '14:00', EPrenotazione::STATO_IN_ATTESA, 140.0, 'Uso per prep delivery', 101, EPrenotazioneGhostKitchen::TIPO_RICHIEDENTE_CHEF)
-        ];
-
-        self::$metodiPagamento = [
-            new EMetodoPagamento(1001, 10, EMetodoPagamento::TIPO_CARTA, 'Anna Neri', 'VISA', '4242', 12, 2028, true),
-            new EMetodoPagamento(1002, 1, EMetodoPagamento::TIPO_PAYPAL, 'Marco Rossi', 'PAYPAL', '', 0, 0, true)
-        ];
-
-        self::$pagamenti = [
-            new EPagamento(1101, 901, EPagamento::PRENOTAZIONE_CHEF, 1001, 44.0, EPagamento::TIPO_CAPARRA, EPagamento::STATO_IN_ATTESA, 'TX-SEED-1101', '2026-05-19')
-        ];
-
-        self::$initialized = true;
-    }
-
-    public static function cercaChef(string $localita, string $tipologiaCucina, float $budgetMax, int $valutazioneMin): array
-    {
-        self::init();
-        $mappaLocalitaChef = [1 => 'roma', 2 => 'milano'];
-    private static bool $initialized = false;
-
-    /** @var ECliente[] */
-    private static array $clienti = [];
-    /** @var EChef[] */
-    private static array $chef = [];
-    /** @var EGestore[] */
-    private static array $gestori = [];
-    /** @var EGhostKitchen[] */
-    private static array $ghostKitchens = [];
-    /** @var EMenu[] */
-    private static array $menu = [];
-    /** @var EPiatto[] */
-    private static array $piatti = [];
-    /** @var EMedia[] */
-    private static array $media = [];
-    /** @var EAttrezzatura[] */
-    private static array $attrezzature = [];
-    /** @var ECertificazione[] */
-    private static array $certificazioni = [];
-    /** @var EDisponibilitaChef[] */
-    private static array $disponibilitaChef = [];
-    /** @var EDisponibilitaGhostKitchen[] */
-    private static array $disponibilitaGhostKitchen = [];
-    /** @var EPrenotazioneChef[] */
-    private static array $prenotazioniChef = [];
-    /** @var EPrenotazioneGhostKitchen[] */
-    private static array $prenotazioniGhostKitchen = [];
-    /** @var EMetodoPagamento[] */
-    private static array $metodiPagamento = [];
-    /** @var EPagamento[] */
-    private static array $pagamenti = [];
+    private static $pagamenti = [];
     /** @var ECancellazione[] */
-    private static array $cancellazioni = [];
+    private static $cancellazioni = [];
     /** @var ERimborso[] */
-    private static array $rimborsi = [];
+    private static $rimborsi = [];
     /** @var ERecensione[] */
-    private static array $recensioni = [];
+    private static $recensioni = [];
     /** @var ESegnalazione[] */
-    private static array $segnalazioni = [];
+    private static $segnalazioni = [];
 
-    private static int $nextIdDisponibilitaChef = 800;
-    private static int $nextIdDisponibilitaGhostKitchen = 900;
-    private static int $nextIdPrenotazioneChef = 1000;
-    private static int $nextIdPrenotazioneGhostKitchen = 1100;
-    private static int $nextIdPagamento = 1200;
-    private static int $nextIdCancellazione = 9001;
-    private static int $nextIdRimborso = 9101;
-    private static int $nextIdRecensioneChef = 9201;
-    private static int $nextIdRecensioneGhostKitchen = 9301;
-    private static int $nextIdSegnalazione = 9401;
+    private static $nextIdDisponibilitaChef = 800;
+    private static $nextIdDisponibilitaGhostKitchen = 900;
+    private static $nextIdPrenotazioneChef = 1000;
+    private static $nextIdPrenotazioneGhostKitchen = 1100;
+    private static $nextIdPagamento = 1200;
+    private static $nextIdCancellazione = 9001;
+    private static $nextIdRimborso = 9101;
+    private static $nextIdRecensioneChef = 9201;
+    private static $nextIdRecensioneGhostKitchen = 9301;
+    private static $nextIdSegnalazione = 9401;
 
     private static function init(): void
     {
@@ -986,14 +850,31 @@ class FPersistentManager
     public static function updateUtente(EUtente $utente): EUtente
     {
         self::init();
-        foreach ([&self::$clienti, &self::$chef, &self::$gestori] as &$gruppo) {
-            foreach ($gruppo as $index => $item) {
-                if ($item->getIdUtente() === $utente->getIdUtente()) {
-                    $gruppo[$index] = $utente;
-                    return $utente;
-                }
+
+        if ($utente instanceof ECliente) {
+            return self::updateUtenteInGruppo(self::$clienti, $utente);
+        }
+
+        if ($utente instanceof EChef) {
+            return self::updateUtenteInGruppo(self::$chef, $utente);
+        }
+
+        if ($utente instanceof EGestore) {
+            return self::updateUtenteInGruppo(self::$gestori, $utente);
+        }
+
+        return $utente;
+    }
+
+    private static function updateUtenteInGruppo(array &$gruppo, EUtente $utente): EUtente
+    {
+        foreach ($gruppo as $index => $item) {
+            if ($item->getIdUtente() === $utente->getIdUtente()) {
+                $gruppo[$index] = $utente;
+                break;
             }
         }
+
         return $utente;
     }
 
