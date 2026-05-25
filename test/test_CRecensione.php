@@ -4,10 +4,10 @@ declare(strict_types=1);
 require_once __DIR__ . '/../Control/CRecensione.php';
 
 echo "UC10 - avvia recensione chef\n";
-print_r(CRecensione::avviaRecensione('chef', 1001, 10));
+print_r((new CRecensione())->avviaRecensione('chef', 1001, 10));
 
 echo "\nUC10 - pubblica recensione chef\n";
-print_r(CRecensione::pubblicaRecensione([
+print_r((new CRecensione())->pubblicaRecensione([
     'tipoTarget' => 'chef',
     'idPrenotazione' => 1001,
     'idAutore' => 10,
@@ -16,11 +16,11 @@ print_r(CRecensione::pubblicaRecensione([
 ]));
 
 echo "\nUC10 - prenotazione non recensibile\n";
-print_r(CRecensione::avviaRecensione('chef', 1002, 10));
+print_r((new CRecensione())->avviaRecensione('chef', 1002, 10));
 
 echo "\nUC10 - input non valido\n";
 try {
-    CRecensione::pubblicaRecensione([
+    (new CRecensione())->pubblicaRecensione([
         'tipoTarget' => 'chef',
         'idPrenotazione' => 1001,
         'idAutore' => 10,
@@ -30,3 +30,4 @@ try {
 } catch (InvalidArgumentException $e) {
     print_r(['eccezione' => $e->getMessage()]);
 }
+

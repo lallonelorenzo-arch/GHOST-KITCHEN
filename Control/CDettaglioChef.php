@@ -5,7 +5,7 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CDettaglioChef
 {
-    public static function visualizzaDettaglioChef(int $idChef): array
+    public function visualizzaDettaglioChef(int $idChef): array
     {
         if ($idChef <= 0) {
             throw new InvalidArgumentException('ID chef non valido.');

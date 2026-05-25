@@ -5,11 +5,11 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CSegnalazione
 {
-    public static function avviaSegnalazione(int $idSegnalante, string $tipoTarget, int $idTarget): array
+    public function avviaSegnalazione(int $idSegnalante, string $tipoTarget, int $idTarget): array
     {
-        self::validaId($idSegnalante, 'ID segnalante non valido.');
-        self::validaTipoTarget($tipoTarget);
-        self::validaId($idTarget, 'ID target non valido.');
+        $this->validaId($idSegnalante, 'ID segnalante non valido.');
+        $this->validaTipoTarget($tipoTarget);
+        $this->validaId($idTarget, 'ID target non valido.');
 
         $segnalante = FPersistentManager::loadUtente($idSegnalante);
         $target = FPersistentManager::loadTargetSegnalazione($tipoTarget, $idTarget);
@@ -37,7 +37,7 @@ class CSegnalazione
         ];
     }
 
-    public static function inviaSegnalazione(array $datiSegnalazione): array
+    public function inviaSegnalazione(array $datiSegnalazione): array
     {
         $idSegnalante = (int) ($datiSegnalazione['idSegnalante'] ?? 0);
         $tipoTarget = strtolower(trim((string) ($datiSegnalazione['tipoTarget'] ?? '')));
@@ -45,9 +45,9 @@ class CSegnalazione
         $motivo = trim((string) ($datiSegnalazione['motivo'] ?? ''));
         $descrizione = trim((string) ($datiSegnalazione['descrizione'] ?? ''));
 
-        self::validaId($idSegnalante, 'ID segnalante non valido.');
-        self::validaTipoTarget($tipoTarget);
-        self::validaId($idTarget, 'ID target non valido.');
+        $this->validaId($idSegnalante, 'ID segnalante non valido.');
+        $this->validaTipoTarget($tipoTarget);
+        $this->validaId($idTarget, 'ID target non valido.');
         if ($motivo === '') {
             throw new InvalidArgumentException('Motivo segnalazione obbligatorio.');
         }
@@ -68,7 +68,7 @@ class CSegnalazione
         ];
     }
 
-    private static function validaTipoTarget(string $tipoTarget): void
+    private function validaTipoTarget(string $tipoTarget): void
     {
         $ammessi = ['utente', 'chef', 'ghost_kitchen', 'recensione', 'menu'];
         if (!in_array($tipoTarget, $ammessi, true)) {
@@ -76,10 +76,11 @@ class CSegnalazione
         }
     }
 
-    private static function validaId(int $id, string $messaggio): void
+    private function validaId(int $id, string $messaggio): void
     {
         if ($id <= 0) {
             throw new InvalidArgumentException($messaggio);
         }
     }
 }
+

@@ -5,7 +5,7 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CGestioneRichieste
 {
-    public static function visualizzaRichieste(string $tipoOwner, int $idOwner): array
+    public function visualizzaRichieste(string $tipoOwner, int $idOwner): array
     {
         if ($idOwner <= 0) {
             throw new InvalidArgumentException('ID owner non valido.');
@@ -23,13 +23,13 @@ class CGestioneRichieste
         return ['tipoOwner' => $tipoOwner, 'richieste' => $richieste];
     }
 
-    public static function accettaRichiesta(string $tipoPrenotazione, int $idPrenotazione): array
+    public function accettaRichiesta(string $tipoPrenotazione, int $idPrenotazione): array
     {
         if ($idPrenotazione <= 0) {
             throw new InvalidArgumentException('ID prenotazione non valido.');
         }
 
-        $tipoPrenotazione = self::normalizzaTipoPrenotazione($tipoPrenotazione);
+        $tipoPrenotazione = $this->normalizzaTipoPrenotazione($tipoPrenotazione);
         if ($tipoPrenotazione === 'chef') {
             $prenotazione = FPersistentManager::loadPrenotazioneChef($idPrenotazione);
             if ($prenotazione === null) {
@@ -49,13 +49,13 @@ class CGestioneRichieste
         return ['messaggio' => 'Richiesta accettata', 'prenotazione' => $prenotazione];
     }
 
-    public static function rifiutaRichiesta(string $tipoPrenotazione, int $idPrenotazione, string $motivo = ''): array
+    public function rifiutaRichiesta(string $tipoPrenotazione, int $idPrenotazione, string $motivo = ''): array
     {
         if ($idPrenotazione <= 0) {
             throw new InvalidArgumentException('ID prenotazione non valido.');
         }
 
-        $tipoPrenotazione = self::normalizzaTipoPrenotazione($tipoPrenotazione);
+        $tipoPrenotazione = $this->normalizzaTipoPrenotazione($tipoPrenotazione);
         $motivo = trim($motivo);
 
         if ($tipoPrenotazione === 'chef') {
@@ -83,7 +83,7 @@ class CGestioneRichieste
         return ['messaggio' => 'Richiesta rifiutata', 'prenotazione' => $prenotazione, 'motivo' => $motivo];
     }
 
-    private static function normalizzaTipoPrenotazione(string $tipoPrenotazione): string
+    private function normalizzaTipoPrenotazione(string $tipoPrenotazione): string
     {
         $tipoPrenotazione = strtolower(trim($tipoPrenotazione));
         if (!in_array($tipoPrenotazione, ['chef', 'ghost_kitchen'], true)) {
@@ -93,3 +93,4 @@ class CGestioneRichieste
         return $tipoPrenotazione;
     }
 }
+

@@ -5,14 +5,14 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CPagamento
 {
-    public static function avviaPagamento(string $tipoPrenotazione, int $idPrenotazione, string $tipoPagamento): array
+    public function avviaPagamento(string $tipoPrenotazione, int $idPrenotazione, string $tipoPagamento): array
     {
         if ($idPrenotazione <= 0) {
             throw new InvalidArgumentException('ID prenotazione non valido.');
         }
 
-        $tipoPrenotazione = self::normalizzaTipoPrenotazione($tipoPrenotazione);
-        $tipoPagamento = self::normalizzaTipoPagamento($tipoPagamento);
+        $tipoPrenotazione = $this->normalizzaTipoPrenotazione($tipoPrenotazione);
+        $tipoPagamento = $this->normalizzaTipoPagamento($tipoPagamento);
 
         $prenotazione = $tipoPrenotazione === 'chef'
             ? FPersistentManager::loadPrenotazioneChef($idPrenotazione)
@@ -31,7 +31,7 @@ class CPagamento
         ];
     }
 
-    public static function selezionaMetodoPagamento(int $idMetodoPagamento): array
+    public function selezionaMetodoPagamento(int $idMetodoPagamento): array
     {
         if ($idMetodoPagamento <= 0) {
             throw new InvalidArgumentException('ID metodo pagamento non valido.');
@@ -45,11 +45,11 @@ class CPagamento
         return ['metodoPagamento' => $metodo];
     }
 
-    public static function confermaPagamento(array $datiPagamento): array
+    public function confermaPagamento(array $datiPagamento): array
     {
-        $tipoPrenotazione = self::normalizzaTipoPrenotazione((string) ($datiPagamento['tipoPrenotazione'] ?? ''));
+        $tipoPrenotazione = $this->normalizzaTipoPrenotazione((string) ($datiPagamento['tipoPrenotazione'] ?? ''));
         $idPrenotazione = (int) ($datiPagamento['idPrenotazione'] ?? 0);
-        $tipoPagamento = self::normalizzaTipoPagamento((string) ($datiPagamento['tipoPagamento'] ?? ''));
+        $tipoPagamento = $this->normalizzaTipoPagamento((string) ($datiPagamento['tipoPagamento'] ?? ''));
         $idMetodoPagamento = (int) ($datiPagamento['idMetodoPagamento'] ?? 0);
 
         if ($idPrenotazione <= 0 || $idMetodoPagamento <= 0) {
@@ -87,7 +87,7 @@ class CPagamento
         ];
     }
 
-    private static function normalizzaTipoPrenotazione(string $tipoPrenotazione): string
+    private function normalizzaTipoPrenotazione(string $tipoPrenotazione): string
     {
         $tipoPrenotazione = strtolower(trim($tipoPrenotazione));
         if (!in_array($tipoPrenotazione, ['chef', 'ghost_kitchen'], true)) {
@@ -97,7 +97,7 @@ class CPagamento
         return $tipoPrenotazione;
     }
 
-    private static function normalizzaTipoPagamento(string $tipoPagamento): string
+    private function normalizzaTipoPagamento(string $tipoPagamento): string
     {
         $tipoPagamento = strtolower(trim($tipoPagamento));
         $tipiAmmessi = [EPagamento::TIPO_CAPARRA, EPagamento::TIPO_SALDO, EPagamento::TIPO_TOTALE, EPagamento::TIPO_PENALE];
@@ -108,3 +108,4 @@ class CPagamento
         return $tipoPagamento;
     }
 }
+

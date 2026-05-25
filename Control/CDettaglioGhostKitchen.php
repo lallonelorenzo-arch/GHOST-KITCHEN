@@ -5,7 +5,7 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CDettaglioGhostKitchen
 {
-    public static function visualizzaDettaglioGhostKitchen(int $idGhostKitchen): array
+    public function visualizzaDettaglioGhostKitchen(int $idGhostKitchen): array
     {
         if ($idGhostKitchen <= 0) {
             throw new InvalidArgumentException('ID ghost kitchen non valido.');
@@ -28,3 +28,4 @@ class CDettaglioGhostKitchen
         ];
     }
 }
+

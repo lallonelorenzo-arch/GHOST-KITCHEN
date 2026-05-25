@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../Control/CRicerca.php';
 
-print_r(CRicerca::avviaRicerca());
+print_r((new CRicerca())->avviaRicerca());
 
 echo PHP_EOL;
 echo "====================" . PHP_EOL;
@@ -17,4 +17,5 @@ $filtri = [
     'tipoRisultato' => 'tutti'
 ];
 
-print_r(CRicerca::cercaOfferte($filtri));
+print_r((new CRicerca())->cercaOfferte($filtri));
+

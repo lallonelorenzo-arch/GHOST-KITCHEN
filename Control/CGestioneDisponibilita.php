@@ -5,13 +5,13 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CGestioneDisponibilita
 {
-    public static function visualizzaCalendario(string $tipoOwner, int $idOwner): array
+    public function visualizzaCalendario(string $tipoOwner, int $idOwner): array
     {
         if ($idOwner <= 0) {
             throw new InvalidArgumentException('ID owner non valido.');
         }
 
-        $tipoOwner = self::normalizzaTipoOwner($tipoOwner);
+        $tipoOwner = $this->normalizzaTipoOwner($tipoOwner);
 
         if ($tipoOwner === 'chef') {
             return ['tipoOwner' => $tipoOwner, 'disponibilita' => FPersistentManager::loadDisponibilitaChef($idOwner)];
@@ -20,13 +20,13 @@ class CGestioneDisponibilita
         return ['tipoOwner' => $tipoOwner, 'disponibilita' => FPersistentManager::loadDisponibilitaGhostKitchen($idOwner)];
     }
 
-    public static function aggiungiDisponibilita(string $tipoOwner, int $idOwner, string $data, string $oraInizio, string $oraFine): array
+    public function aggiungiDisponibilita(string $tipoOwner, int $idOwner, string $data, string $oraInizio, string $oraFine): array
     {
         if ($idOwner <= 0 || trim($data) === '' || trim($oraInizio) === '' || trim($oraFine) === '') {
             throw new InvalidArgumentException('Dati disponibilita non validi.');
         }
 
-        $tipoOwner = self::normalizzaTipoOwner($tipoOwner);
+        $tipoOwner = $this->normalizzaTipoOwner($tipoOwner);
 
         if ($tipoOwner === 'chef') {
             $disponibilita = new EDisponibilitaChef(null, $idOwner, trim($data), trim($oraInizio), trim($oraFine), EDisponibilitaChef::STATO_LIBERA);
@@ -39,17 +39,17 @@ class CGestioneDisponibilita
         return [
             'messaggio' => 'Disponibilita creata',
             'disponibilita' => $saved,
-            'calendario' => self::visualizzaCalendario($tipoOwner, $idOwner)
+            'calendario' => $this->visualizzaCalendario($tipoOwner, $idOwner)
         ];
     }
 
-    public static function bloccaDisponibilita(string $tipoOwner, int $idDisponibilita): array
+    public function bloccaDisponibilita(string $tipoOwner, int $idDisponibilita): array
     {
         if ($idDisponibilita <= 0) {
             throw new InvalidArgumentException('ID disponibilita non valido.');
         }
 
-        $tipoOwner = self::normalizzaTipoOwner($tipoOwner);
+        $tipoOwner = $this->normalizzaTipoOwner($tipoOwner);
 
         if ($tipoOwner === 'chef') {
             $disponibilita = FPersistentManager::loadDisponibilitaChefById($idDisponibilita);
@@ -76,13 +76,13 @@ class CGestioneDisponibilita
         return ['messaggio' => 'Disponibilita bloccata', 'disponibilita' => $disponibilita];
     }
 
-    public static function liberaDisponibilita(string $tipoOwner, int $idDisponibilita): array
+    public function liberaDisponibilita(string $tipoOwner, int $idDisponibilita): array
     {
         if ($idDisponibilita <= 0) {
             throw new InvalidArgumentException('ID disponibilita non valido.');
         }
 
-        $tipoOwner = self::normalizzaTipoOwner($tipoOwner);
+        $tipoOwner = $this->normalizzaTipoOwner($tipoOwner);
 
         if ($tipoOwner === 'chef') {
             $disponibilita = FPersistentManager::loadDisponibilitaChefById($idDisponibilita);
@@ -103,7 +103,7 @@ class CGestioneDisponibilita
         return ['messaggio' => 'Disponibilita liberata', 'disponibilita' => $disponibilita];
     }
 
-    private static function normalizzaTipoOwner(string $tipoOwner): string
+    private function normalizzaTipoOwner(string $tipoOwner): string
     {
         $tipoOwner = strtolower(trim($tipoOwner));
         if (!in_array($tipoOwner, ['chef', 'ghost_kitchen'], true)) {
@@ -113,3 +113,4 @@ class CGestioneDisponibilita
         return $tipoOwner;
     }
 }
+

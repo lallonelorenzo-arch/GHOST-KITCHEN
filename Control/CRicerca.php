@@ -10,7 +10,7 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 class CRicerca
 {
     
-    public static function avviaRicerca(): array
+    public function avviaRicerca(): array
     {
         return [
             'campi' => [
@@ -31,9 +31,9 @@ class CRicerca
     /**
      * Normalizza i filtri e richiede i risultati al PersistentManager fittizio.
      */
-    public static function cercaOfferte(array $filtri): array
+    public function cercaOfferte(array $filtri): array
     {
-        $filtriNormalizzati = self::normalizzaFiltri($filtri);
+        $filtriNormalizzati = $this->normalizzaFiltri($filtri);
 
         $risultatiChef = [];
         $risultatiGhostKitchen = [];
@@ -68,7 +68,7 @@ class CRicerca
         ];
     }
 
-    private static function normalizzaFiltri(array $filtri): array
+    private function normalizzaFiltri(array $filtri): array
     {
         $localita = trim((string) ($filtri['localita'] ?? ''));
         $tipologiaCucina = trim((string) ($filtri['tipologiaCucina'] ?? ''));
@@ -101,3 +101,4 @@ class CRicerca
         ];
     }
 }
+

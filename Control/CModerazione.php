@@ -5,7 +5,7 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CModerazione
 {
-    public static function visualizzaContenutiDaModerare(): array
+    public function visualizzaContenutiDaModerare(): array
     {
         return [
             'segnalazioni' => FPersistentManager::loadSegnalazioniDaModerare(),
@@ -18,9 +18,9 @@ class CModerazione
         ];
     }
 
-    public static function prendiInCaricoSegnalazione(int $idSegnalazione): array
+    public function prendiInCaricoSegnalazione(int $idSegnalazione): array
     {
-        self::validaId($idSegnalazione, 'ID segnalazione non valido.');
+        $this->validaId($idSegnalazione, 'ID segnalazione non valido.');
         $segnalazione = FPersistentManager::loadSegnalazione($idSegnalazione);
 
         if ($segnalazione === null) {
@@ -36,9 +36,9 @@ class CModerazione
         ];
     }
 
-    public static function moderaRecensione(int $idRecensione, string $azione): array
+    public function moderaRecensione(int $idRecensione, string $azione): array
     {
-        self::validaId($idRecensione, 'ID recensione non valido.');
+        $this->validaId($idRecensione, 'ID recensione non valido.');
         $azione = strtolower(trim($azione));
         if (!in_array($azione, ['nascondi', 'rimuovi', 'ripristina'], true)) {
             throw new InvalidArgumentException('Azione recensione non valida.');
@@ -58,9 +58,9 @@ class CModerazione
         ];
     }
 
-    public static function moderaProfilo(int $idUtente, string $azione): array
+    public function moderaProfilo(int $idUtente, string $azione): array
     {
-        self::validaId($idUtente, 'ID utente non valido.');
+        $this->validaId($idUtente, 'ID utente non valido.');
         $azione = strtolower(trim($azione));
         $mappaStati = [
             'sospendi' => EUtente::STATO_SOSPESO,
@@ -85,9 +85,9 @@ class CModerazione
         ];
     }
 
-    public static function chiudiSegnalazione(int $idSegnalazione, string $esito, string $noteAdmin = ''): array
+    public function chiudiSegnalazione(int $idSegnalazione, string $esito, string $noteAdmin = ''): array
     {
-        self::validaId($idSegnalazione, 'ID segnalazione non valido.');
+        $this->validaId($idSegnalazione, 'ID segnalazione non valido.');
         $esito = strtolower(trim($esito));
         if (!in_array($esito, ['risolta', 'archiviata', 'respinta'], true)) {
             throw new InvalidArgumentException('Esito segnalazione non valido.');
@@ -124,10 +124,11 @@ class CModerazione
         ];
     }
 
-    private static function validaId(int $id, string $messaggio): void
+    private function validaId(int $id, string $messaggio): void
     {
         if ($id <= 0) {
             throw new InvalidArgumentException($messaggio);
         }
     }
 }
+

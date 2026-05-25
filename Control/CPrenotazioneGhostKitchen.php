@@ -5,7 +5,7 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CPrenotazioneGhostKitchen
 {
-    public static function avviaPrenotazioneGhostKitchen(int $idRichiedente, string $tipoRichiedente, int $idGhostKitchen): array
+    public function avviaPrenotazioneGhostKitchen(int $idRichiedente, string $tipoRichiedente, int $idGhostKitchen): array
     {
         if ($idRichiedente <= 0 || $idGhostKitchen <= 0) {
             throw new InvalidArgumentException('ID richiedente o ghost kitchen non valido.');
@@ -31,7 +31,7 @@ class CPrenotazioneGhostKitchen
         ];
     }
 
-    public static function selezionaDisponibilitaGhostKitchen(int $idDisponibilitaGhostKitchen): array
+    public function selezionaDisponibilitaGhostKitchen(int $idDisponibilitaGhostKitchen): array
     {
         if ($idDisponibilitaGhostKitchen <= 0) {
             throw new InvalidArgumentException('ID disponibilita ghost kitchen non valido.');
@@ -48,7 +48,7 @@ class CPrenotazioneGhostKitchen
         ];
     }
 
-    public static function inserisciDatiPrenotazioneGhostKitchen(array $datiPrenotazione): array
+    public function inserisciDatiPrenotazioneGhostKitchen(array $datiPrenotazione): array
     {
         $idGhostKitchen = (int) ($datiPrenotazione['idGhostKitchen'] ?? 0);
         $data = trim((string) ($datiPrenotazione['dataServizio'] ?? ''));
@@ -68,7 +68,7 @@ class CPrenotazioneGhostKitchen
         ];
     }
 
-    public static function confermaPrenotazioneGhostKitchen(array $datiConferma): array
+    public function confermaPrenotazioneGhostKitchen(array $datiConferma): array
     {
         $idRichiedente = (int) ($datiConferma['idRichiedente'] ?? 0);
         $tipoRichiedente = strtolower(trim((string) ($datiConferma['tipoRichiedente'] ?? '')));
@@ -122,3 +122,4 @@ class CPrenotazioneGhostKitchen
         ];
     }
 }
+

@@ -5,13 +5,13 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CCancellazioneRimborso
 {
-    public static function avviaCancellazione(string $tipoPrenotazione, int $idPrenotazione, int $idRichiedente): array
+    public function avviaCancellazione(string $tipoPrenotazione, int $idPrenotazione, int $idRichiedente): array
     {
-        self::validaTipoPrenotazione($tipoPrenotazione);
-        self::validaId($idPrenotazione, 'ID prenotazione non valido.');
-        self::validaId($idRichiedente, 'ID richiedente non valido.');
+        $this->validaTipoPrenotazione($tipoPrenotazione);
+        $this->validaId($idPrenotazione, 'ID prenotazione non valido.');
+        $this->validaId($idRichiedente, 'ID richiedente non valido.');
 
-        $prenotazione = self::loadPrenotazione($tipoPrenotazione, $idPrenotazione);
+        $prenotazione = $this->loadPrenotazione($tipoPrenotazione, $idPrenotazione);
         if ($prenotazione === null) {
             return ['errore' => 'Prenotazione non trovata.'];
         }
@@ -34,29 +34,29 @@ class CCancellazioneRimborso
         ];
     }
 
-    public static function calcolaRimborsoStimato(string $tipoPrenotazione, int $idPrenotazione): array
+    public function calcolaRimborsoStimato(string $tipoPrenotazione, int $idPrenotazione): array
     {
-        self::validaTipoPrenotazione($tipoPrenotazione);
-        self::validaId($idPrenotazione, 'ID prenotazione non valido.');
+        $this->validaTipoPrenotazione($tipoPrenotazione);
+        $this->validaId($idPrenotazione, 'ID prenotazione non valido.');
 
         return FPersistentManager::calcolaRimborsoStimato($tipoPrenotazione, $idPrenotazione);
     }
 
-    public static function confermaCancellazione(array $datiCancellazione): array
+    public function confermaCancellazione(array $datiCancellazione): array
     {
         $tipoPrenotazione = strtolower(trim((string) ($datiCancellazione['tipoPrenotazione'] ?? '')));
         $idPrenotazione = (int) ($datiCancellazione['idPrenotazione'] ?? 0);
         $idRichiedente = (int) ($datiCancellazione['idRichiedente'] ?? 0);
         $motivo = trim((string) ($datiCancellazione['motivo'] ?? ''));
 
-        self::validaTipoPrenotazione($tipoPrenotazione);
-        self::validaId($idPrenotazione, 'ID prenotazione non valido.');
-        self::validaId($idRichiedente, 'ID richiedente non valido.');
+        $this->validaTipoPrenotazione($tipoPrenotazione);
+        $this->validaId($idPrenotazione, 'ID prenotazione non valido.');
+        $this->validaId($idRichiedente, 'ID richiedente non valido.');
         if ($motivo === '') {
             throw new InvalidArgumentException('Motivo cancellazione obbligatorio.');
         }
 
-        $prenotazione = self::loadPrenotazione($tipoPrenotazione, $idPrenotazione);
+        $prenotazione = $this->loadPrenotazione($tipoPrenotazione, $idPrenotazione);
         if ($prenotazione === null) {
             return ['errore' => 'Prenotazione non trovata.'];
         }
@@ -118,24 +118,25 @@ class CCancellazioneRimborso
         ];
     }
 
-    private static function loadPrenotazione(string $tipoPrenotazione, int $idPrenotazione)
+    private function loadPrenotazione(string $tipoPrenotazione, int $idPrenotazione)
     {
         return $tipoPrenotazione === ECancellazione::PRENOTAZIONE_CHEF
             ? FPersistentManager::loadPrenotazioneChef($idPrenotazione)
             : FPersistentManager::loadPrenotazioneGhostKitchen($idPrenotazione);
     }
 
-    private static function validaTipoPrenotazione(string $tipoPrenotazione): void
+    private function validaTipoPrenotazione(string $tipoPrenotazione): void
     {
         if (!in_array($tipoPrenotazione, [ECancellazione::PRENOTAZIONE_CHEF, ECancellazione::PRENOTAZIONE_GHOST_KITCHEN], true)) {
             throw new InvalidArgumentException('Tipo prenotazione non valido.');
         }
     }
 
-    private static function validaId(int $id, string $messaggio): void
+    private function validaId(int $id, string $messaggio): void
     {
         if ($id <= 0) {
             throw new InvalidArgumentException($messaggio);
         }
     }
 }
+

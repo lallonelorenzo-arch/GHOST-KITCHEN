@@ -5,7 +5,7 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CValidazioneCertificazioni
 {
-    public static function visualizzaCertificazioniInAttesa(): array
+    public function visualizzaCertificazioniInAttesa(): array
     {
         return [
             'certificazioni' => FPersistentManager::loadCertificazioniInAttesa(),
@@ -17,9 +17,9 @@ class CValidazioneCertificazioni
         ];
     }
 
-    public static function visualizzaDettaglioCertificazione(int $idCertificazione): array
+    public function visualizzaDettaglioCertificazione(int $idCertificazione): array
     {
-        self::validaId($idCertificazione);
+        $this->validaId($idCertificazione);
         $certificazione = FPersistentManager::loadCertificazione($idCertificazione);
 
         if ($certificazione === null) {
@@ -32,19 +32,19 @@ class CValidazioneCertificazioni
         ];
     }
 
-    public static function approvaCertificazione(int $idCertificazione, string $noteAdmin = ''): array
+    public function approvaCertificazione(int $idCertificazione, string $noteAdmin = ''): array
     {
-        return self::aggiornaStatoCertificazione($idCertificazione, ECertificazione::STATO_APPROVATA, $noteAdmin, 'Certificazione approvata.');
+        return $this->aggiornaStatoCertificazione($idCertificazione, ECertificazione::STATO_APPROVATA, $noteAdmin, 'Certificazione approvata.');
     }
 
-    public static function rifiutaCertificazione(int $idCertificazione, string $noteAdmin = ''): array
+    public function rifiutaCertificazione(int $idCertificazione, string $noteAdmin = ''): array
     {
-        return self::aggiornaStatoCertificazione($idCertificazione, ECertificazione::STATO_RIFIUTATA, $noteAdmin, 'Certificazione rifiutata.');
+        return $this->aggiornaStatoCertificazione($idCertificazione, ECertificazione::STATO_RIFIUTATA, $noteAdmin, 'Certificazione rifiutata.');
     }
 
-    private static function aggiornaStatoCertificazione(int $idCertificazione, string $stato, string $noteAdmin, string $messaggio): array
+    private function aggiornaStatoCertificazione(int $idCertificazione, string $stato, string $noteAdmin, string $messaggio): array
     {
-        self::validaId($idCertificazione);
+        $this->validaId($idCertificazione);
         $certificazione = FPersistentManager::loadCertificazione($idCertificazione);
 
         if ($certificazione === null) {
@@ -62,10 +62,11 @@ class CValidazioneCertificazioni
         ];
     }
 
-    private static function validaId(int $idCertificazione): void
+    private function validaId(int $idCertificazione): void
     {
         if ($idCertificazione <= 0) {
             throw new InvalidArgumentException('ID certificazione non valido.');
         }
     }
 }
+

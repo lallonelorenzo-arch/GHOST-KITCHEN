@@ -5,7 +5,7 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CPrenotazioneChef
 {
-    public static function avviaPrenotazioneChef(int $idCliente, int $idChef): array
+    public function avviaPrenotazioneChef(int $idCliente, int $idChef): array
     {
         if ($idCliente <= 0 || $idChef <= 0) {
             throw new InvalidArgumentException('ID cliente o chef non valido.');
@@ -26,7 +26,7 @@ class CPrenotazioneChef
         ];
     }
 
-    public static function selezionaMenu(int $idMenu): array
+    public function selezionaMenu(int $idMenu): array
     {
         if ($idMenu <= 0) {
             throw new InvalidArgumentException('ID menu non valido.');
@@ -43,7 +43,7 @@ class CPrenotazioneChef
         ];
     }
 
-    public static function inserisciDatiPrenotazioneChef(array $datiPrenotazione): array
+    public function inserisciDatiPrenotazioneChef(array $datiPrenotazione): array
     {
         $idChef = (int) ($datiPrenotazione['idChef'] ?? 0);
         $data = trim((string) ($datiPrenotazione['dataServizio'] ?? ''));
@@ -63,7 +63,7 @@ class CPrenotazioneChef
         ];
     }
 
-    public static function confermaPrenotazioneChef(array $datiConferma): array
+    public function confermaPrenotazioneChef(array $datiConferma): array
     {
         $idCliente = (int) ($datiConferma['idCliente'] ?? 0);
         $idChef = (int) ($datiConferma['idChef'] ?? 0);
@@ -127,3 +127,4 @@ class CPrenotazioneChef
         ];
     }
 }
+

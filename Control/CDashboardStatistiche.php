@@ -5,7 +5,7 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CDashboardStatistiche
 {
-    public static function visualizzaDashboard(array $filtri = []): array
+    public function visualizzaDashboard(array $filtri = []): array
     {
         $filtriNormalizzati = [
             'dataDa' => trim((string) ($filtri['dataDa'] ?? '')),
@@ -26,3 +26,4 @@ class CDashboardStatistiche
         ];
     }
 }
+

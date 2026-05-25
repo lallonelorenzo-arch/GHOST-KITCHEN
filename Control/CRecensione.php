@@ -5,11 +5,11 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CRecensione
 {
-    public static function avviaRecensione(string $tipoTarget, int $idPrenotazione, int $idAutore): array
+    public function avviaRecensione(string $tipoTarget, int $idPrenotazione, int $idAutore): array
     {
-        self::validaTipoTarget($tipoTarget);
-        self::validaId($idPrenotazione, 'ID prenotazione non valido.');
-        self::validaId($idAutore, 'ID autore non valido.');
+        $this->validaTipoTarget($tipoTarget);
+        $this->validaId($idPrenotazione, 'ID prenotazione non valido.');
+        $this->validaId($idAutore, 'ID autore non valido.');
 
         $verifica = FPersistentManager::verificaPrenotazioneRecensibile($tipoTarget, $idPrenotazione, $idAutore);
         if (($verifica['recensibile'] ?? false) !== true) {
@@ -36,7 +36,7 @@ class CRecensione
         ];
     }
 
-    public static function pubblicaRecensione(array $datiRecensione): array
+    public function pubblicaRecensione(array $datiRecensione): array
     {
         $tipoTarget = strtolower(trim((string) ($datiRecensione['tipoTarget'] ?? '')));
         $idPrenotazione = (int) ($datiRecensione['idPrenotazione'] ?? 0);
@@ -44,9 +44,9 @@ class CRecensione
         $punteggio = (int) ($datiRecensione['punteggio'] ?? 0);
         $commento = trim((string) ($datiRecensione['commento'] ?? ''));
 
-        self::validaTipoTarget($tipoTarget);
-        self::validaId($idPrenotazione, 'ID prenotazione non valido.');
-        self::validaId($idAutore, 'ID autore non valido.');
+        $this->validaTipoTarget($tipoTarget);
+        $this->validaId($idPrenotazione, 'ID prenotazione non valido.');
+        $this->validaId($idAutore, 'ID autore non valido.');
         if ($punteggio < 1 || $punteggio > 5) {
             throw new InvalidArgumentException('Punteggio recensione non valido.');
         }
@@ -78,17 +78,18 @@ class CRecensione
         ];
     }
 
-    private static function validaTipoTarget(string $tipoTarget): void
+    private function validaTipoTarget(string $tipoTarget): void
     {
         if (!in_array($tipoTarget, ['chef', 'ghost_kitchen'], true)) {
             throw new InvalidArgumentException('Tipo target recensione non valido.');
         }
     }
 
-    private static function validaId(int $id, string $messaggio): void
+    private function validaId(int $id, string $messaggio): void
     {
         if ($id <= 0) {
             throw new InvalidArgumentException($messaggio);
         }
     }
 }
+
