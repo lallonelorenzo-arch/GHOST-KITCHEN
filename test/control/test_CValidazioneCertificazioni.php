@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CValidazioneCertificazioni.php';
+require_once __DIR__ . '/../../Control/CValidazioneCertificazioni.php';
 
 echo "UC12 - certificazioni in attesa\n";
 print_r((new CValidazioneCertificazioni())->visualizzaCertificazioniInAttesa());

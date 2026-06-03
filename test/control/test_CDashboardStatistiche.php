@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CDashboardStatistiche.php';
+require_once __DIR__ . '/../../Control/CDashboardStatistiche.php';
 
 echo "UC14 - dashboard senza filtri\n";
 print_r((new CDashboardStatistiche())->visualizzaDashboard());

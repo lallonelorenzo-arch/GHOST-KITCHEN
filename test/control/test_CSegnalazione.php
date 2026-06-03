@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CSegnalazione.php';
+require_once __DIR__ . '/../../Control/CSegnalazione.php';
 
 echo "UC11 - avvia segnalazione\n";
 print_r((new CSegnalazione())->avviaSegnalazione(10, 'recensione', 3001));

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CGestioneDisponibilita.php';
+require_once __DIR__ . '/../../Control/CGestioneDisponibilita.php';
 
 print_r((new CGestioneDisponibilita())->visualizzaCalendario('chef', 1));
 print_r((new CGestioneDisponibilita())->aggiungiDisponibilita('chef', 1, '2026-06-20', '12:00', '16:00'));

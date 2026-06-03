@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CPrenotazioneChef.php';
+require_once __DIR__ . '/../../Control/CPrenotazioneChef.php';
 
 print_r((new CPrenotazioneChef())->avviaPrenotazioneChef(10, 1));
 print_r((new CPrenotazioneChef())->selezionaMenu(301));

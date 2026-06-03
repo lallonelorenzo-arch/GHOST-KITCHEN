@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CRecensione.php';
+require_once __DIR__ . '/../../Control/CRecensione.php';
 
 echo "UC10 - avvia recensione chef\n";
 print_r((new CRecensione())->avviaRecensione('chef', 1001, 10));

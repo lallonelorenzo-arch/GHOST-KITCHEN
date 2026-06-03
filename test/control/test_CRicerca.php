@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CRicerca.php';
+require_once __DIR__ . '/../../Control/CRicerca.php';
 
 print_r((new CRicerca())->avviaRicerca());
 

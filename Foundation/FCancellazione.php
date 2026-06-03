@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/FAbstractTable.php';
+require_once __DIR__ . '/FPagamento.php';
 require_once __DIR__ . '/FPrenotazioneGhostKitchen.php';
 require_once __DIR__ . '/../Entity/ECancellazione.php';
 

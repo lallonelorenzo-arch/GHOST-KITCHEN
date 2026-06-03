@@ -2,6 +2,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/FBaseJoinPersistence.php';
+require_once __DIR__ . '/FRecensionePersistence.php';
+require_once __DIR__ . '/FRecensioneChef.php';
+require_once __DIR__ . '/FRecensioneGhostKitchen.php';
 require_once __DIR__ . '/../Entity/ERecensione.php';
 
 class FRecensione

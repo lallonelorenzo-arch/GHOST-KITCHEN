@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CPrenotazioneGhostKitchen.php';
+require_once __DIR__ . '/../../Control/CPrenotazioneGhostKitchen.php';
 
 print_r((new CPrenotazioneGhostKitchen())->avviaPrenotazioneGhostKitchen(10, 'cliente', 101));
 print_r((new CPrenotazioneGhostKitchen())->selezionaDisponibilitaGhostKitchen(801));

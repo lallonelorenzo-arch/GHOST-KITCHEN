@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CDettaglioGhostKitchen.php';
+require_once __DIR__ . '/../../Control/CDettaglioGhostKitchen.php';
 
 print_r((new CDettaglioGhostKitchen())->visualizzaDettaglioGhostKitchen(101));
 

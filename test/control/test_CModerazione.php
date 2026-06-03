@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CModerazione.php';
+require_once __DIR__ . '/../../Control/CModerazione.php';
 
 echo "UC13 - contenuti da moderare\n";
 print_r((new CModerazione())->visualizzaContenutiDaModerare());

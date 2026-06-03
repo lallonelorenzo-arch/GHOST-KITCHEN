@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CCancellazioneRimborso.php';
+require_once __DIR__ . '/../../Control/CCancellazioneRimborso.php';
 
 echo "UC9 - avvia cancellazione\n";
 print_r((new CCancellazioneRimborso())->avviaCancellazione('chef', 1002, 10));

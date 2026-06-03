@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../Control/CGestioneRichieste.php';
+require_once __DIR__ . '/../../Control/CGestioneRichieste.php';
 
 print_r((new CGestioneRichieste())->visualizzaRichieste('chef', 1));
 print_r((new CGestioneRichieste())->accettaRichiesta('chef', 901));
