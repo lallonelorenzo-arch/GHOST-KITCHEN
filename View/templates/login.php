@@ -5,7 +5,7 @@ use ViewHelpers as V;
 ?>
 <section class="page-hero compact-hero">
     <h1>Accedi</h1>
-    <p>Entra nel tuo account Ghost Kitchen.</p>
+    <p>Entra nella tua area personale per gestire prenotazioni, disponibilita e richieste.</p>
 </section>
 
 <section class="section auth-section">

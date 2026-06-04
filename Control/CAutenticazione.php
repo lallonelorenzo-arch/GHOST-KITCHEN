@@ -14,6 +14,21 @@ class CAutenticazione
         ];
     }
 
+    public function profilo(array $accesso): array
+    {
+        if (($accesso['isLogged'] ?? false) !== true) {
+            return [
+                'messaggioAccesso' => 'Accedi per visualizzare il tuo profilo.',
+                'accesso' => $accesso,
+            ];
+        }
+
+        return [
+            'messaggioAccesso' => null,
+            'accesso' => $accesso,
+        ];
+    }
+
     public function login(array $dati): array
     {
         $email = strtolower(trim((string) ($dati['email'] ?? '')));

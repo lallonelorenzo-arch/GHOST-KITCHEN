@@ -12,6 +12,7 @@ class CFrontController
             '/ricerca/chef' => ['CRicerca', 'cercaOfferte', 'lista_chef'],
             '/ricerca/ghost-kitchen' => ['CRicerca', 'cercaOfferte', 'lista_ghost_kitchen'],
             '/login' => ['CAutenticazione', 'mostraLogin', 'login'],
+            '/profilo' => ['CAutenticazione', 'profilo', 'profilo'],
             '/logout' => ['CAutenticazione', 'logout', null],
             '/disponibilita' => ['CGestioneDisponibilita', 'mostraDisponibilitaWeb', 'disponibilita'],
             '/richieste' => ['CGestioneRichieste', 'visualizzaRichiesteWeb', 'richieste'],
@@ -182,6 +183,7 @@ class CFrontController
                     'tipoRisultato' => 'ghost_kitchen',
                 ]],
                 '/login' => $method === 'POST' ? [$post] : [],
+                '/profilo' => [$this->accessContext()],
                 '/disponibilita' => [$this->accessContext(), $query],
                 '/richieste' => [$this->accessContext()],
                 '/dashboard' => [$this->accessContext(), $query],
@@ -346,6 +348,8 @@ class CFrontController
             'utenteCorrente' => FSession::isLogged() ? [
                 'nome' => FSession::getNome(),
                 'cognome' => FSession::getCognome(),
+                'email' => FSession::getEmail(),
+                'ruoli' => FSession::getRuoli(),
                 'ruolo' => FSession::getRuoloAttivo(),
             ] : null,
         ];

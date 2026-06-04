@@ -19,7 +19,7 @@ $rating = $chef->getValutazioneMedia();
 <section class="section detail-layout">
     <article>
         <h2>Chi sono</h2>
-        <p class="lead"><?= V::e($chef->getBiografia() ?: 'Profilo chef disponibile nel database.') ?></p>
+        <p class="lead"><?= V::e($chef->getBiografia() ?: 'Lo chef non ha ancora pubblicato una biografia estesa.') ?></p>
         <div class="detail-chips">
             <span><?= V::e($chef->getTipologiaCucina() ?: 'Cucina non specificata') ?></span>
             <span><?= V::e($chef->getNumeroRecensioni()) ?> recensioni</span>
@@ -56,7 +56,7 @@ $rating = $chef->getValutazioneMedia();
             <?php foreach ($certificazioni as $certificazione): ?>
                 <span><?= V::e(method_exists($certificazione, 'getNome') ? $certificazione->getNome() : 'Certificazione') ?></span>
             <?php endforeach; ?>
-            <?php if ($certificazioni === []): ?><span>Nessuna certificazione approvata visibile.</span><?php endif; ?>
+            <?php if ($certificazioni === []): ?><span>Certificazioni non ancora pubblicate</span><?php endif; ?>
         </div>
     </article>
     <aside class="booking-box">
@@ -65,7 +65,7 @@ $rating = $chef->getValutazioneMedia();
         <strong>&euro; <?= V::e(V::money($chef->getPrezzoBase())) ?></strong>
         <span>per esperienza</span>
         <div class="booking-actions">
-            <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/chef/' . $chef->getIdChef())) ?>">Prenota Ora</a>
+            <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/chef/' . $chef->getIdChef())) ?>">Prenota ora</a>
             <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Chef</a>
             <a class="btn btn-ghost" href="<?= V::e(V::url('/segnalazione/chef/' . $chef->getIdChef())) ?>">Segnala profilo</a>
         </div>

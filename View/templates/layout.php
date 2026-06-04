@@ -8,6 +8,14 @@ if ($baseUrl !== '' && str_starts_with($currentPath, $baseUrl)) {
     $currentPath = substr($currentPath, strlen($baseUrl)) ?: '/';
 }
 $isActive = static fn (string $path): string => ($path === '/' ? $currentPath === '/' : str_starts_with($currentPath, $path)) ? ' is-active' : '';
+$utenteNome = $utenteCorrente !== null ? trim((string) (($utenteCorrente['nome'] ?? '') . ' ' . ($utenteCorrente['cognome'] ?? ''))) : '';
+$utenteNome = $utenteNome !== '' ? $utenteNome : 'Account';
+$utenteRuolo = $utenteCorrente !== null ? (string) ($utenteCorrente['ruolo'] ?? 'utente') : '';
+$iniziali = '';
+if ($utenteCorrente !== null) {
+    $iniziali = strtoupper(substr((string) ($utenteCorrente['nome'] ?? 'A'), 0, 1) . substr((string) ($utenteCorrente['cognome'] ?? ''), 0, 1));
+    $iniziali = trim($iniziali) !== '' ? $iniziali : 'GK';
+}
 ?>
 <!doctype html>
 <html lang="it">
@@ -36,12 +44,20 @@ $isActive = static fn (string $path): string => ($path === '/' ? $currentPath ==
             <a class="<?= V::e(trim($isActive('/ricerca/chef'))) ?>" href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova Chef</a>
             <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
             <?php if ($utenteCorrente !== null): ?>
+                <a class="<?= V::e(trim($isActive('/profilo'))) ?>" href="<?= V::e(V::url('/profilo')) ?>">Profilo</a>
+                <a class="<?= V::e(trim($isActive('/richieste'))) ?>" href="<?= V::e(V::url('/richieste')) ?>">Richieste</a>
                 <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard')) ?>">Dashboard</a>
             <?php endif; ?>
         </div>
         <div class="nav-user">
             <?php if ($utenteCorrente !== null): ?>
-                <span class="user-chip"><?= V::e(trim(($utenteCorrente['nome'] ?? '') . ' ' . ($utenteCorrente['cognome'] ?? ''))) ?></span>
+                <a class="user-menu" href="<?= V::e(V::url('/profilo')) ?>" aria-label="Apri profilo utente">
+                    <span class="user-avatar" aria-hidden="true"><?= V::e($iniziali) ?></span>
+                    <span class="user-copy">
+                        <strong><?= V::e($utenteNome) ?></strong>
+                        <span><?= V::e($utenteRuolo !== '' ? $utenteRuolo : 'account') ?></span>
+                    </span>
+                </a>
                 <a class="btn btn-ghost" href="<?= V::e(V::url('/logout')) ?>">Logout</a>
             <?php else: ?>
                 <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Accedi</a>
@@ -54,7 +70,7 @@ $isActive = static fn (string $path): string => ($path === '/' ? $currentPath ==
 </main>
 <footer class="footer">
     <span>Ghost Kitchen</span>
-    <span>Interfaccia Figma adattata a ECFV PHP</span>
+    <span>Prenotazioni, cucine e chef in un unico spazio operativo.</span>
 </footer>
 </body>
 </html>

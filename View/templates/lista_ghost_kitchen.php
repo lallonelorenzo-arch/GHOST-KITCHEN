@@ -9,18 +9,17 @@ $valutazioneSelezionata = ((int) ($filtri['valutazioneMin'] ?? 0) > 0) ? (string
 ?>
 <section class="page-hero">
     <h1>Ghost Kitchen</h1>
-    <p>Cucine professionali attrezzate disponibili a ore.</p>
+    <p>Trova spazi attrezzati per produzione, test menu e servizi temporanei.</p>
 </section>
 
 <section class="section">
-    <form class="figma-filter-panel" method="get" action="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">
+    <form class="filter-shell" method="get" action="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">
         <div class="filter-search-row">
             <label class="search-field" aria-label="Cerca ghost kitchen per citta o indirizzo">
                 <span class="search-icon" aria-hidden="true">&#128269;</span>
-                <input name="localita" value="<?= V::e($localitaSelezionata) ?>" placeholder="Cerca per citta o indirizzo...">
+                <input name="localita" value="<?= V::e($localitaSelezionata) ?>" placeholder="Cerca citta, zona o indirizzo">
             </label>
             <button class="filter-button" type="button" data-filter-toggle aria-expanded="true">
-                <span aria-hidden="true">&#9661;</span>
                 Filtri
                 <span class="filter-chevron" aria-hidden="true">&#8963;</span>
             </button>

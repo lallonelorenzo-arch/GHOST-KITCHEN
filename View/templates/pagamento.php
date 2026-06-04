@@ -15,23 +15,22 @@ $tipoSlug = $tipoPrenotazione === 'ghost_kitchen' ? 'ghost-kitchen' : 'chef';
 $form = $form ?? [];
 $metodiDisponibili = $metodiDisponibili ?? [];
 ?>
-<section class="page-hero compact-hero uc-page-hero">
-    <span class="badge">UC8</span>
+<section class="page-hero compact-hero ops-hero">
     <h1>Pagamento</h1>
-    <p>Completa il pagamento collegato alla prenotazione selezionata.</p>
+    <p>Controlla riepilogo, importo e metodo prima di confermare la transazione.</p>
 </section>
 
-<section class="section uc-flow">
+<section class="section ops-flow">
     <?php if (!empty($messaggioAccesso)): ?>
         <div class="alert"><?= V::e($messaggioAccesso) ?> <a href="<?= V::e(V::url('/login')) ?>">Accedi</a></div>
     <?php endif; ?>
     <?php if (!empty($erroreForm)): ?><div class="alert"><?= V::e($erroreForm) ?></div><?php endif; ?>
     <?php if (!empty($messaggioSuccesso)): ?><div class="notice"><?= V::e($messaggioSuccesso) ?></div><?php endif; ?>
 
-    <div class="uc-grid">
-        <article class="uc-panel">
+    <div class="ops-grid">
+        <article class="ops-panel">
             <h2>Riepilogo</h2>
-            <dl class="uc-meta">
+            <dl class="ops-meta">
                 <div><dt>Prenotazione</dt><dd>#<?= V::e($idPrenotazione ?? '') ?></dd></div>
                 <div><dt>Tipo</dt><dd><?= V::e($tipoPrenotazione) ?></dd></div>
                 <div><dt>Importo</dt><dd>&euro; <?= V::e(V::money((float) ($importo ?? 0))) ?></dd></div>
@@ -41,7 +40,7 @@ $metodiDisponibili = $metodiDisponibili ?? [];
             <?php endif; ?>
         </article>
 
-        <form class="uc-panel uc-form" method="post" action="<?= V::e(V::url('/pagamento/' . $tipoSlug . '/' . (int) $idPrenotazione)) ?>">
+        <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/pagamento/' . $tipoSlug . '/' . (int) $idPrenotazione)) ?>">
             <h2>Dati pagamento</h2>
             <label>Tipo pagamento
                 <select name="tipoPagamento" required>
@@ -61,7 +60,7 @@ $metodiDisponibili = $metodiDisponibili ?? [];
                 </select>
             </label>
             <?php if ($metodiDisponibili === []): ?>
-                <p class="uc-muted">Nessun metodo di pagamento attivo disponibile per questa prenotazione.</p>
+                <p class="muted-text">Nessun metodo di pagamento attivo disponibile per questa prenotazione.</p>
             <?php endif; ?>
             <button class="btn btn-accent" type="submit">Conferma pagamento</button>
         </form>

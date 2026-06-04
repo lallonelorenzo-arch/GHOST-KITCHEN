@@ -5,7 +5,7 @@ use ViewHelpers as V;
 /** @var bool $successo */
 /** @var string $ritorno */
 ?>
-<section class="section error-page uc-esito">
+<section class="section error-page ops-esito">
     <span class="badge"><?= !empty($successo) ? 'OK' : 'Attenzione' ?></span>
     <h1><?= V::e($titolo ?? 'Esito operazione') ?></h1>
     <p><?= V::e($messaggio ?? '') ?></p>

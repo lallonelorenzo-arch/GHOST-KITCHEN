@@ -9,18 +9,17 @@ $valutazioneSelezionata = ((int) ($filtri['valutazioneMin'] ?? 0) > 0) ? (string
 ?>
 <section class="page-hero">
     <h1>Trova il tuo Chef</h1>
-    <p>Scopri chef professionisti per ogni occasione e gusto culinario.</p>
+    <p>Confronta specializzazioni, budget e valutazioni per scegliere il professionista giusto.</p>
 </section>
 
 <section class="section">
-    <form class="figma-filter-panel" method="get" action="<?= V::e(V::url('/ricerca/chef')) ?>">
+    <form class="filter-shell" method="get" action="<?= V::e(V::url('/ricerca/chef')) ?>">
         <div class="filter-search-row">
             <label class="search-field" aria-label="Cerca chef per cucina o specialita">
                 <span class="search-icon" aria-hidden="true">&#128269;</span>
-                <input name="tipologiaCucina" value="<?= V::e($tipologiaSelezionata) ?>" placeholder="Cerca per cucina o specialita...">
+                <input name="tipologiaCucina" value="<?= V::e($tipologiaSelezionata) ?>" placeholder="Cerca cucina, specialita o stile">
             </label>
             <button class="filter-button" type="button" data-filter-toggle aria-expanded="true">
-                <span aria-hidden="true">&#9661;</span>
                 Filtri
                 <span class="filter-chevron" aria-hidden="true">&#8963;</span>
             </button>

@@ -48,11 +48,11 @@ $rating = $ghostKitchen->getValutazioneMedia();
                 <div><span><?= V::e($slot->getData()) ?> <?= V::e($slot->getOraInizio()) ?></span><b><?= V::e($slot->getStato()) ?></b></div>
             <?php endforeach; ?>
             <?php if ($disponibilitaPubbliche === []): ?>
-                <div><span>Nessuno slot pubblicato</span><b>Info</b></div>
+                <div><span>Nessuno slot pubblicato</span><b>Da confermare</b></div>
             <?php endif; ?>
         </div>
         <div class="booking-actions">
-            <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>">Prenota Ora</a>
+            <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>">Prenota ora</a>
             <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Gestore</a>
             <a class="btn btn-ghost" href="<?= V::e(V::url('/segnalazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>">Segnala cucina</a>
         </div>

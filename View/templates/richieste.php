@@ -4,24 +4,23 @@ use ViewHelpers as V;
 /** @var array $richiesteGhostKitchen */
 /** @var string|null $messaggioAccesso */
 ?>
-<section class="page-hero compact-hero uc-page-hero">
-    <span class="badge">UC7</span>
+<section class="page-hero compact-hero ops-hero">
     <h1>Gestione richieste</h1>
-    <p>Accetta o rifiuta le prenotazioni in attesa.</p>
+    <p>Valuta le richieste in attesa e rispondi con un esito chiaro.</p>
 </section>
 
-<section class="section uc-flow">
+<section class="section ops-flow">
     <?php if (!empty($messaggioAccesso)): ?>
         <div class="alert"><?= V::e($messaggioAccesso) ?> <a href="<?= V::e(V::url('/login')) ?>">Accedi</a></div>
     <?php endif; ?>
 
-    <div class="uc-grid">
-        <section class="uc-panel">
+    <div class="ops-grid">
+        <section class="ops-panel">
             <h2>Richieste chef</h2>
-            <?php if (($richiesteChef ?? []) === []): ?><p class="uc-muted">Nessuna richiesta chef in attesa.</p><?php endif; ?>
-            <div class="uc-list">
+            <?php if (($richiesteChef ?? []) === []): ?><p class="muted-text">Nessuna richiesta chef in attesa.</p><?php endif; ?>
+            <div class="ops-list">
                 <?php foreach (($richiesteChef ?? []) as $richiesta): ?>
-                    <article class="uc-list-item uc-request">
+                    <article class="ops-list-item ops-request">
                         <strong>#<?= V::e($richiesta->getIdPrenotazione()) ?> - <?= V::e($richiesta->getDataServizio()) ?></strong>
                         <span><?= V::e($richiesta->getOraInizio()) ?> - <?= V::e($richiesta->getOraFine()) ?>, <?= V::e($richiesta->getNumeroPersone()) ?> persone</span>
                         <form method="post" action="<?= V::e(V::url('/richieste/chef/' . $richiesta->getIdPrenotazione() . '/accetta')) ?>"><button class="btn btn-accent" type="submit">Accetta</button></form>
@@ -31,12 +30,12 @@ use ViewHelpers as V;
             </div>
         </section>
 
-        <section class="uc-panel">
+        <section class="ops-panel">
             <h2>Richieste ghost kitchen</h2>
-            <?php if (($richiesteGhostKitchen ?? []) === []): ?><p class="uc-muted">Nessuna richiesta ghost kitchen in attesa.</p><?php endif; ?>
-            <div class="uc-list">
+            <?php if (($richiesteGhostKitchen ?? []) === []): ?><p class="muted-text">Nessuna richiesta ghost kitchen in attesa.</p><?php endif; ?>
+            <div class="ops-list">
                 <?php foreach (($richiesteGhostKitchen ?? []) as $richiesta): ?>
-                    <article class="uc-list-item uc-request">
+                    <article class="ops-list-item ops-request">
                         <strong>#<?= V::e($richiesta->getIdPrenotazione()) ?> - <?= V::e($richiesta->getDataServizio()) ?></strong>
                         <span><?= V::e($richiesta->getOraInizio()) ?> - <?= V::e($richiesta->getOraFine()) ?>, richiedente <?= V::e($richiesta->getTipoRichiedente()) ?></span>
                         <form method="post" action="<?= V::e(V::url('/richieste/ghost-kitchen/' . $richiesta->getIdPrenotazione() . '/accetta')) ?>"><button class="btn btn-accent" type="submit">Accetta</button></form>
