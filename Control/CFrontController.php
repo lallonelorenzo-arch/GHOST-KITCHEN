@@ -1,39 +1,206 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../Foundation/FSession.php';
+require_once __DIR__ . '/../View/ViewRenderer.php';
+
 class CFrontController
 {
-    public function dispatch(string $controllerName, string $actionName, array $params = []): mixed
-    {
-        $controllerName = trim($controllerName);
-        $actionName = trim($actionName);
+    private const ALLOWED_ROUTES = [
+        'GET' => [
+            '/' => ['CHome', 'home', 'home'],
+            '/ricerca' => ['CRicerca', 'avviaRicerca', 'ricerca'],
+            '/ricerca/chef' => ['CRicerca', 'cercaOfferte', 'lista_chef'],
+            '/ricerca/ghost-kitchen' => ['CRicerca', 'cercaOfferte', 'lista_ghost_kitchen'],
+            '/login' => ['CAutenticazione', 'mostraLogin', 'login'],
+            '/logout' => ['CAutenticazione', 'logout', null],
+            '/prenotazione/placeholder' => ['CHome', 'placeholder', 'placeholder'],
+        ],
+        'POST' => [
+            '/login' => ['CAutenticazione', 'login', 'login'],
+        ],
+    ];
 
-        if ($controllerName === '' || $actionName === '') {
-            return ['errore' => 'Controller non trovato.'];
+    public function handle(): void
+    {
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        $path = $this->normalizePath((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
+        $query = $this->normalizeRequest($_GET);
+        $post = $this->normalizeRequest($_POST);
+
+        try {
+            if ($method === 'GET' && preg_match('#^/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $this->renderController('CDettaglioChef', 'visualizzaDettaglioChef', 'dettaglio_chef', [(int) $matches[1]]);
+                return;
+            }
+
+            if ($method === 'GET' && preg_match('#^/ghost-kitchen/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $this->renderController('CDettaglioGhostKitchen', 'visualizzaDettaglioGhostKitchen', 'dettaglio_ghost_kitchen', [(int) $matches[1]]);
+                return;
+            }
+
+            if (!$this->routeExistsForAnyMethod($path)) {
+                $this->renderError(404, 'Pagina non trovata', 'La pagina richiesta non esiste.');
+                return;
+            }
+
+            $route = self::ALLOWED_ROUTES[$method][$path] ?? null;
+            if ($route === null) {
+                $this->renderError(405, 'Metodo non consentito', 'Il metodo HTTP usato non e valido per questa pagina.');
+                return;
+            }
+
+            [$controller, $action, $template] = $route;
+            $params = match ($path) {
+                '/ricerca/chef' => [[
+                    'localita' => $query['localita'] ?? '',
+                    'tipologiaCucina' => $query['tipologiaCucina'] ?? '',
+                    'budgetMax' => $query['budgetMax'] ?? 0,
+                    'valutazioneMin' => $query['valutazioneMin'] ?? 0,
+                    'tipoRisultato' => 'chef',
+                ]],
+                '/ricerca/ghost-kitchen' => [[
+                    'localita' => $query['localita'] ?? '',
+                    'tipologiaCucina' => '',
+                    'budgetMax' => $query['budgetMax'] ?? 0,
+                    'valutazioneMin' => $query['valutazioneMin'] ?? 0,
+                    'tipoRisultato' => 'ghost_kitchen',
+                ]],
+                '/login' => $method === 'POST' ? [$post] : [],
+                default => [],
+            };
+
+            if ($path === '/logout') {
+                $this->callController($controller, $action, []);
+                $this->redirect('/');
+                return;
+            }
+
+            $data = $this->callController($controller, $action, $params);
+            if ($path === '/login' && $method === 'POST' && is_array($data) && ($data['successo'] ?? false) === true) {
+                $this->redirect('/');
+                return;
+            }
+
+            ViewRenderer::render((string) $template, is_array($data) ? $data : [], $this->sharedViewData());
+        } catch (InvalidArgumentException $exception) {
+            $this->renderError(404, 'Risorsa non valida', $exception->getMessage());
+        } catch (Throwable $exception) {
+            error_log(sprintf(
+                '[CFrontController] %s: %s in %s:%d',
+                $exception::class,
+                $exception->getMessage(),
+                $exception->getFile(),
+                $exception->getLine()
+            ));
+            $this->renderError(500, 'Errore applicativo', 'Si e verificato un errore interno. Riprova piu tardi.');
+        }
+    }
+
+    private function renderController(string $controller, string $action, string $template, array $params): void
+    {
+        $data = $this->callController($controller, $action, $params);
+        if (is_array($data) && isset($data['errore'])) {
+            $this->renderError(404, (string) $data['errore'], 'Controlla l identificativo nella URL.');
+            return;
         }
 
-        // TODO: when the View layer is available, map URL segments/query params
-        // to controller/action names before calling this method.
-        $className = str_starts_with($controllerName, 'C') ? $controllerName : 'C' . $controllerName;
-        $controllerFile = __DIR__ . '/' . $className . '.php';
+        ViewRenderer::render($template, is_array($data) ? $data : [], $this->sharedViewData());
+    }
 
+    private function callController(string $className, string $actionName, array $params): mixed
+    {
+        $controllerFile = __DIR__ . '/' . $className . '.php';
         if (!is_file($controllerFile)) {
-            return ['errore' => 'Controller non trovato.'];
+            throw new RuntimeException('Controller non trovato.');
         }
 
         require_once $controllerFile;
-
-        if (!class_exists($className)) {
-            return ['errore' => 'Controller non trovato.'];
-        }
-
-        if (!method_exists($className, $actionName)) {
-            return ['errore' => 'Metodo non consentito.'];
+        if (!class_exists($className) || !method_exists($className, $actionName)) {
+            throw new RuntimeException('Azione non disponibile.');
         }
 
         $controller = new $className();
-        // TODO: after View implementation, add robust GET/POST to method-parameter
-        // mapping and validation rules.
-        return $controller->$actionName(...array_values($params));
+        return $controller->$actionName(...$params);
+    }
+
+    private function normalizePath(string $path): string
+    {
+        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        $path = '/' . trim($path, '/');
+
+        if ($scriptDir !== '/' && $scriptDir !== '.' && str_starts_with($path, $scriptDir . '/')) {
+            $path = substr($path, strlen($scriptDir));
+        } elseif ($scriptDir !== '/' && $path === $scriptDir) {
+            $path = '/';
+        }
+
+        $path = '/' . trim($path, '/');
+        return $path === '/' ? '/' : rtrim($path, '/');
+    }
+
+    private function normalizeRequest(array $input): array
+    {
+        $normalized = [];
+        foreach ($input as $key => $value) {
+            if (!is_string($key)) {
+                continue;
+            }
+
+            $normalized[$key] = is_array($value) ? '' : trim((string) $value);
+        }
+
+        return $normalized;
+    }
+
+    private function routeExistsForAnyMethod(string $path): bool
+    {
+        if (preg_match('#^/(chef|ghost-kitchen)/[1-9][0-9]*$#', $path) === 1) {
+            return true;
+        }
+
+        foreach (self::ALLOWED_ROUTES as $routes) {
+            if (array_key_exists($path, $routes)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function sharedViewData(): array
+    {
+        FSession::start();
+
+        return [
+            'baseUrl' => $this->baseUrl(),
+            'utenteCorrente' => FSession::isLogged() ? [
+                'nome' => FSession::getNome(),
+                'cognome' => FSession::getCognome(),
+                'ruolo' => FSession::getRuoloAttivo(),
+            ] : null,
+        ];
+    }
+
+    private function baseUrl(): string
+    {
+        $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+        return $scriptDir === '/' || $scriptDir === '.' ? '' : rtrim($scriptDir, '/');
+    }
+
+    private function redirect(string $path): void
+    {
+        header('Location: ' . $this->baseUrl() . $path);
+        exit;
+    }
+
+    private function renderError(int $status, string $title, string $message): void
+    {
+        http_response_code($status);
+        ViewRenderer::render('error', [
+            'status' => $status,
+            'title' => $title,
+            'message' => $message,
+        ], $this->sharedViewData());
     }
 }
