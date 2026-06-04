@@ -62,13 +62,19 @@ img {
 .brand-icon {
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: var(--background);
-  font-size: .78rem;
-  letter-spacing: .08em;
+  width: 42px;
+  height: 42px;
+  color: var(--primary);
+}
+
+.brand-icon svg {
+  width: 34px;
+  height: 34px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .nav-links,
@@ -88,6 +94,11 @@ img {
 }
 
 .nav-links a:hover {
+  color: var(--primary);
+  border-bottom-color: var(--accent);
+}
+
+.nav-links a.is-active {
   color: var(--primary);
   border-bottom-color: var(--accent);
 }
@@ -213,6 +224,12 @@ img {
   gap: 24px;
 }
 
+.center-heading {
+  max-width: 680px;
+  margin: 0 auto 32px;
+  text-align: center;
+}
+
 h2 {
   margin: 0 0 12px;
   font-size: clamp(2rem, 4vw, 3.4rem);
@@ -291,7 +308,7 @@ p {
   background: linear-gradient(0deg, rgba(44, 24, 16, .55), transparent);
 }
 
-.card-image span {
+.card-image .price-badge {
   position: absolute;
   top: 16px;
   right: 16px;
@@ -356,6 +373,29 @@ p {
   font-size: .92rem;
 }
 
+.card-stat-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--primary-soft);
+}
+
+.card-stat-row span {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: rgba(232, 228, 222, .32);
+  color: var(--muted-foreground);
+  font-size: .9rem;
+}
+
+.card-stat-row strong {
+  color: var(--primary);
+  font-size: 1.08rem;
+}
+
 .meta sup {
   line-height: 0;
 }
@@ -371,6 +411,12 @@ p {
   border-radius: 12px;
   background: #fff;
   border: 1px solid var(--primary-soft);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.pill-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 42px rgba(44, 24, 16, .1);
 }
 
 .pill-card strong,
@@ -408,7 +454,9 @@ label {
   font-weight: 700;
 }
 
-input {
+input,
+select,
+textarea {
   width: 100%;
   min-height: 44px;
   padding: 10px 13px;
@@ -418,7 +466,13 @@ input {
   font: inherit;
 }
 
-input:focus {
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
   border-color: var(--accent);
   outline: 0;
 }
@@ -432,6 +486,104 @@ input:focus {
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 18px 48px rgba(44, 24, 16, .12);
+}
+
+.figma-filter-panel {
+  display: grid;
+  gap: 24px;
+  margin: -108px 0 28px;
+  padding: 30px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(44, 24, 16, .16);
+}
+
+.filter-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: center;
+}
+
+.search-field {
+  position: relative;
+  margin: 0;
+}
+
+.search-field input {
+  min-height: 62px;
+  padding-left: 58px;
+  border-color: transparent;
+  background: rgba(232, 228, 222, .38);
+  font-size: 1.08rem;
+}
+
+.search-icon {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  z-index: 1;
+  transform: translateY(-50%);
+  color: var(--muted-foreground);
+  font-size: 1rem;
+}
+
+.filter-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 62px;
+  padding: 0 24px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-chevron {
+  min-width: 1em;
+  text-align: center;
+  line-height: 1;
+}
+
+.filter-collapsible {
+  display: grid;
+  gap: 24px;
+}
+
+.filter-collapsible[hidden] {
+  display: none;
+}
+
+.filter-divider {
+  height: 1px;
+  background: var(--primary-soft);
+}
+
+.filter-select-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.filter-select-grid label {
+  margin: 0;
+  font-size: .98rem;
+}
+
+.filter-select-grid select {
+  min-height: 50px;
+  border-color: transparent;
+  background: rgba(232, 228, 222, .38);
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .result-count {
@@ -480,6 +632,21 @@ input:focus {
   font-size: 1.12rem;
 }
 
+.detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0 34px;
+}
+
+.detail-chips span {
+  padding: 9px 13px;
+  border-radius: 999px;
+  background: rgba(232, 228, 222, .55);
+  color: var(--primary);
+  font-weight: 700;
+}
+
 .stack {
   display: grid;
   gap: 18px;
@@ -516,9 +683,24 @@ input:focus {
   text-align: center;
 }
 
+.booking-label {
+  width: fit-content;
+  margin: 0 auto;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(199, 113, 82, .14);
+  color: var(--primary);
+  font-weight: 700;
+}
+
 .booking-box strong {
   color: var(--accent);
   font-size: 2.3rem;
+}
+
+.booking-actions {
+  display: grid;
+  gap: 10px;
 }
 
 .stats {
@@ -597,12 +779,25 @@ input:focus {
   .split,
   .dark-band,
   .detail-layout,
-  .filter-bar {
+  .filter-bar,
+  .filter-search-row,
+  .filter-select-grid {
     grid-template-columns: 1fr;
   }
 
-  .filter-bar {
+  .filter-bar,
+  .figma-filter-panel {
     margin-top: -90px;
+  }
+
+  .figma-filter-panel {
+    padding: 20px;
+    border-radius: 14px;
+  }
+
+  .filter-button,
+  .filter-actions .btn {
+    width: 100%;
   }
 
   .footer {
@@ -635,6 +830,7 @@ input:focus {
   border: 1px solid var(--primary-soft);
   border-radius: var(--radius);
   background: var(--card);
+  box-shadow: 0 16px 40px rgba(44, 24, 16, .08);
 }
 
 .uc-panel h2 {
@@ -680,7 +876,7 @@ input:focus {
   padding: 10px 12px;
   border: 1px solid var(--primary-soft);
   border-radius: var(--radius);
-  background: #fff;
+  background: rgba(232, 228, 222, .32);
   color: var(--foreground);
   font: inherit;
 }
@@ -703,7 +899,8 @@ input:focus {
   align-items: center;
   padding: 12px;
   border-radius: var(--radius);
-  background: rgba(232, 228, 222, .35);
+  border: 1px solid var(--primary-soft);
+  background: rgba(232, 228, 222, .24);
 }
 
 .uc-request {
@@ -714,6 +911,10 @@ input:focus {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.uc-request .btn {
+  min-width: 120px;
 }
 
 .notice {

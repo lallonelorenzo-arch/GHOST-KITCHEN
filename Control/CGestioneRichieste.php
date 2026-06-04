@@ -111,8 +111,16 @@ class CGestioneRichieste
 
     public function gestisciRichiestaWeb(string $tipoPrenotazione, int $idPrenotazione, string $azione, array $accesso, array $post = []): array
     {
+        if (!in_array($azione, ['accetta', 'rifiuta'], true)) {
+            return $this->esito('Azione non valida', 'L azione richiesta non e disponibile.', false, '/richieste');
+        }
+
         if (!$this->puoGestire($tipoPrenotazione, $accesso)) {
             return $this->esito('Accesso richiesto', 'Il ruolo attivo non puo gestire questa richiesta.', false, '/richieste');
+        }
+
+        if (!$this->richiestaGestibileDaAccesso($tipoPrenotazione, $idPrenotazione, $accesso)) {
+            return $this->esito('Accesso non consentito', 'La richiesta non risulta collegata al tuo profilo.', false, '/richieste');
         }
 
         try {
@@ -125,8 +133,11 @@ class CGestioneRichieste
             }
 
             return $this->esito('Richiesta aggiornata', (string) ($result['messaggio'] ?? 'Operazione completata.'), true, '/richieste');
-        } catch (Throwable $exception) {
+        } catch (InvalidArgumentException $exception) {
             return $this->esito('Richiesta non aggiornata', $exception->getMessage(), false, '/richieste');
+        } catch (Throwable $exception) {
+            error_log('[CGestioneRichieste] ' . $exception->getMessage());
+            return $this->esito('Richiesta non aggiornata', 'Non e stato possibile aggiornare la richiesta. Riprova piu tardi.', false, '/richieste');
         }
     }
 
@@ -139,6 +150,27 @@ class CGestioneRichieste
         $ruoli = $accesso['ruoli'] ?? [];
         return ($tipoPrenotazione === 'chef' && in_array('chef', $ruoli, true))
             || ($tipoPrenotazione === 'ghost_kitchen' && in_array('gestore', $ruoli, true));
+    }
+
+    private function richiestaGestibileDaAccesso(string $tipoPrenotazione, int $idPrenotazione, array $accesso): bool
+    {
+        $idUtente = (int) ($accesso['idUtente'] ?? 0);
+        if ($idUtente <= 0 || $idPrenotazione <= 0) {
+            return false;
+        }
+
+        if ($tipoPrenotazione === 'chef') {
+            $prenotazione = FPersistentManager::loadPrenotazioneChef($idPrenotazione);
+            return $prenotazione !== null && (int) $prenotazione->getIdChef() === $idUtente;
+        }
+
+        $prenotazione = FPersistentManager::loadPrenotazioneGhostKitchen($idPrenotazione);
+        if ($prenotazione === null || $prenotazione->getIdGhostKitchen() === null) {
+            return false;
+        }
+
+        $ghostKitchen = FPersistentManager::loadGhostKitchen((int) $prenotazione->getIdGhostKitchen());
+        return $ghostKitchen !== null && (int) $ghostKitchen->getIdGestore() === $idUtente;
     }
 
     private function esito(string $titolo, string $messaggio, bool $successo, string $ritorno): array

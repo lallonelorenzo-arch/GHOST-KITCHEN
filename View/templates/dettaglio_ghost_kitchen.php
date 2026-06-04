@@ -39,6 +39,7 @@ $rating = $ghostKitchen->getValutazioneMedia();
         <?php if ($attrezzature === []): ?><div class="empty-state">Nessuna attrezzatura pubblicata.</div><?php endif; ?>
     </article>
     <aside class="booking-box">
+        <span class="booking-label">Prenotazione cucina</span>
         <p>A partire da</p>
         <strong>&euro; <?= V::e(V::money($ghostKitchen->getPrezzoOrario())) ?></strong>
         <span>per ora</span>
@@ -46,8 +47,13 @@ $rating = $ghostKitchen->getValutazioneMedia();
             <?php foreach (array_slice($disponibilitaPubbliche, 0, 4) as $slot): ?>
                 <div><span><?= V::e($slot->getData()) ?> <?= V::e($slot->getOraInizio()) ?></span><b><?= V::e($slot->getStato()) ?></b></div>
             <?php endforeach; ?>
+            <?php if ($disponibilitaPubbliche === []): ?>
+                <div><span>Nessuno slot pubblicato</span><b>Info</b></div>
+            <?php endif; ?>
         </div>
-        <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/placeholder')) ?>">Prenota Ora</a>
-        <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Gestore</a>
+        <div class="booking-actions">
+            <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>">Prenota Ora</a>
+            <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Gestore</a>
+        </div>
     </aside>
 </section>

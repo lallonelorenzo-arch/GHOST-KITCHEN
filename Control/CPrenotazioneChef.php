@@ -119,6 +119,9 @@ class CPrenotazioneChef
 
         $prenotazione->validaPerConferma();
         $prenotazioneSalvata = FPersistentManager::storePrenotazioneChef($prenotazione);
+        if ($prenotazioneSalvata === false) {
+            return ['errore' => 'Prenotazione non salvata. Riprova piu tardi.'];
+        }
 
         return [
             'prenotazione' => $prenotazioneSalvata,
@@ -195,8 +198,12 @@ class CPrenotazioneChef
             $data['prenotazione'] = $result['prenotazione'] ?? null;
             $data['messaggioSuccesso'] = 'Richiesta di prenotazione inviata. Stato: in attesa di accettazione.';
             return $data;
-        } catch (Throwable $exception) {
+        } catch (InvalidArgumentException $exception) {
             $data['erroreForm'] = $exception->getMessage();
+            return $data;
+        } catch (Throwable $exception) {
+            error_log('[CPrenotazioneChef] ' . $exception->getMessage());
+            $data['erroreForm'] = 'Non e stato possibile inviare la prenotazione. Riprova piu tardi.';
             return $data;
         }
     }

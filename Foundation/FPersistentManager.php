@@ -117,6 +117,7 @@ class FPersistentManager
     public static function storeAmministratore(EAmministratore $amministratore): EAmministratore|false { return self::storeAndReturn($amministratore, static fn (EAmministratore $entity): bool|int => FAmministratore::store($entity), 'setIdAmministratore'); }
 
     public static function loadGhostKitchen(int $idGhostKitchen): ?EGhostKitchen { return FGhostKitchen::load($idGhostKitchen); }
+    public static function loadGhostKitchenByGestore(int $idGestore): array { return FGhostKitchen::loadByGestore($idGestore); }
     public static function storeGhostKitchen(EGhostKitchen $ghostKitchen): EGhostKitchen|false { return self::storeAndReturn($ghostKitchen, static fn (EGhostKitchen $entity): bool|int => FGhostKitchen::store($entity), 'setId'); }
     public static function updateGhostKitchen(EGhostKitchen $ghostKitchen): EGhostKitchen|false { return self::updateAndReturn($ghostKitchen, static fn (EGhostKitchen $entity): bool => FGhostKitchen::update($entity)); }
     public static function deleteGhostKitchen(int $idGhostKitchen): bool { return FGhostKitchen::delete($idGhostKitchen); }

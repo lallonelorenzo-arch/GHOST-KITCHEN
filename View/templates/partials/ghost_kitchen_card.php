@@ -6,7 +6,7 @@ $rating = $ghostKitchen->getValutazioneMedia();
 ?>
 <a class="result-card kitchen-card" href="<?= V::e(V::url('/ghost-kitchen/' . (int) $ghostKitchen->getId())) ?>">
     <div class="card-image wide" style="background-image: url('<?= V::e($kitchenImage) ?>')">
-        <span>&euro; <?= V::e(V::money($ghostKitchen->getPrezzoOrario())) ?>/h</span>
+        <span class="price-badge">&euro; <?= V::e(V::money($ghostKitchen->getPrezzoOrario())) ?>/h</span>
     </div>
     <div class="card-body">
         <div class="rating-row">
@@ -15,9 +15,9 @@ $rating = $ghostKitchen->getValutazioneMedia();
         </div>
         <h3><?= V::e($ghostKitchen->getNome()) ?></h3>
         <p><?= V::e($ghostKitchen->getIndirizzo() . ', ' . $ghostKitchen->getCitta()) ?></p>
-        <div class="meta">
-            <span><?= V::e($ghostKitchen->getCapienza()) ?> persone</span>
-            <span><?= V::e($ghostKitchen->getMq()) ?> m<sup>2</sup></span>
+        <div class="card-stat-row">
+            <span><strong><?= V::e($ghostKitchen->getCapienza()) ?></strong> persone</span>
+            <span><strong><?= V::e($ghostKitchen->getMq()) ?></strong> m<sup>2</sup></span>
         </div>
     </div>
 </a>

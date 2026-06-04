@@ -69,6 +69,9 @@ use ViewHelpers as V;
                     </div>
                 <?php endforeach; ?>
             </div>
+            <?php if ($disponibilita === []): ?>
+                <p class="uc-muted">Nessuno slot pubblicato per questa ghost kitchen.</p>
+            <?php endif; ?>
         </section>
     <?php endif; ?>
 </section>

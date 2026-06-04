@@ -20,6 +20,11 @@ $rating = $chef->getValutazioneMedia();
     <article>
         <h2>Chi sono</h2>
         <p class="lead"><?= V::e($chef->getBiografia() ?: 'Profilo chef disponibile nel database.') ?></p>
+        <div class="detail-chips">
+            <span><?= V::e($chef->getTipologiaCucina() ?: 'Cucina non specificata') ?></span>
+            <span><?= V::e($chef->getNumeroRecensioni()) ?> recensioni</span>
+            <span><?= V::e($chef->getValutazioneMedia()) ?>/5</span>
+        </div>
 
         <h2>Menu disponibili</h2>
         <div class="stack">
@@ -55,10 +60,13 @@ $rating = $chef->getValutazioneMedia();
         </div>
     </article>
     <aside class="booking-box">
+        <span class="booking-label">Prenotazione chef</span>
         <p>A partire da</p>
         <strong>&euro; <?= V::e(V::money($chef->getPrezzoBase())) ?></strong>
         <span>per esperienza</span>
-        <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/placeholder')) ?>">Prenota Ora</a>
-        <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Chef</a>
+        <div class="booking-actions">
+            <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/chef/' . $chef->getIdChef())) ?>">Prenota Ora</a>
+            <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Chef</a>
+        </div>
     </aside>
 </section>

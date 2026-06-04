@@ -29,6 +29,9 @@ $hero = 'https://images.unsplash.com/photo-1750943081248-833d71a2ab8e?crop=entro
             <?php require __DIR__ . '/partials/chef_card.php'; ?>
         <?php endforeach; ?>
     </div>
+    <?php if ($chefInEvidenza === []): ?>
+        <div class="empty-state">Nessuno chef in evidenza disponibile.</div>
+    <?php endif; ?>
 </section>
 
 <section class="section muted">
@@ -44,6 +47,9 @@ $hero = 'https://images.unsplash.com/photo-1750943081248-833d71a2ab8e?crop=entro
             </a>
         <?php endforeach; ?>
     </div>
+    <?php if ($cucine === []): ?>
+        <div class="empty-state">Nessuna categoria cucina disponibile.</div>
+    <?php endif; ?>
 </section>
 
 <section class="section dark-band">
@@ -57,4 +63,7 @@ $hero = 'https://images.unsplash.com/photo-1750943081248-833d71a2ab8e?crop=entro
             <?php require __DIR__ . '/partials/ghost_kitchen_card.php'; ?>
         <?php endforeach; ?>
     </div>
+    <?php if ($ghostKitchenInEvidenza === []): ?>
+        <div class="empty-state">Nessuna ghost kitchen in evidenza disponibile.</div>
+    <?php endif; ?>
 </section>

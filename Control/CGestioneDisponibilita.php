@@ -111,6 +111,7 @@ class CGestioneDisponibilita
             'calendarioChef' => null,
             'calendarioGhostKitchen' => null,
             'idGhostKitchen' => (int) ($query['idGhostKitchen'] ?? 0),
+            'ghostKitchenGestore' => [],
         ];
 
         if (($accesso['isLogged'] ?? false) !== true) {
@@ -123,10 +124,19 @@ class CGestioneDisponibilita
             $data['calendarioChef'] = $this->visualizzaCalendario('chef', (int) $accesso['idUtente']);
         }
 
-        if (in_array('gestore', $ruoli, true) && $data['idGhostKitchen'] > 0) {
-            $data['calendarioGhostKitchen'] = $this->visualizzaCalendario('ghost_kitchen', $data['idGhostKitchen']);
-        } elseif (in_array('gestore', $ruoli, true)) {
-            $data['messaggioGestore'] = 'Inserisci l ID della ghost kitchen da gestire. Il collegamento automatico gestore -> ghost kitchen resta da completare.';
+        if (in_array('gestore', $ruoli, true)) {
+            $data['ghostKitchenGestore'] = FPersistentManager::loadGhostKitchenByGestore((int) $accesso['idUtente']);
+            if ($data['idGhostKitchen'] <= 0 && count($data['ghostKitchenGestore']) === 1) {
+                $data['idGhostKitchen'] = (int) $data['ghostKitchenGestore'][0]->getId();
+            }
+
+            if ($data['idGhostKitchen'] > 0) {
+                $data['calendarioGhostKitchen'] = $this->visualizzaCalendario('ghost_kitchen', $data['idGhostKitchen']);
+            } elseif ($data['ghostKitchenGestore'] === []) {
+                $data['messaggioGestore'] = 'Nessuna ghost kitchen risulta collegata al tuo profilo gestore.';
+            } else {
+                $data['messaggioGestore'] = 'Seleziona una ghost kitchen da gestire.';
+            }
         }
 
         return $data;
@@ -148,8 +158,11 @@ class CGestioneDisponibilita
             );
 
             return $this->esito('Disponibilita chef', (string) ($result['messaggio'] ?? 'Disponibilita aggiornata.'), true, '/disponibilita');
-        } catch (Throwable $exception) {
+        } catch (InvalidArgumentException $exception) {
             return $this->esito('Errore disponibilita chef', $exception->getMessage(), false, '/disponibilita');
+        } catch (Throwable $exception) {
+            error_log('[CGestioneDisponibilita] ' . $exception->getMessage());
+            return $this->esito('Errore disponibilita chef', 'Non e stato possibile aggiornare la disponibilita. Riprova piu tardi.', false, '/disponibilita');
         }
     }
 
@@ -161,6 +174,10 @@ class CGestioneDisponibilita
 
         try {
             $idGhostKitchen = (int) ($post['idGhostKitchen'] ?? 0);
+            if (!$this->gestorePossiedeGhostKitchen((int) $accesso['idUtente'], $idGhostKitchen)) {
+                return $this->esito('Accesso non consentito', 'Puoi aggiungere disponibilita solo alle ghost kitchen collegate al tuo profilo.', false, '/disponibilita');
+            }
+
             $result = $this->aggiungiDisponibilita(
                 'ghost_kitchen',
                 $idGhostKitchen,
@@ -170,8 +187,11 @@ class CGestioneDisponibilita
             );
 
             return $this->esito('Disponibilita ghost kitchen', (string) ($result['messaggio'] ?? 'Disponibilita aggiornata.'), true, '/disponibilita?idGhostKitchen=' . $idGhostKitchen);
-        } catch (Throwable $exception) {
+        } catch (InvalidArgumentException $exception) {
             return $this->esito('Errore disponibilita ghost kitchen', $exception->getMessage(), false, '/disponibilita');
+        } catch (Throwable $exception) {
+            error_log('[CGestioneDisponibilita] ' . $exception->getMessage());
+            return $this->esito('Errore disponibilita ghost kitchen', 'Non e stato possibile aggiornare la disponibilita. Riprova piu tardi.', false, '/disponibilita');
         }
     }
 
@@ -183,6 +203,17 @@ class CGestioneDisponibilita
             'successo' => $successo,
             'ritorno' => $ritorno,
         ];
+    }
+
+    private function gestorePossiedeGhostKitchen(int $idGestore, int $idGhostKitchen): bool
+    {
+        foreach (FPersistentManager::loadGhostKitchenByGestore($idGestore) as $ghostKitchen) {
+            if ((int) $ghostKitchen->getId() === $idGhostKitchen) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function normalizzaTipoOwner(string $tipoOwner): string

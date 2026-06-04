@@ -6,7 +6,7 @@ $rating = $chef->getValutazioneMedia();
 ?>
 <a class="result-card" href="<?= V::e(V::url('/chef/' . (int) $chef->getIdChef())) ?>">
     <div class="card-image" style="background-image: url('<?= V::e($chefImage) ?>')">
-        <span>&euro; <?= V::e(V::money($chef->getPrezzoBase())) ?></span>
+        <span class="price-badge">&euro; <?= V::e(V::money($chef->getPrezzoBase())) ?></span>
     </div>
     <div class="card-body">
         <div class="rating-row">

@@ -33,6 +33,22 @@ class FGhostKitchen extends FAbstractTable
         return new EGhostKitchen((int) $row['id_ghost_kitchen'], (int) $row['id_gestore'], (string) $row['nome'], (string) $row['descrizione'], (string) $row['indirizzo'], (string) $row['citta'], (string) $row['cap'], (float) $row['prezzo_orario'], (int) $row['capienza'], (float) $row['mq'], (string) $row['stato'], (float) $row['valutazione_media'], (int) $row['numero_recensioni']);
     }
 
+    public static function loadByGestore(int $idGestore): array
+    {
+        if ($idGestore <= 0) {
+            return [];
+        }
+
+        return static::run('caricamento ghost kitchen per gestore', static function () use ($idGestore): array {
+            $statement = static::connection()->prepare(
+                'SELECT * FROM ghost_kitchen WHERE id_gestore = :id_gestore ORDER BY nome ASC'
+            );
+            $statement->execute(['id_gestore' => $idGestore]);
+
+            return array_map(static fn (array $row): EGhostKitchen => static::hydrate($row), $statement->fetchAll());
+        });
+    }
+
     public static function search(string $localita, float $budgetMax, int $valutazioneMin): array
     {
         return static::run('ricerca ghost kitchen', static function () use ($localita, $budgetMax, $valutazioneMin): array {

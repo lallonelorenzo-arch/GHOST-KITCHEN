@@ -52,6 +52,9 @@ use ViewHelpers as V;
                         <?php endforeach; ?>
                     </select>
                 </label>
+                <?php if ($menuDisponibili === []): ?>
+                    <p class="uc-muted">Nessun menu disponibile per questo chef.</p>
+                <?php endif; ?>
                 <div class="uc-form-row">
                     <label>Data <input type="date" name="dataServizio" value="<?= V::e($form['dataServizio'] ?? '') ?>" required></label>
                     <label>Persone <input type="number" name="numeroPersone" min="1" value="<?= V::e($form['numeroPersone'] ?? '2') ?>" required></label>
@@ -91,6 +94,9 @@ use ViewHelpers as V;
                     </div>
                 <?php endforeach; ?>
             </div>
+            <?php if ($disponibilitaChef === []): ?>
+                <p class="uc-muted">Nessuno slot pubblicato per questo chef.</p>
+            <?php endif; ?>
         </section>
     <?php endif; ?>
 </section>
