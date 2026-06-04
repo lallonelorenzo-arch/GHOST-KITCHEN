@@ -93,7 +93,7 @@ class CGestioneRichieste
         ];
 
         if (($accesso['isLogged'] ?? false) !== true) {
-            $data['messaggioAccesso'] = 'Accedi come chef o gestore per visualizzare le richieste.';
+            $data['messaggioAccesso'] = 'Non hai permessi per questa sezione.';
             return $data;
         }
 
@@ -116,7 +116,7 @@ class CGestioneRichieste
         }
 
         if (!$this->puoGestire($tipoPrenotazione, $accesso)) {
-            return $this->esito('Accesso richiesto', 'Il ruolo attivo non puo gestire questa richiesta.', false, '/richieste');
+            return $this->esito('Accesso non consentito', 'Non hai permessi per gestire questa richiesta.', false, '/richieste');
         }
 
         if (!$this->richiestaGestibileDaAccesso($tipoPrenotazione, $idPrenotazione, $accesso)) {

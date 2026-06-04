@@ -115,7 +115,7 @@ class CGestioneDisponibilita
         ];
 
         if (($accesso['isLogged'] ?? false) !== true) {
-            $data['messaggioAccesso'] = 'Accedi come chef o gestore per gestire le disponibilita.';
+            $data['messaggioAccesso'] = 'Non hai permessi per questa sezione.';
             return $data;
         }
 

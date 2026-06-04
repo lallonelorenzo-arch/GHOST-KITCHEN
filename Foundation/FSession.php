@@ -78,6 +78,7 @@ class FSession
             'email' => isset($utenteData['email']) ? (string) $utenteData['email'] : '',
             'nome' => isset($utenteData['nome']) ? (string) $utenteData['nome'] : '',
             'cognome' => isset($utenteData['cognome']) ? (string) $utenteData['cognome'] : '',
+            'fotoProfilo' => isset($utenteData['fotoProfilo']) ? (string) $utenteData['fotoProfilo'] : '',
             'ruoli' => $ruoli,
             'ruoloAttivo' => $ruoloAttivo,
         ];
@@ -121,6 +122,33 @@ class FSession
     {
         $ruoli = self::getUtenteField('ruoli', []);
         return is_array($ruoli) ? $ruoli : [];
+    }
+
+    public static function getFotoProfilo(): ?string
+    {
+        return self::getStringField('fotoProfilo');
+    }
+
+    public static function setFotoProfilo(string $fotoProfilo): void
+    {
+        self::start();
+        if (isset($_SESSION[self::UTENTE_KEY])) {
+            $_SESSION[self::UTENTE_KEY]['fotoProfilo'] = trim($fotoProfilo);
+        }
+    }
+
+    public static function updateUtenteData(array $utenteData): void
+    {
+        self::start();
+        if (!isset($_SESSION[self::UTENTE_KEY])) {
+            return;
+        }
+
+        foreach (['email', 'nome', 'cognome', 'fotoProfilo'] as $key) {
+            if (array_key_exists($key, $utenteData)) {
+                $_SESSION[self::UTENTE_KEY][$key] = (string) $utenteData[$key];
+            }
+        }
     }
 
     public static function hasRuolo(string $ruolo): bool

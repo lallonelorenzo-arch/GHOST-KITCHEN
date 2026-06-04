@@ -32,6 +32,21 @@ class FPagamento extends FAbstractTable
         return $pagamenti[0] ?? null;
     }
 
+    public static function loadByUtente(int $idUtente): array
+    {
+        return static::run('caricamento pagamenti utente', static function () use ($idUtente): array {
+            $sql = 'SELECT pg.*
+                    FROM pagamenti pg
+                    INNER JOIN prenotazioni p ON p.id_prenotazione = pg.id_prenotazione
+                    WHERE p.id_richiedente = :id_utente
+                    ORDER BY COALESCE(pg.data_pagamento, p.data_creazione) DESC, pg.id_pagamento DESC';
+            $statement = static::connection()->prepare($sql);
+            $statement->execute(['id_utente' => $idUtente]);
+
+            return array_map(static fn (array $row): EPagamento => static::hydrate($row), $statement->fetchAll());
+        });
+    }
+
     public static function calcolaImporto(string $tipoPrenotazione, int $idPrenotazione, string $tipoPagamento): float
     {
         $prenotazione = $tipoPrenotazione === EPagamento::PRENOTAZIONE_CHEF

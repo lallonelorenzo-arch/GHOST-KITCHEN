@@ -17,7 +17,7 @@ class FPrenotazioneGhostKitchen
             $statement = FBaseJoinPersistence::connection()->prepare($sql);
             $statement->execute(['id' => $id]);
             $row = $statement->fetch();
-            return $row !== false ? new EPrenotazioneGhostKitchen((int) $row['id_prenotazione'], (int) $row['id_richiedente'], (string) $row['data_creazione'], (string) $row['data_servizio'], (string) $row['ora_inizio'], (string) $row['ora_fine'], (string) $row['stato'], (float) $row['importo_totale'], (string) ($row['note'] ?? ''), (int) $row['id_ghost_kitchen'], (string) $row['tipo_richiedente']) : null;
+            return $row !== false ? self::hydrate($row) : null;
         });
     }
     public static function store(EPrenotazioneGhostKitchen $p): bool|int
@@ -62,7 +62,22 @@ class FPrenotazioneGhostKitchen
             $statement = FBaseJoinPersistence::connection()->prepare($sql);
             $statement->execute(['id_gestore' => $idGestore, 'stato' => EPrenotazione::STATO_IN_ATTESA]);
 
-            return array_map(static fn (array $row): EPrenotazioneGhostKitchen => new EPrenotazioneGhostKitchen((int) $row['id_prenotazione'], (int) $row['id_richiedente'], (string) $row['data_creazione'], (string) $row['data_servizio'], (string) $row['ora_inizio'], (string) $row['ora_fine'], (string) $row['stato'], (float) $row['importo_totale'], (string) ($row['note'] ?? ''), (int) $row['id_ghost_kitchen'], (string) $row['tipo_richiedente']), $statement->fetchAll());
+            return array_map(static fn (array $row): EPrenotazioneGhostKitchen => self::hydrate($row), $statement->fetchAll());
+        });
+    }
+
+    public static function loadByRichiedente(int $idUtente): array
+    {
+        return FBaseJoinPersistence::run('load prenotazioni ghost kitchen richiedente', static function () use ($idUtente): array {
+            $sql = 'SELECT p.*, pgk.id_ghost_kitchen, pgk.tipo_richiedente
+                    FROM prenotazioni p
+                    INNER JOIN prenotazioni_ghost_kitchen pgk ON pgk.id_prenotazione = p.id_prenotazione
+                    WHERE p.id_richiedente = :id_utente
+                    ORDER BY p.data_servizio DESC, p.ora_inizio DESC';
+            $statement = FBaseJoinPersistence::connection()->prepare($sql);
+            $statement->execute(['id_utente' => $idUtente]);
+
+            return array_map(static fn (array $row): EPrenotazioneGhostKitchen => self::hydrate($row), $statement->fetchAll());
         });
     }
 
@@ -80,5 +95,10 @@ class FPrenotazioneGhostKitchen
         }
 
         return ['recensibile' => true, 'motivo' => 'Prenotazione completata e recensibile.'];
+    }
+
+    private static function hydrate(array $row): EPrenotazioneGhostKitchen
+    {
+        return new EPrenotazioneGhostKitchen((int) $row['id_prenotazione'], (int) $row['id_richiedente'], (string) $row['data_creazione'], (string) $row['data_servizio'], (string) $row['ora_inizio'], (string) $row['ora_fine'], (string) $row['stato'], (float) $row['importo_totale'], (string) ($row['note'] ?? ''), (int) $row['id_ghost_kitchen'], (string) $row['tipo_richiedente']);
     }
 }

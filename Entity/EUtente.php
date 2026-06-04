@@ -24,6 +24,9 @@ class EUtente
     private string $telefono;
     private string $tipo;
     private string $stato;
+    private string $fotoProfilo;
+    private string $localita;
+    private string $biografia;
 
     public function __construct(
         ?int $id = null,
@@ -33,7 +36,10 @@ class EUtente
         string $passwordHash = '',
         string $telefono = '',
         string $tipo = self::TIPO_UTENTE,
-        string $stato = self::STATO_ATTIVO
+        string $stato = self::STATO_ATTIVO,
+        string $fotoProfilo = '',
+        string $localita = '',
+        string $biografia = ''
     ) {
         $this->setId($id);
         $this->setNome($nome);
@@ -43,6 +49,9 @@ class EUtente
         $this->setTelefono($telefono);
         $this->setTipo($tipo);
         $this->setStato($stato);
+        $this->setFotoProfilo($fotoProfilo);
+        $this->setLocalita($localita);
+        $this->setBiografia($biografia);
     }
 
     public function getId(): ?int
@@ -159,6 +168,36 @@ class EUtente
         return $this->stato;
     }
 
+    public function getFotoProfilo(): string
+    {
+        return $this->fotoProfilo;
+    }
+
+    public function getLocalita(): string
+    {
+        return $this->localita;
+    }
+
+    public function setLocalita(string $localita): void
+    {
+        $this->localita = trim($localita);
+    }
+
+    public function getBiografia(): string
+    {
+        return $this->biografia;
+    }
+
+    public function setBiografia(string $biografia): void
+    {
+        $this->biografia = trim($biografia);
+    }
+
+    public function setFotoProfilo(string $fotoProfilo): void
+    {
+        $this->fotoProfilo = trim($fotoProfilo);
+    }
+
     public function setStato(string $stato): void
     {
         $stato = strtolower(trim($stato));
@@ -204,7 +243,10 @@ class EUtente
             'email' => $this->email,
             'telefono' => $this->telefono,
             'tipo' => $this->tipo,
-            'stato' => $this->stato
+            'stato' => $this->stato,
+            'fotoProfilo' => $this->fotoProfilo,
+            'localita' => $this->localita,
+            'biografia' => $this->biografia
         ];
 
         if ($includeSensitive) {

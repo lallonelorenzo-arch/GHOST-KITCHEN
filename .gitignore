@@ -8,6 +8,7 @@ coverage/
 
 # Logs
 *.log
+.tmp_sessions/
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*

@@ -66,6 +66,20 @@ class FPrenotazioneChef
         });
     }
 
+    public static function loadByRichiedente(int $idUtente): array
+    {
+        return FBaseJoinPersistence::run('load prenotazioni chef richiedente', static function () use ($idUtente): array {
+            $sql = 'SELECT p.*, pc.id_chef, pc.id_menu, pc.indirizzo_servizio, pc.numero_persone, pc.richieste_speciali
+                    FROM prenotazioni p INNER JOIN prenotazioni_chef pc ON pc.id_prenotazione = p.id_prenotazione
+                    WHERE p.id_richiedente = :id_utente
+                    ORDER BY p.data_servizio DESC, p.ora_inizio DESC';
+            $statement = FBaseJoinPersistence::connection()->prepare($sql);
+            $statement->execute(['id_utente' => $idUtente]);
+
+            return array_map(static fn (array $row): EPrenotazioneChef => self::hydrate($row), $statement->fetchAll());
+        });
+    }
+
     public static function verificaRecensibile(int $idPrenotazione, int $idAutore): array
     {
         $prenotazione = self::load($idPrenotazione);

@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Foundation/FSession.php';
+require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 require_once __DIR__ . '/../View/ViewRenderer.php';
 
 class CFrontController
@@ -14,16 +15,20 @@ class CFrontController
             '/login' => ['CAutenticazione', 'mostraLogin', 'login'],
             '/profilo' => ['CAutenticazione', 'profilo', 'profilo'],
             '/logout' => ['CAutenticazione', 'logout', null],
+            '/prenotazioni' => ['CPrenotazioniUtente', 'visualizzaPrenotazioniWeb', 'prenotazioni'],
             '/disponibilita' => ['CGestioneDisponibilita', 'mostraDisponibilitaWeb', 'disponibilita'],
             '/richieste' => ['CGestioneRichieste', 'visualizzaRichiesteWeb', 'richieste'],
             '/dashboard' => ['CDashboardStatistiche', 'visualizzaDashboardWeb', 'dashboard'],
             '/moderazione' => ['CModerazione', 'visualizzaContenutiDaModerareWeb', 'moderazione'],
             '/certificazioni' => ['CValidazioneCertificazioni', 'visualizzaCertificazioniInAttesaWeb', 'certificazioni'],
+            '/mie-certificazioni' => ['CCertificazioniChef', 'visualizzaMieCertificazioniWeb', 'mie_certificazioni'],
         ],
         'POST' => [
             '/login' => ['CAutenticazione', 'login', 'login'],
+            '/profilo' => ['CAutenticazione', 'aggiornaProfilo', 'richiesta_esito'],
             '/disponibilita/chef' => ['CGestioneDisponibilita', 'aggiungiDisponibilitaChefWeb', 'richiesta_esito'],
             '/disponibilita/ghost-kitchen' => ['CGestioneDisponibilita', 'aggiungiDisponibilitaGhostKitchenWeb', 'richiesta_esito'],
+            '/mie-certificazioni' => ['CCertificazioniChef', 'caricaCertificazioneWeb', 'richiesta_esito'],
         ],
     ];
 
@@ -35,6 +40,12 @@ class CFrontController
         $post = $this->normalizeRequest($_POST);
 
         try {
+            $accessContext = $this->accessContext();
+            if (!$this->isPathAllowed($path, $method, $accessContext)) {
+                $this->renderError(403, 'Accesso non consentito', 'Non hai permessi per questa sezione.');
+                return;
+            }
+
             if ($method === 'GET' && $path === '/ricerca') {
                 $this->redirect('/ricerca/chef');
                 return;
@@ -182,14 +193,16 @@ class CFrontController
                     'tipoRisultato' => 'ghost_kitchen',
                 ]],
                 '/login' => $method === 'POST' ? [$post] : [],
-                '/profilo' => [$this->accessContext()],
-                '/disponibilita' => [$this->accessContext(), $query],
-                '/richieste' => [$this->accessContext()],
-                '/dashboard' => [$this->accessContext(), $query],
-                '/moderazione' => [$this->accessContext()],
-                '/certificazioni' => [$this->accessContext()],
-                '/disponibilita/chef' => [$this->accessContext(), $post],
-                '/disponibilita/ghost-kitchen' => [$this->accessContext(), $post],
+                '/profilo' => $method === 'POST' ? [$accessContext, $post, $_FILES] : [$accessContext],
+                '/prenotazioni' => [$accessContext],
+                '/disponibilita' => [$accessContext, $query],
+                '/richieste' => [$accessContext],
+                '/dashboard' => [$accessContext, $query],
+                '/moderazione' => [$accessContext],
+                '/certificazioni' => [$accessContext],
+                '/mie-certificazioni' => $method === 'POST' ? [$accessContext, $post, $_FILES] : [$accessContext],
+                '/disponibilita/chef' => [$accessContext, $post],
+                '/disponibilita/ghost-kitchen' => [$accessContext, $post],
                 default => [],
             };
 
@@ -333,6 +346,10 @@ class CFrontController
             'email' => FSession::getEmail(),
             'nome' => FSession::getNome(),
             'cognome' => FSession::getCognome(),
+            'telefono' => $this->currentUtente()?->getTelefono() ?? '',
+            'localita' => $this->currentUtente()?->getLocalita() ?? '',
+            'biografia' => $this->currentUtente()?->getBiografia() ?? '',
+            'fotoProfilo' => $this->currentUtente()?->getFotoProfilo() ?? '',
             'ruoli' => FSession::getRuoli(),
             'ruoloAttivo' => FSession::getRuoloAttivo(),
         ];
@@ -349,10 +366,64 @@ class CFrontController
                 'nome' => FSession::getNome(),
                 'cognome' => FSession::getCognome(),
                 'email' => FSession::getEmail(),
+                'fotoProfilo' => $this->currentUtente()?->getFotoProfilo() ?? FSession::getFotoProfilo(),
                 'ruoli' => FSession::getRuoli(),
                 'ruolo' => FSession::getRuoloAttivo(),
             ] : null,
         ];
+    }
+
+    private function currentUtente(): ?EUtente
+    {
+        $idUtente = FSession::getIdUtente();
+        return $idUtente !== null ? FPersistentManager::loadUtente($idUtente) : null;
+    }
+
+    private function isPathAllowed(string $path, string $method, array $accesso): bool
+    {
+        $ruoli = $accesso['ruoli'] ?? [];
+        $isLogged = ($accesso['isLogged'] ?? false) === true;
+        $isAdmin = in_array('admin', $ruoli, true) || in_array('amministratore', $ruoli, true);
+        $isChef = in_array('chef', $ruoli, true);
+        $isGestore = in_array('gestore', $ruoli, true);
+
+        if (in_array($path, ['/dashboard', '/moderazione', '/certificazioni'], true)) {
+            return $isAdmin;
+        }
+
+        if ($path === '/mie-certificazioni') {
+            return $isChef;
+        }
+
+        if ($path === '/prenotazioni') {
+            return $isLogged;
+        }
+
+        if ($path === '/disponibilita') {
+            return $isChef || $isGestore;
+        }
+
+        if ($path === '/richieste') {
+            return $isChef || $isGestore;
+        }
+
+        if ($method === 'POST' && $path === '/disponibilita/chef') {
+            return $isChef;
+        }
+
+        if ($method === 'POST' && $path === '/disponibilita/ghost-kitchen') {
+            return $isGestore;
+        }
+
+        if (preg_match('#^/moderazione/#', $path) === 1 || preg_match('#^/certificazioni/[1-9][0-9]*(/(approva|rifiuta))?$#', $path) === 1) {
+            return $isAdmin;
+        }
+
+        if (preg_match('#^/richieste/(chef|ghost-kitchen)/[1-9][0-9]*/(accetta|rifiuta)$#', $path, $matches) === 1) {
+            return $matches[1] === 'chef' ? $isChef : $isGestore;
+        }
+
+        return true;
     }
 
     private function currentPath(): string

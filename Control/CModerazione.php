@@ -141,7 +141,7 @@ class CModerazione
         if (!$this->isAdmin($accesso)) {
             return [
                 'accessoRichiesto' => true,
-                'messaggioAccesso' => 'Accedi come amministratore per usare la moderazione.',
+                'messaggioAccesso' => 'Non hai permessi per questa sezione.',
                 'segnalazioni' => [],
             ];
         }
@@ -152,7 +152,7 @@ class CModerazione
     public function prendiInCaricoSegnalazioneWeb(int $idSegnalazione, array $accesso): array
     {
         if (!$this->isAdmin($accesso)) {
-            return $this->esito('Accesso richiesto', 'Serve un profilo amministratore.', false);
+            return $this->esito('Accesso non consentito', 'Non hai permessi per questa sezione.', false);
         }
 
         return $this->esitoDaOperazione(fn (): array => $this->prendiInCaricoSegnalazione($idSegnalazione));
@@ -161,7 +161,7 @@ class CModerazione
     public function moderaRecensioneWeb(int $idRecensione, string $azione, array $accesso): array
     {
         if (!$this->isAdmin($accesso)) {
-            return $this->esito('Accesso richiesto', 'Serve un profilo amministratore.', false);
+            return $this->esito('Accesso non consentito', 'Non hai permessi per questa sezione.', false);
         }
 
         return $this->esitoDaOperazione(fn (): array => $this->moderaRecensione($idRecensione, $azione));
@@ -170,7 +170,7 @@ class CModerazione
     public function moderaProfiloWeb(int $idUtente, string $azione, array $accesso): array
     {
         if (!$this->isAdmin($accesso)) {
-            return $this->esito('Accesso richiesto', 'Serve un profilo amministratore.', false);
+            return $this->esito('Accesso non consentito', 'Non hai permessi per questa sezione.', false);
         }
 
         return $this->esitoDaOperazione(fn (): array => $this->moderaProfilo($idUtente, $azione));
@@ -179,7 +179,7 @@ class CModerazione
     public function chiudiSegnalazioneWeb(int $idSegnalazione, array $accesso, array $post): array
     {
         if (!$this->isAdmin($accesso)) {
-            return $this->esito('Accesso richiesto', 'Serve un profilo amministratore.', false);
+            return $this->esito('Accesso non consentito', 'Non hai permessi per questa sezione.', false);
         }
 
         return $this->esitoDaOperazione(fn (): array => $this->chiudiSegnalazione(
@@ -218,7 +218,8 @@ class CModerazione
 
     private function isAdmin(array $accesso): bool
     {
-        return ($accesso['isLogged'] ?? false) === true && in_array('admin', $accesso['ruoli'] ?? [], true);
+        $ruoli = $accesso['ruoli'] ?? [];
+        return ($accesso['isLogged'] ?? false) === true && (in_array('admin', $ruoli, true) || in_array('amministratore', $ruoli, true));
     }
 
     private function validaId(int $id, string $messaggio): void

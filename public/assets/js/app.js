@@ -66,4 +66,32 @@ document.addEventListener('DOMContentLoaded', () => {
       form.action = `${window.location.origin}${window.GK_BASE_URL || ''}${pattern.replace('{id}', id).replace('{azione}', action)}`;
     });
   });
+
+  document.addEventListener('click', (event) => {
+    const passwordButton = event.target.closest('[data-password-toggle]');
+    if (passwordButton) {
+      const field = passwordButton.closest('.password-field');
+      const input = field ? field.querySelector('input') : null;
+      if (input) {
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        passwordButton.setAttribute('aria-label', isHidden ? 'Nascondi password' : 'Mostra password');
+      }
+    }
+
+    const toggleButton = event.target.closest('[data-toggle-target]');
+    if (toggleButton) {
+      const targetId = toggleButton.getAttribute('data-toggle-target');
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (target) {
+        const nextOpen = target.hasAttribute('hidden');
+        target.toggleAttribute('hidden', !nextOpen);
+        toggleButton.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+        toggleButton.textContent = nextOpen ? 'Nascondi form metodo di pagamento' : '+ Aggiungi Metodo di Pagamento';
+        if (nextOpen) {
+          target.querySelector('input, select, textarea')?.focus();
+        }
+      }
+    }
+  });
 });

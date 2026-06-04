@@ -101,6 +101,7 @@ class FPersistentManager
             'email' => $utente->getEmail(),
             'nome' => $utente->getNome(),
             'cognome' => $utente->getCognome(),
+            'fotoProfilo' => $utente->getFotoProfilo(),
         ], $ruoli);
 
         return true;
@@ -147,11 +148,13 @@ class FPersistentManager
     {
         return array_values(array_filter(FCertificazione::loadByChef($idChef), static fn (ECertificazione $c): bool => $c->getStato() === ECertificazione::STATO_APPROVATA));
     }
+    public static function loadCertificazioniByChef(int $idChef): array { return FCertificazione::loadByChef($idChef); }
     public static function loadCertificazioniInAttesa(): array { return FCertificazione::loadByStato(ECertificazione::STATO_IN_ATTESA); }
     public static function loadAttrezzatureByGhostKitchen(int $idGhostKitchen): array { return FAttrezzatura::loadByGhostKitchen($idGhostKitchen); }
     public static function loadDisponibilitaChef(int $idChef): array { return FDisponibilitaChef::loadByChef($idChef); }
     public static function loadDisponibilitaGhostKitchen(int $idGhostKitchen): array { return FDisponibilitaGhostKitchen::loadByGhostKitchen($idGhostKitchen); }
     public static function loadMetodiPagamentoByUtente(int $idUtente): array { return FMetodoPagamento::loadByUtente($idUtente); }
+    public static function loadPagamentiByUtente(int $idUtente): array { return FPagamento::loadByUtente($idUtente); }
     public static function loadSegnalazioniDaModerare(): array { return FSegnalazione::loadByStato(ESegnalazione::STATO_APERTA); }
 
     public static function storeAttrezzatura(EAttrezzatura $entity): EAttrezzatura|false { return self::storeAndReturn($entity, static fn (EAttrezzatura $item): bool|int => FAttrezzatura::store($item), 'setIdAttrezzatura'); }
@@ -207,6 +210,8 @@ class FPersistentManager
     public static function getStatisticheDashboard(array $filtri): array { return FStatisticheDashboard::getStatisticheDashboard($filtri); }
     public static function loadRichiestePrenotazioneChef(int $idChef): array { return FPrenotazioneChef::loadRichieste($idChef); }
     public static function loadRichiestePrenotazioneGhostKitchenByGestore(int $idGestore): array { return FPrenotazioneGhostKitchen::loadRichiesteByGestore($idGestore); }
+    public static function loadPrenotazioniChefByRichiedente(int $idUtente): array { return FPrenotazioneChef::loadByRichiedente($idUtente); }
+    public static function loadPrenotazioniGhostKitchenByRichiedente(int $idUtente): array { return FPrenotazioneGhostKitchen::loadByRichiedente($idUtente); }
     public static function loadRecensione(int $idRecensione): ?ERecensione { return FRecensione::load($idRecensione); }
     public static function updateRecensione(ERecensione $recensione): ERecensione|false { return self::updateAndReturn($recensione, static fn (ERecensione $entity): bool => FRecensione::update($entity)); }
 

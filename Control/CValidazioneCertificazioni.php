@@ -70,7 +70,7 @@ class CValidazioneCertificazioni
         if (!$this->isAdmin($accesso)) {
             return [
                 'accessoRichiesto' => true,
-                'messaggioAccesso' => 'Accedi come amministratore per validare le certificazioni.',
+                'messaggioAccesso' => 'Non hai permessi per questa sezione.',
                 'certificazioni' => [],
             ];
         }
@@ -83,7 +83,7 @@ class CValidazioneCertificazioni
         if (!$this->isAdmin($accesso)) {
             return [
                 'accessoRichiesto' => true,
-                'messaggioAccesso' => 'Accedi come amministratore per validare le certificazioni.',
+                'messaggioAccesso' => 'Non hai permessi per questa sezione.',
             ];
         }
 
@@ -93,7 +93,7 @@ class CValidazioneCertificazioni
     public function aggiornaCertificazioneWeb(int $idCertificazione, string $azione, array $accesso, array $post): array
     {
         if (!$this->isAdmin($accesso)) {
-            return $this->esito('Accesso richiesto', 'Serve un profilo amministratore.', false);
+            return $this->esito('Accesso non consentito', 'Non hai permessi per questa sezione.', false);
         }
 
         try {
@@ -129,7 +129,8 @@ class CValidazioneCertificazioni
 
     private function isAdmin(array $accesso): bool
     {
-        return ($accesso['isLogged'] ?? false) === true && in_array('admin', $accesso['ruoli'] ?? [], true);
+        $ruoli = $accesso['ruoli'] ?? [];
+        return ($accesso['isLogged'] ?? false) === true && (in_array('admin', $ruoli, true) || in_array('amministratore', $ruoli, true));
     }
 
     private function validaId(int $idCertificazione): void

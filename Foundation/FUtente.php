@@ -27,7 +27,8 @@ class FUtente
     public static function load(int $idUtente): ?EUtente
     {
         return self::run('caricamento utente per id', static function () use ($idUtente): ?EUtente {
-            $sql = 'SELECT id_utente, nome, cognome, email, password_hash, telefono, stato
+            $extraSelect = self::optionalSelects();
+            $sql = 'SELECT id_utente, nome, cognome, email, password_hash, telefono, stato, ' . implode(', ', $extraSelect) . '
                     FROM utenti
                     WHERE id_utente = :id_utente
                     LIMIT 1';
@@ -42,7 +43,8 @@ class FUtente
     public static function loadByEmail(string $email): ?EUtente
     {
         return self::run('caricamento utente per email', static function () use ($email): ?EUtente {
-            $sql = 'SELECT id_utente, nome, cognome, email, password_hash, telefono, stato
+            $extraSelect = self::optionalSelects();
+            $sql = 'SELECT id_utente, nome, cognome, email, password_hash, telefono, stato, ' . implode(', ', $extraSelect) . '
                     FROM utenti
                     WHERE email = :email
                     LIMIT 1';
@@ -59,17 +61,30 @@ class FUtente
         return self::run('salvataggio nuovo utente', static function () use ($utente): bool|int {
             $passwordHash = self::normalizePasswordForStorage($utente->getPasswordHash());
 
-            $sql = 'INSERT INTO utenti (nome, cognome, email, password_hash, telefono, stato)
-                    VALUES (:nome, :cognome, :email, :password_hash, :telefono, :stato)';
-            $statement = self::connection()->prepare($sql);
-            $statement->execute([
+            $optionalColumns = self::optionalColumns();
+            $columns = array_merge(['nome', 'cognome', 'email', 'password_hash', 'telefono', 'stato'], $optionalColumns);
+            $placeholders = array_map(static fn (string $column): string => ':' . $column, $columns);
+            $sql = 'INSERT INTO utenti (' . implode(', ', $columns) . ')
+                    VALUES (' . implode(', ', $placeholders) . ')';
+            $values = [
                 'nome' => $utente->getNome(),
                 'cognome' => $utente->getCognome(),
                 'email' => $utente->getEmail(),
                 'password_hash' => $passwordHash,
                 'telefono' => $utente->getTelefono(),
                 'stato' => $utente->getStato(),
-            ]);
+            ];
+            if (in_array('foto_profilo', $optionalColumns, true)) {
+                $values['foto_profilo'] = $utente->getFotoProfilo() !== '' ? $utente->getFotoProfilo() : null;
+            }
+            if (in_array('localita', $optionalColumns, true)) {
+                $values['localita'] = $utente->getLocalita() !== '' ? $utente->getLocalita() : null;
+            }
+            if (in_array('biografia', $optionalColumns, true)) {
+                $values['biografia'] = $utente->getBiografia() !== '' ? $utente->getBiografia() : null;
+            }
+            $statement = self::connection()->prepare($sql);
+            $statement->execute($values);
 
             $id = (int) self::connection()->lastInsertId();
 
@@ -88,17 +103,19 @@ class FUtente
 
             $passwordHash = self::normalizePasswordForStorage($utente->getPasswordHash());
 
+            $optionalColumns = self::optionalColumns();
+            $optionalUpdates = array_map(static fn (string $column): string => ', ' . $column . ' = :' . $column, $optionalColumns);
             $sql = 'UPDATE utenti
                     SET nome = :nome,
                         cognome = :cognome,
                         email = :email,
                         password_hash = :password_hash,
                         telefono = :telefono,
-                        stato = :stato
+                        stato = :stato' . implode('', $optionalUpdates) . '
                     WHERE id_utente = :id_utente';
             $statement = self::connection()->prepare($sql);
 
-            return $statement->execute([
+            $values = [
                 'id_utente' => $idUtente,
                 'nome' => $utente->getNome(),
                 'cognome' => $utente->getCognome(),
@@ -106,7 +123,18 @@ class FUtente
                 'password_hash' => $passwordHash,
                 'telefono' => $utente->getTelefono(),
                 'stato' => $utente->getStato(),
-            ]);
+            ];
+            if (in_array('foto_profilo', $optionalColumns, true)) {
+                $values['foto_profilo'] = $utente->getFotoProfilo() !== '' ? $utente->getFotoProfilo() : null;
+            }
+            if (in_array('localita', $optionalColumns, true)) {
+                $values['localita'] = $utente->getLocalita() !== '' ? $utente->getLocalita() : null;
+            }
+            if (in_array('biografia', $optionalColumns, true)) {
+                $values['biografia'] = $utente->getBiografia() !== '' ? $utente->getBiografia() : null;
+            }
+
+            return $statement->execute($values);
         });
     }
 
@@ -182,7 +210,10 @@ class FUtente
             (string) $row['password_hash'],
             (string) $row['telefono'],
             self::tipoFromRuoli($ruoli),
-            (string) $row['stato']
+            (string) $row['stato'],
+            (string) ($row['foto_profilo'] ?? ''),
+            (string) ($row['localita'] ?? ''),
+            (string) ($row['biografia'] ?? '')
         );
     }
 
@@ -220,6 +251,43 @@ class FUtente
     private static function connection(): PDO
     {
         return FConnectionDB::getInstance()->getConnection();
+    }
+
+    private static function optionalSelects(): array
+    {
+        return [
+            self::hasColumn('foto_profilo') ? 'foto_profilo' : "'' AS foto_profilo",
+            self::hasColumn('localita') ? 'localita' : "'' AS localita",
+            self::hasColumn('biografia') ? 'biografia' : "'' AS biografia",
+        ];
+    }
+
+    private static function optionalColumns(): array
+    {
+        return array_values(array_filter(
+            ['foto_profilo', 'localita', 'biografia'],
+            static fn (string $column): bool => self::hasColumn($column)
+        ));
+    }
+
+    private static function hasColumn(string $column): bool
+    {
+        static $cache = [];
+        if (array_key_exists($column, $cache)) {
+            return $cache[$column];
+        }
+
+        $sql = "SELECT 1
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'utenti'
+                  AND COLUMN_NAME = :column
+                LIMIT 1";
+        $statement = self::connection()->prepare($sql);
+        $statement->execute(['column' => $column]);
+        $cache[$column] = $statement->fetchColumn() !== false;
+
+        return $cache[$column];
     }
 
     private static function run(string $operation, callable $callback): mixed

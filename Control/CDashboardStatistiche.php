@@ -28,10 +28,11 @@ class CDashboardStatistiche
 
     public function visualizzaDashboardWeb(array $accesso, array $query = []): array
     {
-        if (($accesso['isLogged'] ?? false) !== true || !in_array('admin', $accesso['ruoli'] ?? [], true)) {
+        $ruoli = $accesso['ruoli'] ?? [];
+        if (($accesso['isLogged'] ?? false) !== true || (!in_array('admin', $ruoli, true) && !in_array('amministratore', $ruoli, true))) {
             return [
                 'accessoRichiesto' => true,
-                'messaggioAccesso' => 'Accedi come amministratore per visualizzare la dashboard.',
+                'messaggioAccesso' => 'Non hai permessi per questa sezione.',
                 'filtri' => [
                     'dataDa' => '',
                     'dataA' => '',
