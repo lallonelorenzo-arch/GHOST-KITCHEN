@@ -83,6 +83,74 @@ class CGestioneRichieste
         return ['messaggio' => 'Richiesta rifiutata', 'prenotazione' => $prenotazione, 'motivo' => $motivo];
     }
 
+
+    public function visualizzaRichiesteWeb(array $accesso): array
+    {
+        $data = [
+            'accesso' => $accesso,
+            'richiesteChef' => [],
+            'richiesteGhostKitchen' => [],
+        ];
+
+        if (($accesso['isLogged'] ?? false) !== true) {
+            $data['messaggioAccesso'] = 'Accedi come chef o gestore per visualizzare le richieste.';
+            return $data;
+        }
+
+        $ruoli = $accesso['ruoli'] ?? [];
+        if (in_array('chef', $ruoli, true)) {
+            $data['richiesteChef'] = $this->visualizzaRichieste('chef', (int) $accesso['idUtente'])['richieste'];
+        }
+
+        if (in_array('gestore', $ruoli, true)) {
+            $data['richiesteGhostKitchen'] = $this->visualizzaRichieste('gestore', (int) $accesso['idUtente'])['richieste'];
+        }
+
+        return $data;
+    }
+
+    public function gestisciRichiestaWeb(string $tipoPrenotazione, int $idPrenotazione, string $azione, array $accesso, array $post = []): array
+    {
+        if (!$this->puoGestire($tipoPrenotazione, $accesso)) {
+            return $this->esito('Accesso richiesto', 'Il ruolo attivo non puo gestire questa richiesta.', false, '/richieste');
+        }
+
+        try {
+            $result = $azione === 'accetta'
+                ? $this->accettaRichiesta($tipoPrenotazione, $idPrenotazione)
+                : $this->rifiutaRichiesta($tipoPrenotazione, $idPrenotazione, (string) ($post['motivo'] ?? ''));
+
+            if (isset($result['errore'])) {
+                return $this->esito('Richiesta non aggiornata', (string) $result['errore'], false, '/richieste');
+            }
+
+            return $this->esito('Richiesta aggiornata', (string) ($result['messaggio'] ?? 'Operazione completata.'), true, '/richieste');
+        } catch (Throwable $exception) {
+            return $this->esito('Richiesta non aggiornata', $exception->getMessage(), false, '/richieste');
+        }
+    }
+
+    private function puoGestire(string $tipoPrenotazione, array $accesso): bool
+    {
+        if (($accesso['isLogged'] ?? false) !== true) {
+            return false;
+        }
+
+        $ruoli = $accesso['ruoli'] ?? [];
+        return ($tipoPrenotazione === 'chef' && in_array('chef', $ruoli, true))
+            || ($tipoPrenotazione === 'ghost_kitchen' && in_array('gestore', $ruoli, true));
+    }
+
+    private function esito(string $titolo, string $messaggio, bool $successo, string $ritorno): array
+    {
+        return [
+            'titolo' => $titolo,
+            'messaggio' => $messaggio,
+            'successo' => $successo,
+            'ritorno' => $ritorno,
+        ];
+    }
+
     private function normalizzaTipoPrenotazione(string $tipoPrenotazione): string
     {
         $tipoPrenotazione = strtolower(trim($tipoPrenotazione));

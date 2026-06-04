@@ -121,5 +121,88 @@ class CPrenotazioneGhostKitchen
             'urlPagamento' => '/Pagamento/avviaPagamento'
         ];
     }
+
+    public function mostraPrenotazioneGhostKitchenWeb(int $idGhostKitchen, array $accesso): array
+    {
+        if ($idGhostKitchen <= 0) {
+            throw new InvalidArgumentException('ID ghost kitchen non valido.');
+        }
+
+        $ghostKitchen = FPersistentManager::loadGhostKitchen($idGhostKitchen);
+        if ($ghostKitchen === null) {
+            return ['errore' => 'Ghost kitchen non trovata.'];
+        }
+
+        $tipoRichiedente = $this->tipoRichiedenteDaAccesso($accesso);
+        $data = [
+            'ghostKitchen' => $ghostKitchen,
+            'disponibilita' => FPersistentManager::loadDisponibilitaGhostKitchen($idGhostKitchen),
+            'tipoRichiedente' => $tipoRichiedente,
+            'accesso' => $accesso,
+            'form' => [],
+            'prenotazione' => null,
+        ];
+
+        if ($tipoRichiedente === null) {
+            $data['accessoRichiesto'] = true;
+            $data['messaggioAccesso'] = 'Accedi come cliente o chef per confermare la prenotazione. Per ora la pagina mostra i dati reali disponibili.';
+        }
+
+        return $data;
+    }
+
+    public function confermaPrenotazioneGhostKitchenWeb(int $idGhostKitchen, array $accesso, array $post): array
+    {
+        $data = $this->mostraPrenotazioneGhostKitchenWeb($idGhostKitchen, $accesso);
+        $data['form'] = $post;
+
+        $tipoRichiedente = $this->tipoRichiedenteDaAccesso($accesso);
+        if ($tipoRichiedente === null) {
+            return $data;
+        }
+
+        try {
+            $result = $this->confermaPrenotazioneGhostKitchen([
+                'idRichiedente' => (int) $accesso['idUtente'],
+                'tipoRichiedente' => $tipoRichiedente,
+                'idGhostKitchen' => $idGhostKitchen,
+                'dataServizio' => (string) ($post['dataServizio'] ?? ''),
+                'oraInizio' => (string) ($post['oraInizio'] ?? ''),
+                'oraFine' => (string) ($post['oraFine'] ?? ''),
+                'note' => (string) ($post['note'] ?? ''),
+            ]);
+
+            if (isset($result['errore'])) {
+                $data['erroreForm'] = $result['errore'];
+                return $data;
+            }
+
+            $data['prenotazione'] = $result['prenotazione'] ?? null;
+            $data['messaggioSuccesso'] = 'Richiesta di prenotazione inviata. Stato: in attesa di accettazione.';
+            return $data;
+        } catch (Throwable $exception) {
+            $data['erroreForm'] = $exception->getMessage();
+            return $data;
+        }
+    }
+
+    private function tipoRichiedenteDaAccesso(array $accesso): ?string
+    {
+        if (($accesso['isLogged'] ?? false) !== true || (int) ($accesso['idUtente'] ?? 0) <= 0) {
+            return null;
+        }
+
+        $ruoli = $accesso['ruoli'] ?? [];
+        if (($accesso['ruoloAttivo'] ?? '') === EPrenotazioneGhostKitchen::TIPO_RICHIEDENTE_CHEF || in_array('chef', $ruoli, true)) {
+            return EPrenotazioneGhostKitchen::TIPO_RICHIEDENTE_CHEF;
+        }
+
+        if (in_array('cliente', $ruoli, true)) {
+            return EPrenotazioneGhostKitchen::TIPO_RICHIEDENTE_CLIENTE;
+        }
+
+        return null;
+    }
+
 }
 

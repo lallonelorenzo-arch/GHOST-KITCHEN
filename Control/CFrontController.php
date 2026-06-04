@@ -13,10 +13,14 @@ class CFrontController
             '/ricerca/ghost-kitchen' => ['CRicerca', 'cercaOfferte', 'lista_ghost_kitchen'],
             '/login' => ['CAutenticazione', 'mostraLogin', 'login'],
             '/logout' => ['CAutenticazione', 'logout', null],
+            '/disponibilita' => ['CGestioneDisponibilita', 'mostraDisponibilitaWeb', 'disponibilita'],
+            '/richieste' => ['CGestioneRichieste', 'visualizzaRichiesteWeb', 'richieste'],
             '/prenotazione/placeholder' => ['CHome', 'placeholder', 'placeholder'],
         ],
         'POST' => [
             '/login' => ['CAutenticazione', 'login', 'login'],
+            '/disponibilita/chef' => ['CGestioneDisponibilita', 'aggiungiDisponibilitaChefWeb', 'richiesta_esito'],
+            '/disponibilita/ghost-kitchen' => ['CGestioneDisponibilita', 'aggiungiDisponibilitaGhostKitchenWeb', 'richiesta_esito'],
         ],
     ];
 
@@ -30,6 +34,32 @@ class CFrontController
         try {
             if ($method === 'GET' && $path === '/ricerca') {
                 $this->redirect('/ricerca/chef');
+                return;
+            }
+
+            if ($method === 'GET' && preg_match('#^/prenotazione/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $this->renderController('CPrenotazioneChef', 'mostraPrenotazioneChefWeb', 'prenotazione_chef', [(int) $matches[1], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/prenotazione/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $this->renderController('CPrenotazioneChef', 'confermaPrenotazioneChefWeb', 'prenotazione_chef', [(int) $matches[1], $this->accessContext(), $post]);
+                return;
+            }
+
+            if ($method === 'GET' && preg_match('#^/prenotazione/ghost-kitchen/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $this->renderController('CPrenotazioneGhostKitchen', 'mostraPrenotazioneGhostKitchenWeb', 'prenotazione_ghost_kitchen', [(int) $matches[1], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/prenotazione/ghost-kitchen/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $this->renderController('CPrenotazioneGhostKitchen', 'confermaPrenotazioneGhostKitchenWeb', 'prenotazione_ghost_kitchen', [(int) $matches[1], $this->accessContext(), $post]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/richieste/(chef|ghost-kitchen)/([1-9][0-9]*)/(accetta|rifiuta)$#', $path, $matches) === 1) {
+                $tipoPrenotazione = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
+                $this->renderController('CGestioneRichieste', 'gestisciRichiestaWeb', 'richiesta_esito', [$tipoPrenotazione, (int) $matches[2], $matches[3], $this->accessContext(), $post]);
                 return;
             }
 
@@ -71,6 +101,10 @@ class CFrontController
                     'tipoRisultato' => 'ghost_kitchen',
                 ]],
                 '/login' => $method === 'POST' ? [$post] : [],
+                '/disponibilita' => [$this->accessContext(), $query],
+                '/richieste' => [$this->accessContext()],
+                '/disponibilita/chef' => [$this->accessContext(), $post],
+                '/disponibilita/ghost-kitchen' => [$this->accessContext(), $post],
                 default => [],
             };
 
@@ -159,6 +193,14 @@ class CFrontController
 
     private function routeExistsForAnyMethod(string $path): bool
     {
+        if (preg_match('#^/prenotazione/(chef|ghost-kitchen)/[1-9][0-9]*$#', $path) === 1) {
+            return true;
+        }
+
+        if (preg_match('#^/richieste/(chef|ghost-kitchen)/[1-9][0-9]*/(accetta|rifiuta)$#', $path) === 1) {
+            return true;
+        }
+
         if (preg_match('#^/(chef|ghost-kitchen)/[1-9][0-9]*$#', $path) === 1) {
             return true;
         }
@@ -170,6 +212,21 @@ class CFrontController
         }
 
         return false;
+    }
+
+    private function accessContext(): array
+    {
+        FSession::start();
+
+        return [
+            'isLogged' => FSession::isLogged(),
+            'idUtente' => FSession::getIdUtente(),
+            'email' => FSession::getEmail(),
+            'nome' => FSession::getNome(),
+            'cognome' => FSession::getCognome(),
+            'ruoli' => FSession::getRuoli(),
+            'ruoloAttivo' => FSession::getRuoloAttivo(),
+        ];
     }
 
     private function sharedViewData(): array

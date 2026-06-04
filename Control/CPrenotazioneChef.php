@@ -126,5 +126,87 @@ class CPrenotazioneChef
             'urlPagamento' => '/Pagamento/avviaPagamento'
         ];
     }
+
+    public function mostraPrenotazioneChefWeb(int $idChef, array $accesso): array
+    {
+        if ($idChef <= 0) {
+            throw new InvalidArgumentException('ID chef non valido.');
+        }
+
+        $chef = FPersistentManager::loadChef($idChef);
+        if ($chef === null) {
+            return ['errore' => 'Chef non trovato.'];
+        }
+
+        $data = [
+            'chef' => $chef,
+            'menuDisponibili' => FPersistentManager::loadMenuByChef($idChef),
+            'disponibilitaChef' => FPersistentManager::loadDisponibilitaChef($idChef),
+            'accesso' => $accesso,
+            'form' => [],
+            'prenotazione' => null,
+        ];
+
+        if (!$this->canPrenotareComeCliente($accesso)) {
+            $data['accessoRichiesto'] = true;
+            $data['messaggioAccesso'] = 'Accedi come cliente per confermare la prenotazione. Per ora la pagina mostra i dati reali disponibili.';
+            return $data;
+        }
+
+        $cliente = FPersistentManager::loadCliente((int) $accesso['idUtente']);
+        if ($cliente === null) {
+            $data['accessoRichiesto'] = true;
+            $data['messaggioAccesso'] = 'Il tuo utente non risulta collegato al ruolo cliente.';
+            return $data;
+        }
+
+        $data['cliente'] = $cliente;
+        return $data;
+    }
+
+    public function confermaPrenotazioneChefWeb(int $idChef, array $accesso, array $post): array
+    {
+        $data = $this->mostraPrenotazioneChefWeb($idChef, $accesso);
+        $data['form'] = $post;
+
+        if (!$this->canPrenotareComeCliente($accesso)) {
+            return $data;
+        }
+
+        try {
+            $result = $this->confermaPrenotazioneChef([
+                'idCliente' => (int) $accesso['idUtente'],
+                'idChef' => $idChef,
+                'idMenu' => (int) ($post['idMenu'] ?? 0),
+                'dataServizio' => (string) ($post['dataServizio'] ?? ''),
+                'oraInizio' => (string) ($post['oraInizio'] ?? ''),
+                'oraFine' => (string) ($post['oraFine'] ?? ''),
+                'indirizzoServizio' => (string) ($post['indirizzoServizio'] ?? ''),
+                'numeroPersone' => (int) ($post['numeroPersone'] ?? 0),
+                'richiesteSpeciali' => (string) ($post['richiesteSpeciali'] ?? ''),
+                'note' => (string) ($post['note'] ?? ''),
+            ]);
+
+            if (isset($result['errore'])) {
+                $data['erroreForm'] = $result['errore'];
+                return $data;
+            }
+
+            $data['prenotazione'] = $result['prenotazione'] ?? null;
+            $data['messaggioSuccesso'] = 'Richiesta di prenotazione inviata. Stato: in attesa di accettazione.';
+            return $data;
+        } catch (Throwable $exception) {
+            $data['erroreForm'] = $exception->getMessage();
+            return $data;
+        }
+    }
+
+    private function canPrenotareComeCliente(array $accesso): bool
+    {
+        return ($accesso['isLogged'] ?? false) === true
+            && in_array('cliente', $accesso['ruoli'] ?? [], true)
+            && (int) ($accesso['idUtente'] ?? 0) > 0;
+    }
+
 }
 

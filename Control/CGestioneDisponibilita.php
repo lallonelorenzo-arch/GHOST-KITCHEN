@@ -103,6 +103,88 @@ class CGestioneDisponibilita
         return ['messaggio' => 'Disponibilita liberata', 'disponibilita' => $disponibilita];
     }
 
+
+    public function mostraDisponibilitaWeb(array $accesso, array $query = []): array
+    {
+        $data = [
+            'accesso' => $accesso,
+            'calendarioChef' => null,
+            'calendarioGhostKitchen' => null,
+            'idGhostKitchen' => (int) ($query['idGhostKitchen'] ?? 0),
+        ];
+
+        if (($accesso['isLogged'] ?? false) !== true) {
+            $data['messaggioAccesso'] = 'Accedi come chef o gestore per gestire le disponibilita.';
+            return $data;
+        }
+
+        $ruoli = $accesso['ruoli'] ?? [];
+        if (in_array('chef', $ruoli, true)) {
+            $data['calendarioChef'] = $this->visualizzaCalendario('chef', (int) $accesso['idUtente']);
+        }
+
+        if (in_array('gestore', $ruoli, true) && $data['idGhostKitchen'] > 0) {
+            $data['calendarioGhostKitchen'] = $this->visualizzaCalendario('ghost_kitchen', $data['idGhostKitchen']);
+        } elseif (in_array('gestore', $ruoli, true)) {
+            $data['messaggioGestore'] = 'Inserisci l ID della ghost kitchen da gestire. Il collegamento automatico gestore -> ghost kitchen resta da completare.';
+        }
+
+        return $data;
+    }
+
+    public function aggiungiDisponibilitaChefWeb(array $accesso, array $post): array
+    {
+        if (($accesso['isLogged'] ?? false) !== true || !in_array('chef', $accesso['ruoli'] ?? [], true)) {
+            return $this->esito('Accesso richiesto', 'Serve un utente con ruolo chef per aggiungere disponibilita.', false, '/disponibilita');
+        }
+
+        try {
+            $result = $this->aggiungiDisponibilita(
+                'chef',
+                (int) $accesso['idUtente'],
+                (string) ($post['data'] ?? ''),
+                (string) ($post['oraInizio'] ?? ''),
+                (string) ($post['oraFine'] ?? '')
+            );
+
+            return $this->esito('Disponibilita chef', (string) ($result['messaggio'] ?? 'Disponibilita aggiornata.'), true, '/disponibilita');
+        } catch (Throwable $exception) {
+            return $this->esito('Errore disponibilita chef', $exception->getMessage(), false, '/disponibilita');
+        }
+    }
+
+    public function aggiungiDisponibilitaGhostKitchenWeb(array $accesso, array $post): array
+    {
+        if (($accesso['isLogged'] ?? false) !== true || !in_array('gestore', $accesso['ruoli'] ?? [], true)) {
+            return $this->esito('Accesso richiesto', 'Serve un utente con ruolo gestore per aggiungere disponibilita.', false, '/disponibilita');
+        }
+
+        try {
+            $idGhostKitchen = (int) ($post['idGhostKitchen'] ?? 0);
+            $result = $this->aggiungiDisponibilita(
+                'ghost_kitchen',
+                $idGhostKitchen,
+                (string) ($post['data'] ?? ''),
+                (string) ($post['oraInizio'] ?? ''),
+                (string) ($post['oraFine'] ?? '')
+            );
+
+            return $this->esito('Disponibilita ghost kitchen', (string) ($result['messaggio'] ?? 'Disponibilita aggiornata.'), true, '/disponibilita?idGhostKitchen=' . $idGhostKitchen);
+        } catch (Throwable $exception) {
+            return $this->esito('Errore disponibilita ghost kitchen', $exception->getMessage(), false, '/disponibilita');
+        }
+    }
+
+    private function esito(string $titolo, string $messaggio, bool $successo, string $ritorno): array
+    {
+        return [
+            'titolo' => $titolo,
+            'messaggio' => $messaggio,
+            'successo' => $successo,
+            'ritorno' => $ritorno,
+        ];
+    }
+
     private function normalizzaTipoOwner(string $tipoOwner): string
     {
         $tipoOwner = strtolower(trim($tipoOwner));
