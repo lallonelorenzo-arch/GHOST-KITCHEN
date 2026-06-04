@@ -67,6 +67,7 @@ $rating = $chef->getValutazioneMedia();
         <div class="booking-actions">
             <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/chef/' . $chef->getIdChef())) ?>">Prenota Ora</a>
             <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Chef</a>
+            <a class="btn btn-ghost" href="<?= V::e(V::url('/segnalazione/chef/' . $chef->getIdChef())) ?>">Segnala profilo</a>
         </div>
     </aside>
 </section>

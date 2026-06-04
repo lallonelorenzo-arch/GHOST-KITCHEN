@@ -29,6 +29,9 @@ class CModerazione
 
         $segnalazione->prendiInCarico();
         $segnalazione = FPersistentManager::updateSegnalazione($segnalazione);
+        if ($segnalazione === false) {
+            return ['errore' => 'Segnalazione non aggiornata.'];
+        }
 
         return [
             'segnalazione' => $segnalazione,
@@ -51,6 +54,9 @@ class CModerazione
 
         $recensione->{$azione}();
         $recensione = FPersistentManager::updateRecensione($recensione);
+        if ($recensione === false) {
+            return ['errore' => 'Recensione non aggiornata.'];
+        }
 
         return [
             'recensione' => $recensione,
@@ -78,6 +84,9 @@ class CModerazione
 
         $utente->setStato($mappaStati[$azione]);
         $utente = FPersistentManager::updateUtente($utente);
+        if ($utente === false) {
+            return ['errore' => 'Profilo non aggiornato.'];
+        }
 
         return [
             'utente' => $utente,
@@ -117,11 +126,99 @@ class CModerazione
         $segnalazione->setNoteAdmin($noteAdmin);
         $segnalazione->setDataGestione(date('Y-m-d'));
         $segnalazione = FPersistentManager::updateSegnalazione($segnalazione);
+        if ($segnalazione === false) {
+            return ['errore' => 'Segnalazione non chiusa.'];
+        }
 
         return [
             'segnalazione' => $segnalazione,
             'messaggio' => 'Segnalazione chiusa.'
         ];
+    }
+
+    public function visualizzaContenutiDaModerareWeb(array $accesso): array
+    {
+        if (!$this->isAdmin($accesso)) {
+            return [
+                'accessoRichiesto' => true,
+                'messaggioAccesso' => 'Accedi come amministratore per usare la moderazione.',
+                'segnalazioni' => [],
+            ];
+        }
+
+        return $this->visualizzaContenutiDaModerare() + ['accesso' => $accesso];
+    }
+
+    public function prendiInCaricoSegnalazioneWeb(int $idSegnalazione, array $accesso): array
+    {
+        if (!$this->isAdmin($accesso)) {
+            return $this->esito('Accesso richiesto', 'Serve un profilo amministratore.', false);
+        }
+
+        return $this->esitoDaOperazione(fn (): array => $this->prendiInCaricoSegnalazione($idSegnalazione));
+    }
+
+    public function moderaRecensioneWeb(int $idRecensione, string $azione, array $accesso): array
+    {
+        if (!$this->isAdmin($accesso)) {
+            return $this->esito('Accesso richiesto', 'Serve un profilo amministratore.', false);
+        }
+
+        return $this->esitoDaOperazione(fn (): array => $this->moderaRecensione($idRecensione, $azione));
+    }
+
+    public function moderaProfiloWeb(int $idUtente, string $azione, array $accesso): array
+    {
+        if (!$this->isAdmin($accesso)) {
+            return $this->esito('Accesso richiesto', 'Serve un profilo amministratore.', false);
+        }
+
+        return $this->esitoDaOperazione(fn (): array => $this->moderaProfilo($idUtente, $azione));
+    }
+
+    public function chiudiSegnalazioneWeb(int $idSegnalazione, array $accesso, array $post): array
+    {
+        if (!$this->isAdmin($accesso)) {
+            return $this->esito('Accesso richiesto', 'Serve un profilo amministratore.', false);
+        }
+
+        return $this->esitoDaOperazione(fn (): array => $this->chiudiSegnalazione(
+            $idSegnalazione,
+            (string) ($post['esito'] ?? ''),
+            (string) ($post['noteAdmin'] ?? '')
+        ));
+    }
+
+    private function esitoDaOperazione(callable $callback): array
+    {
+        try {
+            $result = $callback();
+            if (isset($result['errore'])) {
+                return $this->esito('Operazione non completata', (string) $result['errore'], false);
+            }
+
+            return $this->esito('Operazione completata', (string) ($result['messaggio'] ?? 'Aggiornamento eseguito.'), true);
+        } catch (InvalidArgumentException $exception) {
+            return $this->esito('Operazione non completata', $exception->getMessage(), false);
+        } catch (Throwable $exception) {
+            error_log('[CModerazione] ' . $exception->getMessage());
+            return $this->esito('Operazione non completata', 'Errore interno durante la moderazione. Riprova piu tardi.', false);
+        }
+    }
+
+    private function esito(string $titolo, string $messaggio, bool $successo): array
+    {
+        return [
+            'titolo' => $titolo,
+            'messaggio' => $messaggio,
+            'successo' => $successo,
+            'ritorno' => '/moderazione',
+        ];
+    }
+
+    private function isAdmin(array $accesso): bool
+    {
+        return ($accesso['isLogged'] ?? false) === true && in_array('admin', $accesso['ruoli'] ?? [], true);
     }
 
     private function validaId(int $id, string $messaggio): void

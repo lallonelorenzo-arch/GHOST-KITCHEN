@@ -16,6 +16,7 @@ $isActive = static fn (string $path): string => ($path === '/' ? $currentPath ==
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Ghost Kitchen</title>
     <link rel="stylesheet" href="<?= V::e(V::asset('css/app.css')) ?>">
+    <script>window.GK_BASE_URL = <?= json_encode((string) ($GLOBALS['view_base_url'] ?? ''), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;</script>
     <script defer src="<?= V::e(V::asset('js/app.js')) ?>"></script>
 </head>
 <body>
@@ -34,6 +35,9 @@ $isActive = static fn (string $path): string => ($path === '/' ? $currentPath ==
         <div class="nav-links" data-nav-links>
             <a class="<?= V::e(trim($isActive('/ricerca/chef'))) ?>" href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova Chef</a>
             <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
+            <?php if ($utenteCorrente !== null): ?>
+                <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard')) ?>">Dashboard</a>
+            <?php endif; ?>
         </div>
         <div class="nav-user">
             <?php if ($utenteCorrente !== null): ?>

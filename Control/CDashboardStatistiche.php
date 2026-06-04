@@ -25,5 +25,23 @@ class CDashboardStatistiche
             ]
         ];
     }
+
+    public function visualizzaDashboardWeb(array $accesso, array $query = []): array
+    {
+        if (($accesso['isLogged'] ?? false) !== true || !in_array('admin', $accesso['ruoli'] ?? [], true)) {
+            return [
+                'accessoRichiesto' => true,
+                'messaggioAccesso' => 'Accedi come amministratore per visualizzare la dashboard.',
+                'filtri' => [
+                    'dataDa' => '',
+                    'dataA' => '',
+                    'tipoPrenotazione' => 'tutte',
+                ],
+                'statistiche' => [],
+            ];
+        }
+
+        return $this->visualizzaDashboard($query) + ['accesso' => $accesso];
+    }
 }
 

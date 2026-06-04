@@ -61,6 +61,16 @@ class CPagamento
             return ['errore' => 'Metodo pagamento non trovato'];
         }
 
+        $prenotazione = $tipoPrenotazione === 'chef'
+            ? FPersistentManager::loadPrenotazioneChef($idPrenotazione)
+            : FPersistentManager::loadPrenotazioneGhostKitchen($idPrenotazione);
+        if ($prenotazione === null) {
+            return ['errore' => 'Prenotazione non trovata'];
+        }
+        if ((int) $metodo->getIdUtente() !== (int) $prenotazione->getIdRichiedente()) {
+            return ['errore' => 'Metodo pagamento non associato al richiedente della prenotazione'];
+        }
+
         $importo = FPersistentManager::calcolaImportoPagamento($tipoPrenotazione, $idPrenotazione, $tipoPagamento);
 
         $pagamento = new EPagamento(
@@ -78,6 +88,10 @@ class CPagamento
         $pagamento->autorizza();
         $pagamento->completa();
         $pagamentoSalvato = FPersistentManager::storePagamento($pagamento);
+        if ($pagamentoSalvato === false) {
+            return ['errore' => 'Pagamento non salvato. Riprova piu tardi.'];
+        }
+
         FPersistentManager::updatePagamento($pagamentoSalvato);
 
         return [
@@ -85,6 +99,85 @@ class CPagamento
             'pagamento' => $pagamentoSalvato,
             'importo' => $importo
         ];
+    }
+
+    public function mostraPagamentoWeb(string $tipoPrenotazione, int $idPrenotazione, array $accesso, array $query = []): array
+    {
+        if (!$this->isLogged($accesso)) {
+            return [
+                'accessoRichiesto' => true,
+                'messaggioAccesso' => 'Accedi per completare il pagamento.',
+                'tipoPrenotazione' => $this->normalizzaTipoPrenotazione($tipoPrenotazione),
+                'idPrenotazione' => $idPrenotazione,
+            ];
+        }
+
+        $tipoPrenotazione = $this->normalizzaTipoPrenotazione($tipoPrenotazione);
+        $tipoPagamento = (string) ($query['tipoPagamento'] ?? EPagamento::TIPO_TOTALE);
+        $data = $this->avviaPagamento($tipoPrenotazione, $idPrenotazione, $tipoPagamento);
+        $data['accesso'] = $accesso;
+        $data['form'] = ['tipoPagamento' => $data['tipoPagamento'] ?? $tipoPagamento];
+        $data['pagamento'] = null;
+
+        if (isset($data['errore'])) {
+            return $data;
+        }
+
+        if (!$this->utentePossiedePrenotazione($tipoPrenotazione, $idPrenotazione, (int) $accesso['idUtente'])) {
+            return ['errore' => 'Prenotazione non collegata al tuo profilo.'];
+        }
+
+        return $data;
+    }
+
+    public function confermaPagamentoWeb(string $tipoPrenotazione, int $idPrenotazione, array $accesso, array $post): array
+    {
+        $data = $this->mostraPagamentoWeb($tipoPrenotazione, $idPrenotazione, $accesso, $post);
+        $data['form'] = $post;
+
+        if (!empty($data['accessoRichiesto']) || isset($data['errore'])) {
+            return $data;
+        }
+
+        try {
+            $result = $this->confermaPagamento([
+                'tipoPrenotazione' => $tipoPrenotazione,
+                'idPrenotazione' => $idPrenotazione,
+                'tipoPagamento' => (string) ($post['tipoPagamento'] ?? EPagamento::TIPO_TOTALE),
+                'idMetodoPagamento' => (int) ($post['idMetodoPagamento'] ?? 0),
+            ]);
+
+            if (isset($result['errore'])) {
+                $data['erroreForm'] = $result['errore'];
+                return $data;
+            }
+
+            $data['pagamento'] = $result['pagamento'] ?? null;
+            $data['importo'] = $result['importo'] ?? ($data['importo'] ?? 0);
+            $data['messaggioSuccesso'] = 'Pagamento completato correttamente.';
+            return $data;
+        } catch (InvalidArgumentException $exception) {
+            $data['erroreForm'] = $exception->getMessage();
+            return $data;
+        } catch (Throwable $exception) {
+            error_log('[CPagamento] ' . $exception->getMessage());
+            $data['erroreForm'] = 'Non e stato possibile completare il pagamento. Riprova piu tardi.';
+            return $data;
+        }
+    }
+
+    private function isLogged(array $accesso): bool
+    {
+        return ($accesso['isLogged'] ?? false) === true && (int) ($accesso['idUtente'] ?? 0) > 0;
+    }
+
+    private function utentePossiedePrenotazione(string $tipoPrenotazione, int $idPrenotazione, int $idUtente): bool
+    {
+        $prenotazione = $tipoPrenotazione === 'chef'
+            ? FPersistentManager::loadPrenotazioneChef($idPrenotazione)
+            : FPersistentManager::loadPrenotazioneGhostKitchen($idPrenotazione);
+
+        return $prenotazione !== null && (int) $prenotazione->getIdRichiedente() === $idUtente;
     }
 
     private function normalizzaTipoPrenotazione(string $tipoPrenotazione): string

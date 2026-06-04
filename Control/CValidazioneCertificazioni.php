@@ -55,11 +55,81 @@ class CValidazioneCertificazioni
         $certificazione->setNoteAdmin($noteAdmin);
         $certificazione->setDataValidazione(date('Y-m-d'));
         $certificazione = FPersistentManager::updateCertificazione($certificazione);
+        if ($certificazione === false) {
+            return ['errore' => 'Certificazione non aggiornata.'];
+        }
 
         return [
             'certificazione' => $certificazione,
             'messaggio' => $messaggio
         ];
+    }
+
+    public function visualizzaCertificazioniInAttesaWeb(array $accesso): array
+    {
+        if (!$this->isAdmin($accesso)) {
+            return [
+                'accessoRichiesto' => true,
+                'messaggioAccesso' => 'Accedi come amministratore per validare le certificazioni.',
+                'certificazioni' => [],
+            ];
+        }
+
+        return $this->visualizzaCertificazioniInAttesa() + ['accesso' => $accesso];
+    }
+
+    public function visualizzaDettaglioCertificazioneWeb(int $idCertificazione, array $accesso): array
+    {
+        if (!$this->isAdmin($accesso)) {
+            return [
+                'accessoRichiesto' => true,
+                'messaggioAccesso' => 'Accedi come amministratore per validare le certificazioni.',
+            ];
+        }
+
+        return $this->visualizzaDettaglioCertificazione($idCertificazione) + ['accesso' => $accesso];
+    }
+
+    public function aggiornaCertificazioneWeb(int $idCertificazione, string $azione, array $accesso, array $post): array
+    {
+        if (!$this->isAdmin($accesso)) {
+            return $this->esito('Accesso richiesto', 'Serve un profilo amministratore.', false);
+        }
+
+        try {
+            $azione = strtolower(trim($azione));
+            $result = match ($azione) {
+                'approva' => $this->approvaCertificazione($idCertificazione, (string) ($post['noteAdmin'] ?? '')),
+                'rifiuta' => $this->rifiutaCertificazione($idCertificazione, (string) ($post['noteAdmin'] ?? '')),
+                default => ['errore' => 'Azione certificazione non valida.'],
+            };
+
+            if (isset($result['errore'])) {
+                return $this->esito('Certificazione non aggiornata', (string) $result['errore'], false);
+            }
+
+            return $this->esito('Certificazione aggiornata', (string) ($result['messaggio'] ?? 'Operazione completata.'), true);
+        } catch (InvalidArgumentException $exception) {
+            return $this->esito('Certificazione non aggiornata', $exception->getMessage(), false);
+        } catch (Throwable $exception) {
+            error_log('[CValidazioneCertificazioni] ' . $exception->getMessage());
+            return $this->esito('Certificazione non aggiornata', 'Errore interno durante la validazione. Riprova piu tardi.', false);
+        }
+    }
+
+    private function esito(string $titolo, string $messaggio, bool $successo): array
+    {
+        return [
+            'titolo' => $titolo,
+            'messaggio' => $messaggio,
+            'successo' => $successo,
+            'ritorno' => '/certificazioni',
+        ];
+    }
+
+    private function isAdmin(array $accesso): bool
+    {
+        return ($accesso['isLogged'] ?? false) === true && in_array('admin', $accesso['ruoli'] ?? [], true);
     }
 
     private function validaId(int $idCertificazione): void

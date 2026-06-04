@@ -63,11 +63,17 @@ class CRecensione
             $prenotazione = FPersistentManager::loadPrenotazioneChef($idPrenotazione);
             $recensione = new ERecensioneChef(null, $idAutore, $punteggio, $commento, date('Y-m-d'), ERecensione::STATO_VISIBILE, $prenotazione !== null ? $prenotazione->getIdChef() : null, $idPrenotazione);
             $recensione = FPersistentManager::storeRecensioneChef($recensione);
+            if ($recensione === false) {
+                return ['errore' => 'Recensione non salvata. Riprova piu tardi.'];
+            }
             $valutazione = FPersistentManager::aggiornaValutazioneChef((int) $recensione->getIdChef());
         } else {
             $prenotazione = FPersistentManager::loadPrenotazioneGhostKitchen($idPrenotazione);
             $recensione = new ERecensioneGhostKitchen(null, $idAutore, $punteggio, $commento, date('Y-m-d'), ERecensione::STATO_VISIBILE, $prenotazione !== null ? $prenotazione->getIdGhostKitchen() : null, $idPrenotazione);
             $recensione = FPersistentManager::storeRecensioneGhostKitchen($recensione);
+            if ($recensione === false) {
+                return ['errore' => 'Recensione non salvata. Riprova piu tardi.'];
+            }
             $valutazione = FPersistentManager::aggiornaValutazioneGhostKitchen((int) $recensione->getIdGhostKitchen());
         }
 
@@ -78,11 +84,85 @@ class CRecensione
         ];
     }
 
+    public function mostraRecensioneWeb(string $tipoTarget, int $idPrenotazione, array $accesso): array
+    {
+        if (!$this->isLogged($accesso)) {
+            return [
+                'accessoRichiesto' => true,
+                'messaggioAccesso' => 'Accedi per pubblicare una recensione.',
+                'tipoTarget' => $this->tipoDaSlug($tipoTarget),
+                'idPrenotazione' => $idPrenotazione,
+                'form' => ['punteggio' => 5, 'commento' => ''],
+            ];
+        }
+
+        $tipoTarget = $this->tipoDaSlug($tipoTarget);
+        $data = $this->avviaRecensione($tipoTarget, $idPrenotazione, (int) $accesso['idUtente']);
+        if (isset($data['errore'])) {
+            $data['erroreForm'] = $data['errore'];
+            unset($data['errore']);
+            $data['tipoTarget'] = $tipoTarget;
+        }
+        $data['accesso'] = $accesso;
+        $data['form'] = $data['campi'] ?? ['punteggio' => 5, 'commento' => ''];
+        $data['recensione'] = null;
+
+        return $data;
+    }
+
+    public function pubblicaRecensioneWeb(string $tipoTarget, int $idPrenotazione, array $accesso, array $post): array
+    {
+        $data = $this->mostraRecensioneWeb($tipoTarget, $idPrenotazione, $accesso);
+        $data['form'] = array_merge($data['form'] ?? [], $post);
+
+        if (!empty($data['accessoRichiesto']) || isset($data['errore'])) {
+            return $data;
+        }
+
+        try {
+            $result = $this->pubblicaRecensione([
+                'tipoTarget' => $this->tipoDaSlug($tipoTarget),
+                'idPrenotazione' => $idPrenotazione,
+                'idAutore' => (int) $accesso['idUtente'],
+                'punteggio' => (int) ($post['punteggio'] ?? 0),
+                'commento' => (string) ($post['commento'] ?? ''),
+            ]);
+
+            if (isset($result['errore'])) {
+                $data['erroreForm'] = $result['errore'];
+                return $data;
+            }
+
+            $data['recensione'] = $result['recensione'] ?? null;
+            $data['valutazione'] = $result['valutazione'] ?? null;
+            $data['messaggioSuccesso'] = $result['messaggio'] ?? 'Recensione pubblicata.';
+            return $data;
+        } catch (InvalidArgumentException $exception) {
+            $data['erroreForm'] = $exception->getMessage();
+            return $data;
+        } catch (Throwable $exception) {
+            error_log('[CRecensione] ' . $exception->getMessage());
+            $data['erroreForm'] = 'Non e stato possibile pubblicare la recensione. Riprova piu tardi.';
+            return $data;
+        }
+    }
+
     private function validaTipoTarget(string $tipoTarget): void
     {
         if (!in_array($tipoTarget, ['chef', 'ghost_kitchen'], true)) {
             throw new InvalidArgumentException('Tipo target recensione non valido.');
         }
+    }
+
+    private function tipoDaSlug(string $tipoTarget): string
+    {
+        $tipoTarget = strtolower(trim($tipoTarget));
+        return $tipoTarget === 'ghost-kitchen' ? 'ghost_kitchen' : $tipoTarget;
+    }
+
+    private function isLogged(array $accesso): bool
+    {
+        return ($accesso['isLogged'] ?? false) === true && (int) ($accesso['idUtente'] ?? 0) > 0;
     }
 
     private function validaId(int $id, string $messaggio): void

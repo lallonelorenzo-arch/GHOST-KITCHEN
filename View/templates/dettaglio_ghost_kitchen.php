@@ -54,6 +54,7 @@ $rating = $ghostKitchen->getValutazioneMedia();
         <div class="booking-actions">
             <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>">Prenota Ora</a>
             <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Gestore</a>
+            <a class="btn btn-ghost" href="<?= V::e(V::url('/segnalazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>">Segnala cucina</a>
         </div>
     </aside>
 </section>

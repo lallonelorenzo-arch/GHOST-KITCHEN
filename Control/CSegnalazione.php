@@ -61,11 +61,71 @@ class CSegnalazione
 
         $segnalazione = new ESegnalazione(null, $idSegnalante, $tipoTarget, $idTarget, $motivo, $descrizione, ESegnalazione::STATO_APERTA, date('Y-m-d'));
         $segnalazione = FPersistentManager::storeSegnalazione($segnalazione);
+        if ($segnalazione === false) {
+            return ['errore' => 'Segnalazione non salvata. Riprova piu tardi.'];
+        }
 
         return [
             'segnalazione' => $segnalazione,
             'messaggio' => 'Segnalazione registrata.'
         ];
+    }
+
+    public function mostraSegnalazioneWeb(string $tipoTarget, int $idTarget, array $accesso): array
+    {
+        if (!$this->isLogged($accesso)) {
+            return [
+                'accessoRichiesto' => true,
+                'messaggioAccesso' => 'Accedi per inviare una segnalazione.',
+                'tipoTarget' => $this->tipoDaSlug($tipoTarget),
+                'idTarget' => $idTarget,
+                'form' => [],
+            ];
+        }
+
+        $tipoTarget = $this->tipoDaSlug($tipoTarget);
+        $data = $this->avviaSegnalazione((int) $accesso['idUtente'], $tipoTarget, $idTarget);
+        $data['accesso'] = $accesso;
+        $data['form'] = $data['campi'] ?? [];
+        $data['segnalazione'] = null;
+
+        return $data;
+    }
+
+    public function inviaSegnalazioneWeb(string $tipoTarget, int $idTarget, array $accesso, array $post): array
+    {
+        $data = $this->mostraSegnalazioneWeb($tipoTarget, $idTarget, $accesso);
+        $data['form'] = array_merge($data['form'] ?? [], $post);
+
+        if (!empty($data['accessoRichiesto']) || isset($data['errore'])) {
+            return $data;
+        }
+
+        try {
+            $result = $this->inviaSegnalazione([
+                'idSegnalante' => (int) $accesso['idUtente'],
+                'tipoTarget' => $this->tipoDaSlug($tipoTarget),
+                'idTarget' => $idTarget,
+                'motivo' => (string) ($post['motivo'] ?? ''),
+                'descrizione' => (string) ($post['descrizione'] ?? ''),
+            ]);
+
+            if (isset($result['errore'])) {
+                $data['erroreForm'] = $result['errore'];
+                return $data;
+            }
+
+            $data['segnalazione'] = $result['segnalazione'] ?? null;
+            $data['messaggioSuccesso'] = $result['messaggio'] ?? 'Segnalazione registrata.';
+            return $data;
+        } catch (InvalidArgumentException $exception) {
+            $data['erroreForm'] = $exception->getMessage();
+            return $data;
+        } catch (Throwable $exception) {
+            error_log('[CSegnalazione] ' . $exception->getMessage());
+            $data['erroreForm'] = 'Non e stato possibile inviare la segnalazione. Riprova piu tardi.';
+            return $data;
+        }
     }
 
     private function validaTipoTarget(string $tipoTarget): void
@@ -74,6 +134,17 @@ class CSegnalazione
         if (!in_array($tipoTarget, $ammessi, true)) {
             throw new InvalidArgumentException('Tipo target segnalazione non valido.');
         }
+    }
+
+    private function tipoDaSlug(string $tipoTarget): string
+    {
+        $tipoTarget = strtolower(trim($tipoTarget));
+        return $tipoTarget === 'ghost-kitchen' ? 'ghost_kitchen' : $tipoTarget;
+    }
+
+    private function isLogged(array $accesso): bool
+    {
+        return ($accesso['isLogged'] ?? false) === true && (int) ($accesso['idUtente'] ?? 0) > 0;
     }
 
     private function validaId(int $id, string $messaggio): void

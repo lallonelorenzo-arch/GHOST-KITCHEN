@@ -15,6 +15,9 @@ class CFrontController
             '/logout' => ['CAutenticazione', 'logout', null],
             '/disponibilita' => ['CGestioneDisponibilita', 'mostraDisponibilitaWeb', 'disponibilita'],
             '/richieste' => ['CGestioneRichieste', 'visualizzaRichiesteWeb', 'richieste'],
+            '/dashboard' => ['CDashboardStatistiche', 'visualizzaDashboardWeb', 'dashboard'],
+            '/moderazione' => ['CModerazione', 'visualizzaContenutiDaModerareWeb', 'moderazione'],
+            '/certificazioni' => ['CValidazioneCertificazioni', 'visualizzaCertificazioniInAttesaWeb', 'certificazioni'],
             '/prenotazione/placeholder' => ['CHome', 'placeholder', 'placeholder'],
         ],
         'POST' => [
@@ -63,6 +66,84 @@ class CFrontController
                 return;
             }
 
+            if ($method === 'GET' && preg_match('#^/pagamento/(chef|ghost-kitchen)/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $tipoPrenotazione = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
+                $this->renderController('CPagamento', 'mostraPagamentoWeb', 'pagamento', [$tipoPrenotazione, (int) $matches[2], $this->accessContext(), $query]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/pagamento/(chef|ghost-kitchen)/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $tipoPrenotazione = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
+                $this->renderController('CPagamento', 'confermaPagamentoWeb', 'pagamento', [$tipoPrenotazione, (int) $matches[2], $this->accessContext(), $post]);
+                return;
+            }
+
+            if ($method === 'GET' && preg_match('#^/cancellazione/(chef|ghost-kitchen)/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $tipoPrenotazione = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
+                $this->renderController('CCancellazioneRimborso', 'mostraCancellazioneWeb', 'cancellazione', [$tipoPrenotazione, (int) $matches[2], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/cancellazione/(chef|ghost-kitchen)/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $tipoPrenotazione = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
+                $this->renderController('CCancellazioneRimborso', 'confermaCancellazioneWeb', 'cancellazione', [$tipoPrenotazione, (int) $matches[2], $this->accessContext(), $post]);
+                return;
+            }
+
+            if ($method === 'GET' && preg_match('#^/recensione/(chef|ghost-kitchen)/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $tipoTarget = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
+                $this->renderController('CRecensione', 'mostraRecensioneWeb', 'recensione', [$tipoTarget, (int) $matches[2], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/recensione/(chef|ghost-kitchen)/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $tipoTarget = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
+                $this->renderController('CRecensione', 'pubblicaRecensioneWeb', 'recensione', [$tipoTarget, (int) $matches[2], $this->accessContext(), $post]);
+                return;
+            }
+
+            if ($method === 'GET' && preg_match('#^/segnalazione/(utente|chef|ghost-kitchen|recensione|menu)/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $tipoTarget = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : $matches[1];
+                $this->renderController('CSegnalazione', 'mostraSegnalazioneWeb', 'segnalazione', [$tipoTarget, (int) $matches[2], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/segnalazione/(utente|chef|ghost-kitchen|recensione|menu)/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $tipoTarget = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : $matches[1];
+                $this->renderController('CSegnalazione', 'inviaSegnalazioneWeb', 'segnalazione', [$tipoTarget, (int) $matches[2], $this->accessContext(), $post]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/moderazione/segnalazione/([1-9][0-9]*)/prendi$#', $path, $matches) === 1) {
+                $this->renderController('CModerazione', 'prendiInCaricoSegnalazioneWeb', 'richiesta_esito', [(int) $matches[1], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/moderazione/segnalazione/([1-9][0-9]*)/chiudi$#', $path, $matches) === 1) {
+                $this->renderController('CModerazione', 'chiudiSegnalazioneWeb', 'richiesta_esito', [(int) $matches[1], $this->accessContext(), $post]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/moderazione/recensione/([1-9][0-9]*)/(nascondi|rimuovi|ripristina)$#', $path, $matches) === 1) {
+                $this->renderController('CModerazione', 'moderaRecensioneWeb', 'richiesta_esito', [(int) $matches[1], $matches[2], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/moderazione/profilo/([1-9][0-9]*)/(sospendi|banna|riattiva)$#', $path, $matches) === 1) {
+                $this->renderController('CModerazione', 'moderaProfiloWeb', 'richiesta_esito', [(int) $matches[1], $matches[2], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'GET' && preg_match('#^/certificazioni/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $this->renderController('CValidazioneCertificazioni', 'visualizzaDettaglioCertificazioneWeb', 'certificazione_dettaglio', [(int) $matches[1], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/certificazioni/([1-9][0-9]*)/(approva|rifiuta)$#', $path, $matches) === 1) {
+                $this->renderController('CValidazioneCertificazioni', 'aggiornaCertificazioneWeb', 'richiesta_esito', [(int) $matches[1], $matches[2], $this->accessContext(), $post]);
+                return;
+            }
+
             if ($method === 'GET' && preg_match('#^/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
                 $this->renderController('CDettaglioChef', 'visualizzaDettaglioChef', 'dettaglio_chef', [(int) $matches[1]]);
                 return;
@@ -103,6 +184,9 @@ class CFrontController
                 '/login' => $method === 'POST' ? [$post] : [],
                 '/disponibilita' => [$this->accessContext(), $query],
                 '/richieste' => [$this->accessContext()],
+                '/dashboard' => [$this->accessContext(), $query],
+                '/moderazione' => [$this->accessContext()],
+                '/certificazioni' => [$this->accessContext()],
                 '/disponibilita/chef' => [$this->accessContext(), $post],
                 '/disponibilita/ghost-kitchen' => [$this->accessContext(), $post],
                 default => [],
@@ -197,7 +281,31 @@ class CFrontController
             return true;
         }
 
+        if (preg_match('#^/(pagamento|cancellazione|recensione)/(chef|ghost-kitchen)/[1-9][0-9]*$#', $path) === 1) {
+            return true;
+        }
+
+        if (preg_match('#^/segnalazione/(utente|chef|ghost-kitchen|recensione|menu)/[1-9][0-9]*$#', $path) === 1) {
+            return true;
+        }
+
         if (preg_match('#^/richieste/(chef|ghost-kitchen)/[1-9][0-9]*/(accetta|rifiuta)$#', $path) === 1) {
+            return true;
+        }
+
+        if (preg_match('#^/moderazione/segnalazione/[1-9][0-9]*/(prendi|chiudi)$#', $path) === 1) {
+            return true;
+        }
+
+        if (preg_match('#^/moderazione/recensione/[1-9][0-9]*/(nascondi|rimuovi|ripristina)$#', $path) === 1) {
+            return true;
+        }
+
+        if (preg_match('#^/moderazione/profilo/[1-9][0-9]*/(sospendi|banna|riattiva)$#', $path) === 1) {
+            return true;
+        }
+
+        if (preg_match('#^/certificazioni/[1-9][0-9]*(/(approva|rifiuta))?$#', $path) === 1) {
             return true;
         }
 

@@ -51,4 +51,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
   });
+
+  document.querySelectorAll('[data-dynamic-action]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      const pattern = form.getAttribute('data-dynamic-action');
+      const id = form.querySelector('[name="dynamicId"]')?.value;
+      const action = form.querySelector('[name="dynamicAction"]')?.value;
+
+      if (!pattern || !id || !action) {
+        event.preventDefault();
+        return;
+      }
+
+      form.action = `${window.location.origin}${window.GK_BASE_URL || ''}${pattern.replace('{id}', id).replace('{azione}', action)}`;
+    });
+  });
 });

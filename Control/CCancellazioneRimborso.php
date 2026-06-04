@@ -60,6 +60,9 @@ class CCancellazioneRimborso
         if ($prenotazione === null) {
             return ['errore' => 'Prenotazione non trovata.'];
         }
+        if ((int) $prenotazione->getIdRichiedente() !== $idRichiedente) {
+            return ['errore' => 'Prenotazione non collegata al richiedente indicato.'];
+        }
 
         $stima = FPersistentManager::calcolaRimborsoStimato($tipoPrenotazione, $idPrenotazione);
         if (($stima['trovato'] ?? false) !== true) {
@@ -80,6 +83,9 @@ class CCancellazioneRimborso
             ECancellazione::STATO_ACCETTATA
         );
         $cancellazione = FPersistentManager::storeCancellazione($cancellazione);
+        if ($cancellazione === false) {
+            return ['errore' => 'Cancellazione non salvata. Riprova piu tardi.'];
+        }
 
         $rimborso = null;
         $pagamento = FPersistentManager::loadPagamentoByPrenotazione($tipoPrenotazione, $idPrenotazione);
@@ -100,6 +106,9 @@ class CCancellazioneRimborso
                 date('Y-m-d')
             );
             $rimborso = FPersistentManager::storeRimborso($rimborso);
+            if ($rimborso === false) {
+                return ['errore' => 'Rimborso non salvato. Riprova piu tardi.'];
+            }
             FPersistentManager::updatePagamento($pagamento);
         }
 
@@ -118,6 +127,66 @@ class CCancellazioneRimborso
         ];
     }
 
+    public function mostraCancellazioneWeb(string $tipoPrenotazione, int $idPrenotazione, array $accesso): array
+    {
+        if (!$this->isLogged($accesso)) {
+            return [
+                'accessoRichiesto' => true,
+                'messaggioAccesso' => 'Accedi per richiedere la cancellazione.',
+                'tipoPrenotazione' => $tipoPrenotazione,
+                'idPrenotazione' => $idPrenotazione,
+                'form' => [],
+            ];
+        }
+
+        $tipoPrenotazione = $this->tipoDaSlug($tipoPrenotazione);
+        $data = $this->avviaCancellazione($tipoPrenotazione, $idPrenotazione, (int) $accesso['idUtente']);
+        $data['accesso'] = $accesso;
+        $data['form'] = [];
+        $data['cancellazione'] = null;
+        $data['rimborso'] = null;
+
+        return $data;
+    }
+
+    public function confermaCancellazioneWeb(string $tipoPrenotazione, int $idPrenotazione, array $accesso, array $post): array
+    {
+        $data = $this->mostraCancellazioneWeb($tipoPrenotazione, $idPrenotazione, $accesso);
+        $data['form'] = $post;
+
+        if (!empty($data['accessoRichiesto']) || isset($data['errore'])) {
+            return $data;
+        }
+
+        try {
+            $result = $this->confermaCancellazione([
+                'tipoPrenotazione' => $this->tipoDaSlug($tipoPrenotazione),
+                'idPrenotazione' => $idPrenotazione,
+                'idRichiedente' => (int) $accesso['idUtente'],
+                'motivo' => (string) ($post['motivo'] ?? ''),
+            ]);
+
+            if (isset($result['errore'])) {
+                $data['erroreForm'] = $result['errore'];
+                return $data;
+            }
+
+            $data['cancellazione'] = $result['cancellazione'] ?? null;
+            $data['rimborso'] = $result['rimborso'] ?? null;
+            $data['prenotazione'] = $result['prenotazione'] ?? ($data['prenotazione'] ?? null);
+            $data['rimborsoStimato'] = $result['riepilogo'] ?? ($data['rimborsoStimato'] ?? []);
+            $data['messaggioSuccesso'] = 'Cancellazione registrata correttamente.';
+            return $data;
+        } catch (InvalidArgumentException $exception) {
+            $data['erroreForm'] = $exception->getMessage();
+            return $data;
+        } catch (Throwable $exception) {
+            error_log('[CCancellazioneRimborso] ' . $exception->getMessage());
+            $data['erroreForm'] = 'Non e stato possibile completare la cancellazione. Riprova piu tardi.';
+            return $data;
+        }
+    }
+
     private function loadPrenotazione(string $tipoPrenotazione, int $idPrenotazione)
     {
         return $tipoPrenotazione === ECancellazione::PRENOTAZIONE_CHEF
@@ -130,6 +199,17 @@ class CCancellazioneRimborso
         if (!in_array($tipoPrenotazione, [ECancellazione::PRENOTAZIONE_CHEF, ECancellazione::PRENOTAZIONE_GHOST_KITCHEN], true)) {
             throw new InvalidArgumentException('Tipo prenotazione non valido.');
         }
+    }
+
+    private function tipoDaSlug(string $tipoPrenotazione): string
+    {
+        $tipoPrenotazione = strtolower(trim($tipoPrenotazione));
+        return $tipoPrenotazione === 'ghost-kitchen' ? ECancellazione::PRENOTAZIONE_GHOST_KITCHEN : $tipoPrenotazione;
+    }
+
+    private function isLogged(array $accesso): bool
+    {
+        return ($accesso['isLogged'] ?? false) === true && (int) ($accesso['idUtente'] ?? 0) > 0;
     }
 
     private function validaId(int $id, string $messaggio): void

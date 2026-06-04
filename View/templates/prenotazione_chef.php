@@ -80,6 +80,7 @@ use ViewHelpers as V;
             <article class="uc-panel uc-result">
                 <h2>Riepilogo richiesta #<?= V::e($prenotazione->getIdPrenotazione()) ?></h2>
                 <p>Stato: <?= V::e($prenotazione->getStato()) ?> - Importo stimato: € <?= V::e(V::money($prenotazione->getImportoTotale())) ?></p>
+                <a class="btn btn-accent" href="<?= V::e(V::url('/pagamento/chef/' . $prenotazione->getIdPrenotazione())) ?>">Vai al pagamento</a>
             </article>
         <?php endif; ?>
 
