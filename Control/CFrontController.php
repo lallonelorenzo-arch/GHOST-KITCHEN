@@ -19,7 +19,6 @@ class CFrontController
             '/dashboard' => ['CDashboardStatistiche', 'visualizzaDashboardWeb', 'dashboard'],
             '/moderazione' => ['CModerazione', 'visualizzaContenutiDaModerareWeb', 'moderazione'],
             '/certificazioni' => ['CValidazioneCertificazioni', 'visualizzaCertificazioniInAttesaWeb', 'certificazioni'],
-            '/prenotazione/placeholder' => ['CHome', 'placeholder', 'placeholder'],
         ],
         'POST' => [
             '/login' => ['CAutenticazione', 'login', 'login'],
@@ -345,6 +344,7 @@ class CFrontController
 
         return [
             'baseUrl' => $this->baseUrl(),
+            'currentPath' => $this->currentPath(),
             'utenteCorrente' => FSession::isLogged() ? [
                 'nome' => FSession::getNome(),
                 'cognome' => FSession::getCognome(),
@@ -353,6 +353,12 @@ class CFrontController
                 'ruolo' => FSession::getRuoloAttivo(),
             ] : null,
         ];
+    }
+
+    private function currentPath(): string
+    {
+        $path = $this->normalizePath((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
+        return $path === '' ? '/' : $path;
     }
 
     private function baseUrl(): string

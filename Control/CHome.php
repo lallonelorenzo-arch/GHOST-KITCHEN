@@ -23,8 +23,4 @@ class CHome
         ];
     }
 
-    public function placeholder(): array
-    {
-        return [];
-    }
 }

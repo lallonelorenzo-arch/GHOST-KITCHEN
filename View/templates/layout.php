@@ -1,12 +1,9 @@
 <?php
 /** @var string $contentTemplate */
 /** @var array|null $utenteCorrente */
+/** @var string $currentPath */
 use ViewHelpers as V;
-$currentPath = parse_url((string) ($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH) ?: '/';
-$baseUrl = (string) ($GLOBALS['view_base_url'] ?? '');
-if ($baseUrl !== '' && str_starts_with($currentPath, $baseUrl)) {
-    $currentPath = substr($currentPath, strlen($baseUrl)) ?: '/';
-}
+$currentPath = (string) ($currentPath ?? '/');
 $isActive = static fn (string $path): string => ($path === '/' ? $currentPath === '/' : str_starts_with($currentPath, $path)) ? ' is-active' : '';
 $utenteNome = $utenteCorrente !== null ? trim((string) (($utenteCorrente['nome'] ?? '') . ' ' . ($utenteCorrente['cognome'] ?? ''))) : '';
 $utenteNome = $utenteNome !== '' ? $utenteNome : 'Account';
