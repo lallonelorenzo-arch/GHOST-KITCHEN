@@ -3,13 +3,12 @@ use ViewHelpers as V;
 /** @var array $chefInEvidenza */
 /** @var array $ghostKitchenInEvidenza */
 /** @var array $cucine */
-$hero = 'https://images.unsplash.com/photo-1750943081248-833d71a2ab8e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920';
 ?>
-<section class="hero" style="background-image: linear-gradient(90deg, rgba(44,24,16,.92), rgba(44,24,16,.55), rgba(44,24,16,.1)), url('<?= V::e($hero) ?>')">
+<section class="hero brand-hero">
     <div class="hero-content">
         <span class="eyebrow">Chef privati e cucine professionali</span>
-        <h1>Organizza esperienze food <span>senza attriti</span></h1>
-        <p>Prenota chef selezionati per eventi privati oppure trova cucine attrezzate pronte per produzione, test menu e servizi su misura.</p>
+        <h1>Ghost Kitchen per esperienze food <span>memorabili</span></h1>
+        <p>Prenota chef selezionati e cucine attrezzate con un'esperienza piu decisa, veloce e costruita intorno al mondo food.</p>
         <div class="actions">
             <a class="btn btn-accent" href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova uno Chef</a>
             <a class="btn btn-light" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Esplora Ghost Kitchen</a>
