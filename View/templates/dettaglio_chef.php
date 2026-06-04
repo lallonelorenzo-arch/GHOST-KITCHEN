@@ -5,11 +5,12 @@ use ViewHelpers as V;
 /** @var array $menu */
 /** @var array $certificazioni */
 $image = V::mediaUrl($fotoProfilo ?? null, 'https://images.unsplash.com/photo-1750943082012-efe6d2fd9e45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200');
+$rating = $chef->getValutazioneMedia();
 ?>
 <section class="detail-hero" style="background-image: linear-gradient(0deg, rgba(44,24,16,.9), rgba(44,24,16,.25)), url('<?= V::e($image) ?>')">
     <a class="back-link" href="<?= V::e(V::url('/ricerca/chef')) ?>">Torna alla ricerca</a>
     <div>
-        <span class="badge">Valutazione <?= V::e($chef->getValutazioneMedia()) ?> / 5</span>
+        <span class="badge rating-badge"><span class="stars"><?= V::stars($rating) ?></span> <?= V::e($rating) ?> / 5</span>
         <h1><?= V::e($chef->getNome() . ' ' . $chef->getCognome()) ?></h1>
         <p><?= V::e($chef->getSpecializzazione() ?: $chef->getTipologiaCucina()) ?></p>
     </div>
@@ -27,7 +28,7 @@ $image = V::mediaUrl($fotoProfilo ?? null, 'https://images.unsplash.com/photo-17
                 <div class="panel">
                     <div class="panel-title">
                         <h3><?= V::e($m->getNome()) ?></h3>
-                        <strong>Euro <?= V::e(V::money($m->getPrezzoPersona())) ?></strong>
+                        <strong>&euro; <?= V::e(V::money($m->getPrezzoPersona())) ?></strong>
                     </div>
                     <p><?= V::e($m->getDescrizione()) ?></p>
                     <?php if (($menuItem['piatti'] ?? []) !== []): ?>
@@ -55,7 +56,7 @@ $image = V::mediaUrl($fotoProfilo ?? null, 'https://images.unsplash.com/photo-17
     </article>
     <aside class="booking-box">
         <p>A partire da</p>
-        <strong>Euro <?= V::e(V::money($chef->getPrezzoBase())) ?></strong>
+        <strong>&euro; <?= V::e(V::money($chef->getPrezzoBase())) ?></strong>
         <span>per esperienza</span>
         <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/placeholder')) ?>">Prenota Ora</a>
         <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Chef</a>

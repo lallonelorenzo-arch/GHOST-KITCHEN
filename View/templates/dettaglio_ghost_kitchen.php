@@ -5,11 +5,12 @@ use ViewHelpers as V;
 /** @var array $disponibilitaPubbliche */
 /** @var mixed $mediaPrincipale */
 $image = V::mediaUrl($mediaPrincipale ?? null, 'https://images.unsplash.com/photo-1767785990437-dfe1fe516fe8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200');
+$rating = $ghostKitchen->getValutazioneMedia();
 ?>
 <section class="detail-hero" style="background-image: linear-gradient(0deg, rgba(44,24,16,.9), rgba(44,24,16,.25)), url('<?= V::e($image) ?>')">
     <a class="back-link" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Torna alle cucine</a>
     <div>
-        <span class="badge">Valutazione <?= V::e($ghostKitchen->getValutazioneMedia()) ?> / 5</span>
+        <span class="badge rating-badge"><span class="stars"><?= V::stars($rating) ?></span> <?= V::e($rating) ?> / 5</span>
         <h1><?= V::e($ghostKitchen->getNome()) ?></h1>
         <p><?= V::e($ghostKitchen->getIndirizzo() . ', ' . $ghostKitchen->getCitta()) ?></p>
     </div>
@@ -21,7 +22,7 @@ $image = V::mediaUrl($mediaPrincipale ?? null, 'https://images.unsplash.com/phot
         <p class="lead"><?= V::e($ghostKitchen->getDescrizione()) ?></p>
         <div class="stats">
             <div><strong><?= V::e($ghostKitchen->getCapienza()) ?></strong><span>Persone</span></div>
-            <div><strong><?= V::e($ghostKitchen->getMq()) ?></strong><span>m2</span></div>
+            <div><strong><?= V::e($ghostKitchen->getMq()) ?></strong><span>m<sup>2</sup></span></div>
             <div><strong><?= V::e($ghostKitchen->getStato()) ?></strong><span>Stato</span></div>
         </div>
 
@@ -39,7 +40,7 @@ $image = V::mediaUrl($mediaPrincipale ?? null, 'https://images.unsplash.com/phot
     </article>
     <aside class="booking-box">
         <p>A partire da</p>
-        <strong>Euro <?= V::e(V::money($ghostKitchen->getPrezzoOrario())) ?></strong>
+        <strong>&euro; <?= V::e(V::money($ghostKitchen->getPrezzoOrario())) ?></strong>
         <span>per ora</span>
         <div class="slots">
             <?php foreach (array_slice($disponibilitaPubbliche, 0, 4) as $slot): ?>

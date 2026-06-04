@@ -21,7 +21,6 @@ use ViewHelpers as V;
         </a>
         <button class="nav-toggle" type="button" data-nav-toggle aria-label="Apri menu">Menu</button>
         <div class="nav-links" data-nav-links>
-            <a href="<?= V::e(V::url('/ricerca')) ?>">Ricerca</a>
             <a href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova Chef</a>
             <a href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
         </div>

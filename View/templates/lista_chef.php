@@ -2,6 +2,7 @@
 use ViewHelpers as V;
 /** @var array $chef */
 /** @var array $filtri */
+$numeroChef = count($chef);
 ?>
 <section class="page-hero">
     <h1>Trova il tuo Chef</h1>
@@ -15,13 +16,14 @@ use ViewHelpers as V;
         <input name="valutazioneMin" value="<?= V::e($filtri['valutazioneMin'] ?? '') ?>" type="number" min="0" max="5" placeholder="Valutazione min">
         <button class="btn btn-primary" type="submit">Filtra</button>
     </form>
-    <p class="result-count"><?= count($chef) ?> chef <?= count($chef) === 1 ? 'trovato' : 'trovati' ?></p>
+    <p class="result-count"><?= $numeroChef ?> chef <?= $numeroChef === 1 ? 'trovato' : 'trovati' ?></p>
     <div class="card-grid three">
-        <?php foreach ($chef as $chef): ?>
+        <?php foreach ($chef as $chefItem): ?>
+            <?php $chef = $chefItem; ?>
             <?php require __DIR__ . '/partials/chef_card.php'; ?>
         <?php endforeach; ?>
     </div>
-    <?php if (count($chef) === 0): ?>
+    <?php if ($numeroChef === 0): ?>
         <div class="empty-state">Nessun chef trovato. Prova a modificare i filtri.</div>
     <?php endif; ?>
 </section>

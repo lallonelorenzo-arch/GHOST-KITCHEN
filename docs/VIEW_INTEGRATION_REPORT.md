@@ -22,7 +22,6 @@ L'export originale non e stato eliminato. La prima integrazione PHP riusa strutt
 - `View/ViewRenderer.php`
 - `View/templates/layout.php`
 - `View/templates/home.php`
-- `View/templates/ricerca.php`
 - `View/templates/lista_chef.php`
 - `View/templates/lista_ghost_kitchen.php`
 - `View/templates/dettaglio_chef.php`
@@ -46,7 +45,7 @@ L'export originale non e stato eliminato. La prima integrazione PHP riusa strutt
 ## URL implementate
 
 - `GET /`
-- `GET /ricerca`
+- `GET /ricerca` -> redirect a `/ricerca/chef`
 - `GET /ricerca/chef`
 - `GET /ricerca/ghost-kitchen`
 - `GET /chef/{id}`
@@ -66,12 +65,14 @@ Se il progetto viene aperto da XAMPP come sottocartella, gli stessi URL sono sot
 - Il catch generale del FrontController ora scrive il dettaglio tecnico in `error_log()` e mostra all'utente un messaggio generico.
 - La route `GET /prenotazione/placeholder` ora chiama `CHome::placeholder()` invece di `CHome::home()`.
 - Verificata la coerenza delle route dichiarate: ogni route ha controller, metodo e template/redirect esistente.
+- Rimossa la pagina generica `View/templates/ricerca.php`: non era presente nella UI Figma e duplicava "Trova Chef" e "Ghost Kitchen".
+- Rimosso il link "Ricerca" dalla navbar; `GET /ricerca` resta solo come redirect di compatibilita verso `/ricerca/chef`.
+- Migliorate le card e i dettagli con rating a stelle, prezzo `&euro;` e metratura `m2` formattata in modo piu vicino all'export UI.
 
 ## Control collegati
 
 - `CHome::home()`
 - `CHome::placeholder()`
-- `CRicerca::avviaRicerca()`
 - `CRicerca::cercaOfferte()`
 - `CDettaglioChef::visualizzaDettaglioChef()`
 - `CDettaglioGhostKitchen::visualizzaDettaglioGhostKitchen()`
@@ -113,7 +114,7 @@ Se il progetto viene aperto da XAMPP come sottocartella, gli stessi URL sono sot
 
 - [ ] `GET /` carica home con layout Figma.
 - [ ] CSS e immagini si caricano correttamente.
-- [ ] `GET /ricerca` carica pagina ricerca.
+- [ ] `GET /ricerca` reindirizza a `/ricerca/chef`.
 - [ ] `GET /ricerca/chef` mostra lista chef reale o messaggio coerente.
 - [ ] `GET /ricerca/ghost-kitchen` mostra lista ghost kitchen reale o messaggio coerente.
 - [ ] `GET /chef/{id valido}` mostra dettaglio reale.

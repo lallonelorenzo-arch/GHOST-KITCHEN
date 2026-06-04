@@ -44,6 +44,20 @@ class ViewHelpers
     {
         return number_format($value, 2, ',', '.');
     }
+
+    public static function stars(float $rating): string
+    {
+        $fullStars = max(0, min(5, (int) round($rating)));
+        $stars = '';
+
+        for ($i = 1; $i <= 5; $i++) {
+            $stars .= $i <= $fullStars
+                ? '<span class="star filled">&#9733;</span>'
+                : '<span class="star">&#9734;</span>';
+        }
+
+        return $stars;
+    }
 }
 
 class_alias(ViewHelpers::class, 'V');

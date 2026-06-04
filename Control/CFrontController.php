@@ -9,7 +9,6 @@ class CFrontController
     private const ALLOWED_ROUTES = [
         'GET' => [
             '/' => ['CHome', 'home', 'home'],
-            '/ricerca' => ['CRicerca', 'avviaRicerca', 'ricerca'],
             '/ricerca/chef' => ['CRicerca', 'cercaOfferte', 'lista_chef'],
             '/ricerca/ghost-kitchen' => ['CRicerca', 'cercaOfferte', 'lista_ghost_kitchen'],
             '/login' => ['CAutenticazione', 'mostraLogin', 'login'],
@@ -29,6 +28,11 @@ class CFrontController
         $post = $this->normalizeRequest($_POST);
 
         try {
+            if ($method === 'GET' && $path === '/ricerca') {
+                $this->redirect('/ricerca/chef');
+                return;
+            }
+
             if ($method === 'GET' && preg_match('#^/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
                 $this->renderController('CDettaglioChef', 'visualizzaDettaglioChef', 'dettaglio_chef', [(int) $matches[1]]);
                 return;

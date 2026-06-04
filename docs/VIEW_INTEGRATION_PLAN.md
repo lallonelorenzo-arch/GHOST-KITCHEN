@@ -60,7 +60,6 @@
 
 - `View/templates/layout.php`
 - `View/templates/home.php`
-- `View/templates/ricerca.php`
 - `View/templates/lista_chef.php`
 - `View/templates/lista_ghost_kitchen.php`
 - `View/templates/dettaglio_chef.php`
@@ -79,7 +78,7 @@
 ## Routing minimo
 
 - `GET /`
-- `GET /ricerca`
+- `GET /ricerca` -> redirect a `/ricerca/chef`
 - `GET /ricerca/chef`
 - `GET /ricerca/ghost-kitchen`
 - `GET /chef/{id}`
