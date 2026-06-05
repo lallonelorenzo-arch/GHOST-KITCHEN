@@ -25,7 +25,7 @@ if ($utenteCorrente !== null) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Ghost Kitchen</title>
-    <link rel="stylesheet" href="<?= V::e(V::asset('css/app.css')) ?>?v=<?= V::e((string) @filemtime(dirname(__DIR__, 2) . '/public/assets/css/app.css')) ?>">
+    <link rel="stylesheet" href="<?= V::e(V::asset('css/app.css')) ?>">
     <script>window.GK_BASE_URL = <?= json_encode((string) ($GLOBALS['view_base_url'] ?? ''), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;</script>
     <script defer src="<?= V::e(V::asset('js/app.js')) ?>?v=<?= V::e((string) @filemtime(dirname(__DIR__, 2) . '/public/assets/js/app.js')) ?>"></script>
 </head>
@@ -33,7 +33,13 @@ if ($utenteCorrente !== null) {
 <header class="site-header">
     <nav class="navbar">
         <a class="brand" href="<?= V::e(V::url('/')) ?>">
-            <img class="brand-logo" src="<?= V::e(V::asset('img/ghost-kitchen-logo-final.png')) ?>" alt="Ghost Kitchen">
+            <span class="brand-icon" aria-hidden="true">
+                <svg viewBox="0 0 32 32" focusable="false">
+                    <path d="M10 14c-2.2-.4-3.8-2.1-3.8-4.2 0-2.4 2-4.3 4.6-4.3.8 0 1.6.2 2.2.5 1-1.7 2.8-2.8 5-2.8 3 0 5.4 2.1 5.7 4.8 1.6.6 2.7 2 2.7 3.8 0 2.1-1.6 3.8-3.7 4.2v8.5H10V14Z"/>
+                    <path d="M10 18h12M10 22h12"/>
+                </svg>
+            </span>
+            <span>Ghost Kitchen</span>
         </a>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-label="Apri menu">Menu</button>
         <div class="nav-links" data-nav-links>
@@ -80,7 +86,7 @@ if ($utenteCorrente !== null) {
     <?php require $contentTemplate; ?>
 </main>
 <footer class="footer">
-    <span><img class="footer-logo" src="<?= V::e(V::asset('img/ghost-kitchen-logo-final.png')) ?>" alt="Ghost Kitchen"></span>
+    <span>Ghost Kitchen</span>
     <span>Prenotazioni, cucine e chef in un unico spazio operativo.</span>
 </footer>
 </body>
