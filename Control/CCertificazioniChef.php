@@ -51,7 +51,10 @@ class CCertificazioniChef
                 ECertificazione::STATO_IN_ATTESA,
                 date('Y-m-d'),
                 '',
-                ''
+                '',
+                '',
+                ECertificazione::OWNER_CHEF,
+                (int) $accesso['idUtente']
             );
 
             if (FPersistentManager::storeCertificazione($certificazione) === false) {

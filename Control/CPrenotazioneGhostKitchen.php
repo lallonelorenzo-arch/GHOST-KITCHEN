@@ -23,6 +23,10 @@ class CPrenotazioneGhostKitchen
             return ['errore' => 'Richiedente o ghost kitchen non trovati'];
         }
 
+        if ($this->ghostKitchenNonPrenotabile($ghostKitchen)) {
+            return ['errore' => 'Ghost kitchen non prenotabile: stato, gestore o certificazioni non approvati.'];
+        }
+
         return [
             'richiedente' => $utente,
             'tipoRichiedente' => $tipoRichiedente,
@@ -86,13 +90,17 @@ class CPrenotazioneGhostKitchen
             throw new InvalidArgumentException('Tipo richiedente non valido.');
         }
 
-        if (!FPersistentManager::verificaDisponibilitaGhostKitchen($idGhostKitchen, $dataServizio, $oraInizio, $oraFine)) {
-            return ['errore' => 'Ghost kitchen non disponibile nello slot richiesto'];
-        }
-
         $ghostKitchen = FPersistentManager::loadGhostKitchen($idGhostKitchen);
         if ($ghostKitchen === null) {
             return ['errore' => 'Ghost kitchen non trovata'];
+        }
+
+        if ($this->ghostKitchenNonPrenotabile($ghostKitchen)) {
+            return ['errore' => 'Ghost kitchen non prenotabile: stato, gestore o certificazioni non approvati.'];
+        }
+
+        if (!FPersistentManager::verificaDisponibilitaGhostKitchen($idGhostKitchen, $dataServizio, $oraInizio, $oraFine)) {
+            return ['errore' => 'Ghost kitchen non disponibile nello slot richiesto'];
         }
 
         $ore = max(1.0, (strtotime($oraFine) - strtotime($oraInizio)) / 3600);
@@ -136,6 +144,7 @@ class CPrenotazioneGhostKitchen
             return ['errore' => 'Ghost kitchen non trovata.'];
         }
 
+        $prenotabile = !$this->ghostKitchenNonPrenotabile($ghostKitchen);
         $tipoRichiedente = $this->tipoRichiedenteDaAccesso($accesso);
         $data = [
             'ghostKitchen' => $ghostKitchen,
@@ -144,7 +153,14 @@ class CPrenotazioneGhostKitchen
             'accesso' => $accesso,
             'form' => [],
             'prenotazione' => null,
+            'ghostKitchenPrenotabile' => $prenotabile,
         ];
+
+        if (!$prenotabile) {
+            $data['accessoRichiesto'] = true;
+            $data['messaggioAccesso'] = 'Questa ghost kitchen non e prenotabile perche lo stato non e attivo oppure le certificazioni non risultano approvate e valide.';
+            return $data;
+        }
 
         if ($tipoRichiedente === null) {
             $data['accessoRichiesto'] = true;
@@ -191,6 +207,17 @@ class CPrenotazioneGhostKitchen
             $data['erroreForm'] = 'Non e stato possibile inviare la prenotazione. Riprova piu tardi.';
             return $data;
         }
+    }
+
+    private function ghostKitchenNonPrenotabile(EGhostKitchen $ghostKitchen): bool
+    {
+        $gestore = FPersistentManager::loadGestore((int) $ghostKitchen->getIdGestore());
+
+        return $ghostKitchen->getStato() !== EGhostKitchen::STATO_ATTIVA
+            || $ghostKitchen->getId() === null
+            || $gestore === null
+            || !$gestore->isVerificato()
+            || !FPersistentManager::ghostKitchenHaCertificazioniInRegola((int) $ghostKitchen->getId());
     }
 
     private function tipoRichiedenteDaAccesso(array $accesso): ?string

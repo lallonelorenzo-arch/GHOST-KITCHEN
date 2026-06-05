@@ -8,6 +8,8 @@ use ViewHelpers as V;
 /** @var string|null $erroreForm */
 /** @var string|null $messaggioSuccesso */
 /** @var EPrenotazioneGhostKitchen|null $prenotazione */
+/** @var bool|null $ghostKitchenPrenotabile */
+$ghostKitchenPrenotabile = $ghostKitchenPrenotabile ?? true;
 ?>
 <section class="page-hero compact-hero ops-hero">
     <h1>Prenotazione ghost kitchen</h1>
@@ -35,6 +37,7 @@ use ViewHelpers as V;
                 </dl>
             </article>
 
+            <?php if ($ghostKitchenPrenotabile): ?>
             <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>">
                 <h2>Dati richiesta</h2>
                 <p class="muted-text">Tipo richiedente: <?= V::e($tipoRichiedente ?? 'non disponibile') ?></p>
@@ -48,6 +51,12 @@ use ViewHelpers as V;
                 </label>
                 <button class="btn btn-accent" type="submit">Invia richiesta</button>
             </form>
+            <?php else: ?>
+                <article class="ops-panel">
+                    <h2>Prenotazione bloccata</h2>
+                    <p class="muted-text">Questa ghost kitchen non puo ricevere richieste finche lo stato non torna attivo.</p>
+                </article>
+            <?php endif; ?>
         </div>
 
         <?php if ($prenotazione !== null): ?>

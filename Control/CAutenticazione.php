@@ -17,18 +17,27 @@ class CAutenticazione
         ];
     }
 
-    public function profilo(array $accesso): array
+    public function profilo(array $accesso, array $query = []): array
     {
         if (($accesso['isLogged'] ?? false) !== true) {
             return [
                 'messaggioAccesso' => 'Accedi per visualizzare il tuo profilo.',
                 'accesso' => $accesso,
+                'section' => 'profilo',
+                'isEditing' => false,
             ];
+        }
+
+        $section = strtolower(trim((string) ($query['section'] ?? 'profilo')));
+        if (!in_array($section, ['profilo', 'sicurezza', 'notifiche', 'pagamenti'], true)) {
+            $section = 'profilo';
         }
 
         return [
             'messaggioAccesso' => null,
             'accesso' => $accesso,
+            'section' => $section,
+            'isEditing' => $section === 'profilo' && (string) ($query['edit'] ?? '') === '1',
             'metodiPagamento' => FPersistentManager::loadMetodiPagamentoByUtente((int) $accesso['idUtente']),
             'storicoPagamenti' => $this->storicoPagamenti((int) $accesso['idUtente']),
         ];

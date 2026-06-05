@@ -8,6 +8,8 @@ use ViewHelpers as V;
 /** @var string|null $erroreForm */
 /** @var string|null $messaggioSuccesso */
 /** @var EPrenotazioneChef|null $prenotazione */
+/** @var bool|null $certificazioniInRegola */
+$certificazioniInRegola = $certificazioniInRegola ?? true;
 ?>
 <section class="page-hero compact-hero ops-hero">
     <h1>Prenotazione chef</h1>
@@ -39,6 +41,7 @@ use ViewHelpers as V;
                 </dl>
             </article>
 
+            <?php if ($certificazioniInRegola): ?>
             <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/prenotazione/chef/' . $chef->getIdChef())) ?>">
                 <h2>Dati richiesta</h2>
                 <label>Menu
@@ -73,6 +76,12 @@ use ViewHelpers as V;
                 </label>
                 <button class="btn btn-accent" type="submit">Invia richiesta</button>
             </form>
+            <?php else: ?>
+                <article class="ops-panel">
+                    <h2>Prenotazione bloccata</h2>
+                    <p class="muted-text">Questo chef non puo ricevere richieste finche le certificazioni non risultano approvate e valide.</p>
+                </article>
+            <?php endif; ?>
         </div>
 
         <?php if ($prenotazione !== null): ?>

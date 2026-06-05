@@ -7,8 +7,12 @@ class CModerazione
 {
     public function visualizzaContenutiDaModerare(): array
     {
+        $segnalazioni = FPersistentManager::loadSegnalazioniDaModerare();
+
         return [
-            'segnalazioni' => FPersistentManager::loadSegnalazioniDaModerare(),
+            'segnalazioni' => $segnalazioni,
+            'segnalazioniModerazione' => $this->preparaSchedeSegnalazioni($segnalazioni),
+            'riepilogoModerazione' => $this->preparaRiepilogo($segnalazioni),
             'azioni' => [
                 'prendiInCarico' => '/Moderazione/prendiInCaricoSegnalazione',
                 'moderaRecensione' => '/Moderazione/moderaRecensione',
@@ -143,6 +147,8 @@ class CModerazione
                 'accessoRichiesto' => true,
                 'messaggioAccesso' => 'Non hai permessi per questa sezione.',
                 'segnalazioni' => [],
+                'segnalazioniModerazione' => [],
+                'riepilogoModerazione' => [],
             ];
         }
 
@@ -220,6 +226,102 @@ class CModerazione
     {
         $ruoli = $accesso['ruoli'] ?? [];
         return ($accesso['isLogged'] ?? false) === true && (in_array('admin', $ruoli, true) || in_array('amministratore', $ruoli, true));
+    }
+
+
+    private function preparaSchedeSegnalazioni(array $segnalazioni): array
+    {
+        $schede = [];
+
+        foreach ($segnalazioni as $segnalazione) {
+            if (!$segnalazione instanceof ESegnalazione) {
+                continue;
+            }
+
+            $tipoTarget = $segnalazione->getTipoTarget();
+            $idTarget = (int) $segnalazione->getIdTarget();
+            $target = null;
+
+            if ($idTarget > 0) {
+                try {
+                    $target = FPersistentManager::loadTargetSegnalazione($tipoTarget, $idTarget);
+                } catch (Throwable $exception) {
+                    error_log('[CModerazione] target segnalazione non caricato: ' . $exception->getMessage());
+                }
+            }
+
+            $schede[] = [
+                'segnalazione' => $segnalazione,
+                'targetLabel' => $this->targetLabel($tipoTarget),
+                'targetSummary' => $this->targetSummary($target, $tipoTarget, $idTarget),
+                'isRecensione' => $tipoTarget === ESegnalazione::TARGET_RECENSIONE,
+                'isProfilo' => in_array($tipoTarget, [ESegnalazione::TARGET_UTENTE, ESegnalazione::TARGET_CHEF], true),
+            ];
+        }
+
+        return $schede;
+    }
+
+    private function preparaRiepilogo(array $segnalazioni): array
+    {
+        $riepilogo = [
+            'totale' => 0,
+            'recensioni' => 0,
+            'profili' => 0,
+            'contenuti' => 0,
+        ];
+
+        foreach ($segnalazioni as $segnalazione) {
+            if (!$segnalazione instanceof ESegnalazione) {
+                continue;
+            }
+
+            $riepilogo['totale']++;
+            $tipoTarget = $segnalazione->getTipoTarget();
+            if ($tipoTarget === ESegnalazione::TARGET_RECENSIONE) {
+                $riepilogo['recensioni']++;
+            } elseif (in_array($tipoTarget, [ESegnalazione::TARGET_UTENTE, ESegnalazione::TARGET_CHEF], true)) {
+                $riepilogo['profili']++;
+            } else {
+                $riepilogo['contenuti']++;
+            }
+        }
+
+        return $riepilogo;
+    }
+
+    private function targetLabel(string $tipoTarget): string
+    {
+        return [
+            ESegnalazione::TARGET_UTENTE => 'Profilo utente',
+            ESegnalazione::TARGET_CHEF => 'Profilo chef',
+            ESegnalazione::TARGET_GHOST_KITCHEN => 'Ghost kitchen',
+            ESegnalazione::TARGET_RECENSIONE => 'Recensione',
+            ESegnalazione::TARGET_MENU => 'Menu',
+        ][$tipoTarget] ?? ucfirst(str_replace('_', ' ', $tipoTarget));
+    }
+
+    private function targetSummary(mixed $target, string $tipoTarget, int $idTarget): string
+    {
+        if ($target === null) {
+            return $this->targetLabel($tipoTarget) . ' #' . $idTarget;
+        }
+
+        if (method_exists($target, 'getNome') && method_exists($target, 'getCognome')) {
+            $nome = trim((string) $target->getNome() . ' ' . (string) $target->getCognome());
+            return $nome !== '' ? $nome : $this->targetLabel($tipoTarget) . ' #' . $idTarget;
+        }
+
+        if (method_exists($target, 'getNome')) {
+            return (string) $target->getNome();
+        }
+
+        if (method_exists($target, 'getCommento')) {
+            $commento = (string) $target->getCommento();
+            return $commento !== '' ? substr($commento, 0, 90) : 'Recensione #' . $idTarget;
+        }
+
+        return $this->targetLabel($tipoTarget) . ' #' . $idTarget;
     }
 
     private function validaId(int $id, string $messaggio): void

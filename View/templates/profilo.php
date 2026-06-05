@@ -4,6 +4,8 @@ use ViewHelpers as V;
 /** @var string|null $messaggioAccesso */
 /** @var array $metodiPagamento */
 /** @var array $storicoPagamenti */
+/** @var string $section */
+/** @var bool $isEditing */
 $accesso = $accesso ?? [];
 $metodiPagamento = $metodiPagamento ?? [];
 $storicoPagamenti = $storicoPagamenti ?? [];
@@ -21,11 +23,8 @@ $telefono = trim((string) ($accesso['telefono'] ?? $accesso['phone'] ?? ''));
 $localita = trim((string) ($accesso['localita'] ?? $accesso['location'] ?? ''));
 $bio = trim((string) ($accesso['biografia'] ?? $accesso['bio'] ?? $accesso['descrizione'] ?? $accesso['descrizioneChef'] ?? ''));
 $ruoliLabel = $ruoli !== [] ? implode(', ', array_map('ucfirst', $ruoli)) : 'Nessun ruolo assegnato';
-$section = (string) ($_GET['section'] ?? 'profilo');
-if (!in_array($section, ['profilo', 'sicurezza', 'notifiche', 'pagamenti'], true)) {
-    $section = 'profilo';
-}
-$isEditing = (string) ($_GET['edit'] ?? '') === '1';
+$section = (string) ($section ?? 'profilo');
+$isEditing = (bool) ($isEditing ?? false);
 $profileFields = [
     'Nome completo' => $nome,
     'Email' => $email !== '' ? $email : 'Non disponibile',

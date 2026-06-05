@@ -13,6 +13,7 @@ class CFrontController
             '/ricerca/chef' => ['CRicerca', 'cercaOfferte', 'lista_chef'],
             '/ricerca/ghost-kitchen' => ['CRicerca', 'cercaOfferte', 'lista_ghost_kitchen'],
             '/login' => ['CAutenticazione', 'mostraLogin', 'login'],
+            '/registrazione' => ['CRegistrazione', 'mostraRegistrazione', 'registrazione'],
             '/profilo' => ['CAutenticazione', 'profilo', 'profilo'],
             '/logout' => ['CAutenticazione', 'logout', null],
             '/prenotazioni' => ['CPrenotazioniUtente', 'visualizzaPrenotazioniWeb', 'prenotazioni'],
@@ -20,11 +21,13 @@ class CFrontController
             '/richieste' => ['CGestioneRichieste', 'visualizzaRichiesteWeb', 'richieste'],
             '/dashboard' => ['CDashboardStatistiche', 'visualizzaDashboardWeb', 'dashboard'],
             '/moderazione' => ['CModerazione', 'visualizzaContenutiDaModerareWeb', 'moderazione'],
+            '/utenti' => ['CAdminUtenti', 'visualizzaUtentiWeb', 'utenti'],
             '/certificazioni' => ['CValidazioneCertificazioni', 'visualizzaCertificazioniInAttesaWeb', 'certificazioni'],
             '/mie-certificazioni' => ['CCertificazioniChef', 'visualizzaMieCertificazioniWeb', 'mie_certificazioni'],
         ],
         'POST' => [
             '/login' => ['CAutenticazione', 'login', 'login'],
+            '/registrazione' => ['CRegistrazione', 'registra', 'registrazione'],
             '/profilo' => ['CAutenticazione', 'aggiornaProfilo', 'richiesta_esito'],
             '/disponibilita/chef' => ['CGestioneDisponibilita', 'aggiungiDisponibilitaChefWeb', 'richiesta_esito'],
             '/disponibilita/ghost-kitchen' => ['CGestioneDisponibilita', 'aggiungiDisponibilitaGhostKitchenWeb', 'richiesta_esito'],
@@ -145,12 +148,27 @@ class CFrontController
                 return;
             }
 
+            if ($method === 'POST' && preg_match('#^/utenti/utente/([1-9][0-9]*)/(sospendi|banna|riattiva)$#', $path, $matches) === 1) {
+                $this->renderController('CAdminUtenti', 'aggiornaStatoUtenteWeb', 'richiesta_esito', [(int) $matches[1], $matches[2], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/utenti/ghost-kitchen/([1-9][0-9]*)/(attiva|sospendi|non-disponibile)$#', $path, $matches) === 1) {
+                $this->renderController('CAdminUtenti', 'aggiornaStatoGhostKitchenWeb', 'richiesta_esito', [(int) $matches[1], $matches[2], $this->accessContext()]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/utenti/gestore/([1-9][0-9]*)/(approva|rifiuta|sospendi-verifica|rimetti-in-attesa)$#', $path, $matches) === 1) {
+                $this->renderController('CAdminUtenti', 'aggiornaVerificaGestoreWeb', 'richiesta_esito', [(int) $matches[1], $matches[2], $this->accessContext()]);
+                return;
+            }
+
             if ($method === 'GET' && preg_match('#^/certificazioni/([1-9][0-9]*)$#', $path, $matches) === 1) {
                 $this->renderController('CValidazioneCertificazioni', 'visualizzaDettaglioCertificazioneWeb', 'certificazione_dettaglio', [(int) $matches[1], $this->accessContext()]);
                 return;
             }
 
-            if ($method === 'POST' && preg_match('#^/certificazioni/([1-9][0-9]*)/(approva|rifiuta)$#', $path, $matches) === 1) {
+            if ($method === 'POST' && preg_match('#^/certificazioni/([1-9][0-9]*)/(approva|rifiuta|in-attesa)$#', $path, $matches) === 1) {
                 $this->renderController('CValidazioneCertificazioni', 'aggiornaCertificazioneWeb', 'richiesta_esito', [(int) $matches[1], $matches[2], $this->accessContext(), $post]);
                 return;
             }
@@ -193,12 +211,14 @@ class CFrontController
                     'tipoRisultato' => 'ghost_kitchen',
                 ]],
                 '/login' => $method === 'POST' ? [$post] : [],
-                '/profilo' => $method === 'POST' ? [$accessContext, $post, $_FILES] : [$accessContext],
+                '/registrazione' => $method === 'POST' ? [$post, $_FILES] : [],
+                '/profilo' => $method === 'POST' ? [$accessContext, $post, $_FILES] : [$accessContext, $query],
                 '/prenotazioni' => [$accessContext],
                 '/disponibilita' => [$accessContext, $query],
                 '/richieste' => [$accessContext],
                 '/dashboard' => [$accessContext, $query],
                 '/moderazione' => [$accessContext],
+                '/utenti' => [$accessContext],
                 '/certificazioni' => [$accessContext],
                 '/mie-certificazioni' => $method === 'POST' ? [$accessContext, $post, $_FILES] : [$accessContext],
                 '/disponibilita/chef' => [$accessContext, $post],
@@ -214,7 +234,12 @@ class CFrontController
 
             $data = $this->callController($controller, $action, $params);
             if ($path === '/login' && $method === 'POST' && is_array($data) && ($data['successo'] ?? false) === true) {
-                $this->redirect('/');
+                $this->redirect($this->postLoginRedirectPath());
+                return;
+            }
+
+            if ($path === '/registrazione' && $method === 'POST' && is_array($data) && ($data['successo'] ?? false) === true) {
+                ViewRenderer::render('richiesta_esito', $data, $this->sharedViewData());
                 return;
             }
 
@@ -283,7 +308,11 @@ class CFrontController
                 continue;
             }
 
-            $normalized[$key] = is_array($value) ? '' : trim((string) $value);
+            if (is_array($value)) {
+                $normalized[$key] = array_map(static fn (mixed $item): string => trim((string) $item), $value);
+            } else {
+                $normalized[$key] = trim((string) $value);
+            }
         }
 
         return $normalized;
@@ -319,7 +348,19 @@ class CFrontController
             return true;
         }
 
-        if (preg_match('#^/certificazioni/[1-9][0-9]*(/(approva|rifiuta))?$#', $path) === 1) {
+        if (preg_match('#^/utenti/utente/[1-9][0-9]*/(sospendi|banna|riattiva)$#', $path) === 1) {
+            return true;
+        }
+
+        if (preg_match('#^/utenti/ghost-kitchen/[1-9][0-9]*/(attiva|sospendi|non-disponibile)$#', $path) === 1) {
+            return true;
+        }
+
+        if (preg_match('#^/utenti/gestore/[1-9][0-9]*/(approva|rifiuta|sospendi-verifica|rimetti-in-attesa)$#', $path) === 1) {
+            return true;
+        }
+
+        if (preg_match('#^/certificazioni/[1-9][0-9]*(/(approva|rifiuta|in-attesa))?$#', $path) === 1) {
             return true;
         }
 
@@ -334,6 +375,16 @@ class CFrontController
         }
 
         return false;
+    }
+
+    private function postLoginRedirectPath(): string
+    {
+        $ruoli = FSession::getRuoli();
+        if (in_array('admin', $ruoli, true) || in_array('amministratore', $ruoli, true)) {
+            return '/dashboard';
+        }
+
+        return '/';
     }
 
     private function accessContext(): array
@@ -387,7 +438,7 @@ class CFrontController
         $isChef = in_array('chef', $ruoli, true);
         $isGestore = in_array('gestore', $ruoli, true);
 
-        if (in_array($path, ['/dashboard', '/moderazione', '/certificazioni'], true)) {
+        if (in_array($path, ['/dashboard', '/moderazione', '/utenti', '/certificazioni'], true)) {
             return $isAdmin;
         }
 
@@ -415,7 +466,7 @@ class CFrontController
             return $isGestore;
         }
 
-        if (preg_match('#^/moderazione/#', $path) === 1 || preg_match('#^/certificazioni/[1-9][0-9]*(/(approva|rifiuta))?$#', $path) === 1) {
+        if (preg_match('#^/moderazione/#', $path) === 1 || preg_match('#^/utenti/#', $path) === 1 || preg_match('#^/certificazioni/[1-9][0-9]*(/(approva|rifiuta|in-attesa))?$#', $path) === 1) {
             return $isAdmin;
         }
 

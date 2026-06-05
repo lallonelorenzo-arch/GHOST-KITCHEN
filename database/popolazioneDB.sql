@@ -59,8 +59,8 @@ INSERT INTO chef (id_utente, biografia, specializzazione, tipologia_cucina, prez
 (7, 'Chef pastry e brunch creator per eventi corporate.', 'Pasticceria moderna e brunch', 'fusion', 150.00, 7, 'in_attesa', 4.20, 5),
 (8, 'Chef tradizione romana e menu stagionali.', 'Cucina romana e comfort food', 'italiana', 140.00, 6, 'non_verificato', 4.10, 3);
 
-INSERT INTO gestori (id_utente) VALUES
-(8), (9), (10);
+INSERT INTO gestori (id_utente, stato_verifica) VALUES
+(8, 'verificato'), (9, 'verificato'), (10, 'verificato');
 
 INSERT INTO amministratori (id_utente) VALUES
 (12);
@@ -168,11 +168,15 @@ INSERT INTO media (id_media, tipo_owner, id_owner, tipo_media, nome_file, path_f
 -- =========================================================
 -- CERTIFICAZIONI
 -- =========================================================
-INSERT INTO certificazioni (id_certificazione, id_chef, tipo, nome_file, path_file, stato, data_caricamento, data_validazione, note_admin) VALUES
-(1, 5, 'HACCP Livello 3', 'haccp_marco.pdf', '/uploads/certificazioni/haccp_marco.pdf', 'approvata', '2026-01-20 08:00:00', '2026-01-22 14:00:00', 'Documentazione completa e valida.'),
-(2, 6, 'Food Safety Manager', 'fsm_federica.pdf', '/uploads/certificazioni/fsm_federica.pdf', 'approvata', '2026-01-21 09:30:00', '2026-01-23 16:10:00', 'Certificazione verificata con ente emittente.'),
-(3, 7, 'Corso Pasticceria Avanzata', 'pastry_davide.pdf', '/uploads/certificazioni/pastry_davide.pdf', 'in_attesa', '2026-03-02 11:00:00', NULL, NULL),
-(4, 8, 'Corso Cucina Regionale', 'regionale_marta.pdf', '/uploads/certificazioni/regionale_marta.pdf', 'rifiutata', '2026-02-11 12:00:00', '2026-02-13 10:00:00', 'Documento illeggibile, richiesto nuovo upload.');
+INSERT INTO certificazioni (id_certificazione, id_chef, tipo_owner, id_owner, tipo, nome_file, path_file, stato, data_caricamento, data_validazione, data_scadenza, note_admin) VALUES
+(1, 5, 'chef', 5, 'HACCP Livello 3', 'haccp_marco.pdf', '/uploads/certificazioni/haccp_marco.pdf', 'approvata', '2026-01-20 08:00:00', '2026-01-22 14:00:00', '2029-01-22', 'Documentazione completa e valida.'),
+(2, 6, 'chef', 6, 'Food Safety Manager', 'fsm_federica.pdf', '/uploads/certificazioni/fsm_federica.pdf', 'approvata', '2026-01-21 09:30:00', '2026-01-23 16:10:00', '2028-01-23', 'Certificazione verificata con ente emittente.'),
+(3, 7, 'chef', 7, 'Corso Pasticceria Avanzata', 'pastry_davide.pdf', '/uploads/certificazioni/pastry_davide.pdf', 'in_attesa', '2026-03-02 11:00:00', NULL, NULL, NULL),
+(4, 8, 'chef', 8, 'Corso Cucina Regionale', 'regionale_marta.pdf', '/uploads/certificazioni/regionale_marta.pdf', 'rifiutata', '2026-02-11 12:00:00', '2026-02-13 10:00:00', NULL, 'Documento illeggibile, richiesto nuovo upload.'),
+(5, NULL, 'ghost_kitchen', 1, 'SCIA sanitaria', 'scia_milano_isola.pdf', '/uploads/certificazioni/scia_milano_isola.pdf', 'approvata', '2026-01-18 10:00:00', '2026-01-19 12:00:00', '2028-01-19', 'Documentazione cucina verificata.'),
+(6, NULL, 'ghost_kitchen', 2, 'HACCP struttura', 'haccp_navigli.pdf', '/uploads/certificazioni/haccp_navigli.pdf', 'approvata', '2026-01-19 10:00:00', '2026-01-21 12:00:00', '2029-01-21', 'HACCP struttura valido.'),
+(7, NULL, 'ghost_kitchen', 3, 'SCIA sanitaria', 'scia_trastevere.pdf', '/uploads/certificazioni/scia_trastevere.pdf', 'rifiutata', '2026-02-10 10:00:00', '2026-02-12 12:00:00', NULL, 'Documento non aggiornato.'),
+(8, NULL, 'ghost_kitchen', 4, 'SCIA sanitaria', 'scia_torino.pdf', '/uploads/certificazioni/scia_torino.pdf', 'approvata', '2026-02-15 10:00:00', '2026-02-16 12:00:00', '2028-02-16', 'Documentazione approvata.');
 
 -- =========================================================
 -- DISPONIBILITA CHEF

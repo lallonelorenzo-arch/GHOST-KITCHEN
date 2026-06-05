@@ -28,6 +28,7 @@ require_once __DIR__ . '/FRecensioneChef.php';
 require_once __DIR__ . '/FRecensioneGhostKitchen.php';
 require_once __DIR__ . '/FSegnalazione.php';
 require_once __DIR__ . '/FStatisticheDashboard.php';
+require_once __DIR__ . '/FRegistrazione.php';
 
 /*
  * Foundation ibrida controllata:
@@ -78,6 +79,16 @@ class FPersistentManager
         return FUtente::delete($idUtente);
     }
 
+    public static function emailUtenteExists(string $email): bool
+    {
+        return FUtente::emailExists($email);
+    }
+
+    public static function registraAccount(EUtente $utente, array $ruoli, array $chefData = [], array $certificazioni = []): int|false
+    {
+        return FRegistrazione::registra($utente, $ruoli, $chefData, $certificazioni);
+    }
+
     public static function verificaCredenziali(string $email, string $password): ?EUtente
     {
         return FUtente::verificaCredenziali($email, $password);
@@ -108,16 +119,21 @@ class FPersistentManager
     }
 
     public static function loadCliente(int $idCliente): ?ECliente { return FCliente::load($idCliente); }
+    public static function loadClientiRegistrati(): array { return FCliente::loadAll(); }
     public static function loadChef(int $idChef): ?EChef { return FChef::load($idChef); }
+    public static function loadChefRegistrati(): array { return FChef::loadAll(); }
     public static function loadGestore(int $idGestore): ?EGestore { return FGestore::load($idGestore); }
+    public static function loadGestoriRegistrati(): array { return FGestore::loadAll(); }
     public static function loadAmministratore(int $idAmministratore): ?EAmministratore { return FAmministratore::load($idAmministratore); }
 
     public static function storeCliente(ECliente $cliente): ECliente|false { return self::storeAndReturn($cliente, static fn (ECliente $entity): bool|int => FCliente::store($entity), 'setIdCliente'); }
     public static function storeChef(EChef $chef): EChef|false { return self::storeAndReturn($chef, static fn (EChef $entity): bool|int => FChef::store($entity), 'setIdChef'); }
     public static function storeGestore(EGestore $gestore): EGestore|false { return self::storeAndReturn($gestore, static fn (EGestore $entity): bool|int => FGestore::store($entity), 'setIdGestore'); }
+    public static function updateGestore(EGestore $gestore): EGestore|false { return self::updateAndReturn($gestore, static fn (EGestore $entity): bool => FGestore::update($entity)); }
     public static function storeAmministratore(EAmministratore $amministratore): EAmministratore|false { return self::storeAndReturn($amministratore, static fn (EAmministratore $entity): bool|int => FAmministratore::store($entity), 'setIdAmministratore'); }
 
     public static function loadGhostKitchen(int $idGhostKitchen): ?EGhostKitchen { return FGhostKitchen::load($idGhostKitchen); }
+    public static function loadGhostKitchenRegistrate(): array { return FGhostKitchen::loadAll(); }
     public static function loadGhostKitchenByGestore(int $idGestore): array { return FGhostKitchen::loadByGestore($idGestore); }
     public static function storeGhostKitchen(EGhostKitchen $ghostKitchen): EGhostKitchen|false { return self::storeAndReturn($ghostKitchen, static fn (EGhostKitchen $entity): bool|int => FGhostKitchen::store($entity), 'setId'); }
     public static function updateGhostKitchen(EGhostKitchen $ghostKitchen): EGhostKitchen|false { return self::updateAndReturn($ghostKitchen, static fn (EGhostKitchen $entity): bool => FGhostKitchen::update($entity)); }
@@ -149,7 +165,13 @@ class FPersistentManager
         return array_values(array_filter(FCertificazione::loadByChef($idChef), static fn (ECertificazione $c): bool => $c->getStato() === ECertificazione::STATO_APPROVATA));
     }
     public static function loadCertificazioniByChef(int $idChef): array { return FCertificazione::loadByChef($idChef); }
+    public static function loadCertificazioniByGhostKitchen(int $idGhostKitchen): array { return FCertificazione::loadByGhostKitchen($idGhostKitchen); }
     public static function loadCertificazioniInAttesa(): array { return FCertificazione::loadByStato(ECertificazione::STATO_IN_ATTESA); }
+    public static function loadTutteCertificazioni(): array { return FCertificazione::loadAllCertificazioni(); }
+    public static function loadCertificazioniHaccpInScadenza(int $giorni = 90): array { return FCertificazione::loadCertificazioniInScadenza($giorni); }
+    public static function loadCertificazioniInScadenza(int $giorni = 90): array { return FCertificazione::loadCertificazioniInScadenza($giorni); }
+    public static function chefHaCertificazioniInRegola(int $idChef): bool { return FCertificazione::chefHaCertificazioniInRegola($idChef); }
+    public static function ghostKitchenHaCertificazioniInRegola(int $idGhostKitchen): bool { return FCertificazione::ghostKitchenHaCertificazioniInRegola($idGhostKitchen); }
     public static function loadAttrezzatureByGhostKitchen(int $idGhostKitchen): array { return FAttrezzatura::loadByGhostKitchen($idGhostKitchen); }
     public static function loadDisponibilitaChef(int $idChef): array { return FDisponibilitaChef::loadByChef($idChef); }
     public static function loadDisponibilitaGhostKitchen(int $idGhostKitchen): array { return FDisponibilitaGhostKitchen::loadByGhostKitchen($idGhostKitchen); }

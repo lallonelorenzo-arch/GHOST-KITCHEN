@@ -17,8 +17,17 @@ use ViewHelpers as V;
             <input name="email" type="email" value="<?= V::e($email ?? '') ?>" required>
         </label>
         <label>Password
-            <input name="password" type="password" required>
+            <span class="password-field">
+                <input name="password" type="password" required autocomplete="current-password">
+                <button type="button" class="password-toggle" data-password-toggle aria-label="Mostra password">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                </button>
+            </span>
         </label>
         <button class="btn btn-accent" type="submit">Accedi</button>
+        <p class="auth-switch">Non hai un account? <a href="<?= V::e(V::url('/registrazione')) ?>">Registrati</a></p>
     </form>
 </section>

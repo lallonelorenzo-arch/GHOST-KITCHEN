@@ -3,12 +3,19 @@ use ViewHelpers as V;
 /** @var array $filtri */
 /** @var array $statistiche */
 /** @var string|null $messaggioAccesso */
-$filtri = $filtri ?? ['dataDa' => '', 'dataA' => '', 'tipoPrenotazione' => 'tutte'];
+/** @var string|null $messaggioFiltro */
+$filtri = $filtri ?? ['dataDa' => '', 'dataA' => '', 'tipoPrenotazione' => 'tutte', 'periodo' => 'personalizzato'];
 $statistiche = $statistiche ?? [];
 $prenotazioni = $statistiche['prenotazioni'] ?? [];
 $pagamenti = $statistiche['pagamenti'] ?? [];
 $recensioni = $statistiche['recensioni'] ?? [];
 $moderazione = $statistiche['moderazione'] ?? [];
+$periodoAttivo = (string) ($filtri['periodo'] ?? 'personalizzato');
+$periodiRapidi = [
+    'mese' => 'Mensile',
+    'trimestre' => 'Trimestrale',
+    'anno' => 'Annuale',
+];
 ?>
 <section class="page-hero compact-hero ops-hero">
     <h1>Dashboard</h1>
@@ -20,26 +27,48 @@ $moderazione = $statistiche['moderazione'] ?? [];
         <div class="alert"><?= V::e($messaggioAccesso) ?> <a href="<?= V::e(V::url('/login')) ?>">Accedi</a></div>
     <?php endif; ?>
 
-    <form class="ops-panel ops-form" method="get" action="<?= V::e(V::url('/dashboard')) ?>">
-        <h2>Filtri</h2>
-        <div class="ops-form-row">
-            <label>Data da <input type="date" name="dataDa" value="<?= V::e($filtri['dataDa'] ?? '') ?>"></label>
-            <label>Data a <input type="date" name="dataA" value="<?= V::e($filtri['dataA'] ?? '') ?>"></label>
+    <?php if (!empty($messaggioFiltro)): ?>
+        <div class="alert"><?= V::e($messaggioFiltro) ?></div>
+    <?php endif; ?>
+
+    <form class="ops-panel ops-form dashboard-filter-panel" method="get" action="<?= V::e(V::url('/dashboard')) ?>">
+        <div class="toolbar">
+            <div>
+                <h2>Filtri statistiche</h2>
+                <p>Restringono le statistiche per data servizio, pagamenti collegati alle prenotazioni e tipologia di prenotazione.</p>
+            </div>
         </div>
-        <label>Tipo prenotazione
+
+        <div class="period-shortcuts" aria-label="Periodo statistiche">
+            <?php foreach ($periodiRapidi as $value => $label): ?>
+                <a class="btn <?= $periodoAttivo === $value ? 'btn-primary' : 'btn-ghost' ?>" href="<?= V::e(V::url('/dashboard', ['periodo' => $value, 'tipoPrenotazione' => $filtri['tipoPrenotazione'] ?? 'tutte'])) ?>"><?= V::e($label) ?></a>
+            <?php endforeach; ?>
+        </div>
+
+        <input type="hidden" name="periodo" value="personalizzato">
+        <div class="ops-form-row">
+            <label>Dal giorno
+                <input type="date" name="dataDa" value="<?= V::e($filtri['dataDa'] ?? '') ?>">
+                <span class="filter-help">Prima data da includere nel calcolo.</span>
+            </label>
+            <label>Al giorno
+                <input type="date" name="dataA" value="<?= V::e($filtri['dataA'] ?? '') ?>">
+                <span class="filter-help">Deve essere uguale o successiva alla data iniziale.</span>
+            </label>
+        </div>
+        <label>Tipologia da analizzare
             <select name="tipoPrenotazione">
-                <?php foreach (['tutte' => 'Tutte', 'chef' => 'Chef', 'ghost_kitchen' => 'Ghost kitchen'] as $value => $label): ?>
+                <?php foreach (['tutte' => 'Tutte le prenotazioni', 'chef' => 'Solo prenotazioni chef', 'ghost_kitchen' => 'Solo prenotazioni ghost kitchen'] as $value => $label): ?>
                     <option value="<?= V::e($value) ?>" <?= ($filtri['tipoPrenotazione'] ?? 'tutte') === $value ? 'selected' : '' ?>><?= V::e($label) ?></option>
                 <?php endforeach; ?>
             </select>
+            <span class="filter-help">Il filtro incide su prenotazioni, pagamenti e recensioni collegate.</span>
         </label>
-        <button class="btn btn-primary" type="submit">Aggiorna</button>
+        <div class="filter-actions">
+            <button class="btn btn-primary" type="submit">Aggiorna dashboard</button>
+            <a class="btn btn-ghost" href="<?= V::e(V::url('/dashboard')) ?>">Azzera filtri</a>
+        </div>
     </form>
-
-    <div class="actions">
-        <a class="btn btn-ghost" href="<?= V::e(V::url('/moderazione')) ?>">Moderazione</a>
-        <a class="btn btn-ghost" href="<?= V::e(V::url('/certificazioni')) ?>">Certificazioni</a>
-    </div>
 
     <div class="ops-grid dashboard-grid">
         <article class="ops-panel">
@@ -79,16 +108,37 @@ $moderazione = $statistiche['moderazione'] ?? [];
         </article>
     </div>
 
-    <section class="ops-panel">
-        <h2>Ghost kitchen piu prenotate</h2>
-        <div class="ops-list">
-            <?php foreach (($prenotazioni['ghostKitchenPiuPrenotate'] ?? []) as $item): ?>
-                <div class="ops-list-item">
-                    <strong><?= V::e($item['nome'] ?? 'Ghost kitchen') ?></strong>
-                    <span>#<?= V::e($item['idGhostKitchen'] ?? '') ?></span>
-                    <span class="badge"><?= V::e($item['prenotazioni'] ?? 0) ?> prenotazioni</span>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    </section>
+    <div class="ops-grid dashboard-grid">
+        <section class="ops-panel">
+            <h2>Chef piu prenotati</h2>
+            <div class="ops-list">
+                <?php foreach (($prenotazioni['chefPiuPrenotati'] ?? []) as $item): ?>
+                    <div class="ops-list-item">
+                        <strong><?= V::e($item['nome'] ?? 'Chef') ?></strong>
+                        <span>#<?= V::e($item['idChef'] ?? '') ?></span>
+                        <span class="badge"><?= V::e($item['prenotazioni'] ?? 0) ?> prenotazioni</span>
+                    </div>
+                <?php endforeach; ?>
+                <?php if (($prenotazioni['chefPiuPrenotati'] ?? []) === []): ?>
+                    <div class="empty-state">Nessun dato chef disponibile per i filtri selezionati.</div>
+                <?php endif; ?>
+            </div>
+        </section>
+
+        <section class="ops-panel">
+            <h2>Ghost kitchen piu prenotate</h2>
+            <div class="ops-list">
+                <?php foreach (($prenotazioni['ghostKitchenPiuPrenotate'] ?? []) as $item): ?>
+                    <div class="ops-list-item">
+                        <strong><?= V::e($item['nome'] ?? 'Ghost kitchen') ?></strong>
+                        <span>#<?= V::e($item['idGhostKitchen'] ?? '') ?></span>
+                        <span class="badge"><?= V::e($item['prenotazioni'] ?? 0) ?> prenotazioni</span>
+                    </div>
+                <?php endforeach; ?>
+                <?php if (($prenotazioni['ghostKitchenPiuPrenotate'] ?? []) === []): ?>
+                    <div class="empty-state">Nessun dato ghost kitchen disponibile per i filtri selezionati.</div>
+                <?php endif; ?>
+            </div>
+        </section>
+    </div>
 </section>

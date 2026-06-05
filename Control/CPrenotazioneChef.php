@@ -18,6 +18,10 @@ class CPrenotazioneChef
             return ['errore' => 'Cliente o chef non trovato'];
         }
 
+        if ($this->chefNonPrenotabilePerCertificazioni($idChef)) {
+            return ['errore' => 'Chef non prenotabile: certificazioni non approvate o scadute.'];
+        }
+
         return [
             'cliente' => $cliente,
             'chef' => $chef,
@@ -89,6 +93,10 @@ class CPrenotazioneChef
             throw new InvalidArgumentException('Dati conferma prenotazione chef non validi.');
         }
 
+        if ($this->chefNonPrenotabilePerCertificazioni($idChef)) {
+            return ['errore' => 'Chef non prenotabile: certificazioni non approvate o scadute.'];
+        }
+
         if (!FPersistentManager::verificaDisponibilitaChef($idChef, $dataServizio, $oraInizio, $oraFine)) {
             return ['errore' => 'Chef non disponibile nello slot richiesto'];
         }
@@ -141,6 +149,7 @@ class CPrenotazioneChef
             return ['errore' => 'Chef non trovato.'];
         }
 
+        $certificazioniInRegola = !$this->chefNonPrenotabilePerCertificazioni($idChef);
         $data = [
             'chef' => $chef,
             'menuDisponibili' => FPersistentManager::loadMenuByChef($idChef),
@@ -148,7 +157,14 @@ class CPrenotazioneChef
             'accesso' => $accesso,
             'form' => [],
             'prenotazione' => null,
+            'certificazioniInRegola' => $certificazioniInRegola,
         ];
+
+        if (!$certificazioniInRegola) {
+            $data['accessoRichiesto'] = true;
+            $data['messaggioAccesso'] = 'Questo chef non e prenotabile perche le certificazioni non risultano approvate o valide.';
+            return $data;
+        }
 
         if (!$this->canPrenotareComeCliente($accesso)) {
             $data['accessoRichiesto'] = true;
@@ -206,6 +222,11 @@ class CPrenotazioneChef
             $data['erroreForm'] = 'Non e stato possibile inviare la prenotazione. Riprova piu tardi.';
             return $data;
         }
+    }
+
+    private function chefNonPrenotabilePerCertificazioni(int $idChef): bool
+    {
+        return !FPersistentManager::chefHaCertificazioniInRegola($idChef);
     }
 
     private function canPrenotareComeCliente(array $accesso): bool

@@ -46,10 +46,14 @@ if ($utenteCorrente !== null) {
         </a>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-label="Apri menu">Menu</button>
         <div class="nav-links" data-nav-links>
-            <a class="<?= V::e(trim($isActive('/ricerca/chef'))) ?>" href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova Chef</a>
-            <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
+            <?php if (!$isAdminUser): ?>
+                <a class="<?= V::e(trim($isActive('/ricerca/chef'))) ?>" href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova Chef</a>
+                <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
+            <?php endif; ?>
             <?php if ($utenteCorrente !== null): ?>
-                <a class="<?= V::e(trim($isActive('/prenotazioni'))) ?>" href="<?= V::e(V::url('/prenotazioni')) ?>">Le mie prenotazioni</a>
+                <?php if (!$isAdminUser): ?>
+                    <a class="<?= V::e(trim($isActive('/prenotazioni'))) ?>" href="<?= V::e(V::url('/prenotazioni')) ?>">Le mie prenotazioni</a>
+                <?php endif; ?>
                 <?php if ($isChefUser || $isGestoreUser): ?>
                     <a class="<?= V::e(trim($isActive('/disponibilita'))) ?>" href="<?= V::e(V::url('/disponibilita')) ?>">Disponibilita</a>
                     <a class="<?= V::e(trim($isActive('/richieste'))) ?>" href="<?= V::e(V::url('/richieste')) ?>">Richieste</a>
@@ -59,6 +63,8 @@ if ($utenteCorrente !== null) {
                 <?php endif; ?>
                 <?php if ($isAdminUser): ?>
                     <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard')) ?>">Dashboard</a>
+                    <a class="<?= V::e(trim($isActive('/moderazione'))) ?>" href="<?= V::e(V::url('/moderazione')) ?>">Moderazione</a>
+                    <a class="<?= V::e(trim($isActive('/utenti'))) ?>" href="<?= V::e(V::url('/utenti')) ?>">Utenti</a>
                     <a class="<?= V::e(trim($isActive('/certificazioni'))) ?>" href="<?= V::e(V::url('/certificazioni')) ?>">Certificazioni</a>
                 <?php endif; ?>
             <?php endif; ?>
@@ -80,6 +86,7 @@ if ($utenteCorrente !== null) {
                 </a>
                 <a class="btn btn-ghost" href="<?= V::e(V::url('/logout')) ?>">Logout</a>
             <?php else: ?>
+                <a class="btn btn-ghost" href="<?= V::e(V::url('/registrazione')) ?>">Registrati</a>
                 <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Accedi</a>
             <?php endif; ?>
         </div>

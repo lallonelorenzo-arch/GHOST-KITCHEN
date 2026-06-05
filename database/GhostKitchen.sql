@@ -1,4 +1,4 @@
-﻿-- Ghost Kitchen - Schema SQL (MySQL 8+, InnoDB, utf8mb4)
+-- Ghost Kitchen - Schema SQL (MySQL 8+, InnoDB, utf8mb4)
 -- NOTE IMPORTANTI:
 -- 1) Una prenotazione base deve avere esattamente una specializzazione (prenotazioni_chef XOR prenotazioni_ghost_kitchen).
 -- 2) Una recensione base deve avere esattamente una specializzazione (recensioni_chef XOR recensioni_ghost_kitchen).
@@ -88,10 +88,13 @@ CREATE TABLE chef (
 
 CREATE TABLE gestori (
   id_utente INT PRIMARY KEY,
+  stato_verifica VARCHAR(30) NOT NULL DEFAULT 'verificato',
   CONSTRAINT fk_gestori_utenti FOREIGN KEY (id_utente)
     REFERENCES utenti(id_utente)
     ON DELETE CASCADE
-    ON UPDATE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT chk_gestori_stato_verifica CHECK (stato_verifica IN ('non_verificato', 'in_attesa', 'verificato', 'rifiutato', 'sospeso')),
+  INDEX idx_gestori_stato_verifica (stato_verifica)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE amministratori (
@@ -209,21 +212,28 @@ CREATE TABLE media (
 
 CREATE TABLE certificazioni (
   id_certificazione INT AUTO_INCREMENT PRIMARY KEY,
-  id_chef INT NOT NULL,
+  id_chef INT NULL,
+  tipo_owner VARCHAR(30) NOT NULL DEFAULT 'chef',
+  id_owner INT NOT NULL,
   tipo VARCHAR(120) NOT NULL,
   nome_file VARCHAR(255) NOT NULL,
   path_file VARCHAR(500) NOT NULL,
   stato VARCHAR(30) NOT NULL DEFAULT 'in_attesa',
   data_caricamento DATETIME NOT NULL,
   data_validazione DATETIME NULL,
+  data_scadenza DATE NULL,
   note_admin TEXT NULL,
   CONSTRAINT fk_certificazioni_chef FOREIGN KEY (id_chef)
     REFERENCES chef(id_utente)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
+  CONSTRAINT chk_certificazioni_owner CHECK (tipo_owner IN ('chef', 'ghost_kitchen')),
   CONSTRAINT chk_certificazioni_stato CHECK (stato IN ('in_attesa', 'approvata', 'rifiutata')),
+  CONSTRAINT chk_certificazioni_owner_chef CHECK ((tipo_owner = 'chef' AND id_chef IS NOT NULL) OR tipo_owner = 'ghost_kitchen'),
   INDEX idx_certificazioni_id_chef (id_chef),
-  INDEX idx_certificazioni_stato (stato)
+  INDEX idx_certificazioni_owner (tipo_owner, id_owner),
+  INDEX idx_certificazioni_stato (stato),
+  INDEX idx_certificazioni_data_scadenza (data_scadenza)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE disponibilita_chef (

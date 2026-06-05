@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/FAbstractTable.php';
 require_once __DIR__ . '/../Entity/EGhostKitchen.php';
+require_once __DIR__ . '/../Entity/EGestore.php';
 
 class FGhostKitchen extends FAbstractTable
 {
@@ -52,24 +53,24 @@ class FGhostKitchen extends FAbstractTable
     public static function search(string $localita, float $budgetMax, int $valutazioneMin): array
     {
         return static::run('ricerca ghost kitchen', static function () use ($localita, $budgetMax, $valutazioneMin): array {
-            $where = ['stato = :stato'];
-            $params = ['stato' => EGhostKitchen::STATO_ATTIVA];
+            $where = ['gk.stato = :stato', 'gestori.stato_verifica = :stato_verifica_gestore'];
+            $params = ['stato' => EGhostKitchen::STATO_ATTIVA, 'stato_verifica_gestore' => EGestore::STATO_VERIFICA_VERIFICATO];
 
             $localita = strtolower(trim($localita));
             if ($localita !== '') {
-                $where[] = 'LOWER(citta) = :localita';
+                $where[] = 'LOWER(gk.citta) = :localita';
                 $params['localita'] = $localita;
             }
             if ($budgetMax > 0) {
-                $where[] = 'prezzo_orario <= :budget';
+                $where[] = 'gk.prezzo_orario <= :budget';
                 $params['budget'] = $budgetMax;
             }
             if ($valutazioneMin > 0) {
-                $where[] = 'valutazione_media >= :valutazione';
+                $where[] = 'gk.valutazione_media >= :valutazione';
                 $params['valutazione'] = $valutazioneMin;
             }
 
-            $sql = 'SELECT * FROM ghost_kitchen WHERE ' . implode(' AND ', $where) . ' ORDER BY valutazione_media DESC, prezzo_orario ASC';
+            $sql = 'SELECT gk.* FROM ghost_kitchen gk INNER JOIN gestori ON gestori.id_utente = gk.id_gestore WHERE ' . implode(' AND ', $where) . ' ORDER BY gk.valutazione_media DESC, gk.prezzo_orario ASC';
             $statement = static::connection()->prepare($sql);
             $statement->execute($params);
 

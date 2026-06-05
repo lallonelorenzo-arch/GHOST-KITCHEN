@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/FRolePersistence.php';
 require_once __DIR__ . '/FUtente.php';
 require_once __DIR__ . '/../Entity/EChef.php';
+require_once __DIR__ . '/../Entity/ECertificazione.php';
 
 class FChef
 {
@@ -66,11 +67,36 @@ class FChef
         return FRolePersistence::deleteRole($id, 'chef');
     }
 
+    public static function loadAll(): array
+    {
+        return FRolePersistence::run('load all chef', static function (): array {
+            $sql = 'SELECT u.id_utente, u.nome, u.cognome, u.email, u.password_hash, u.telefono, u.stato,
+                           u.foto_profilo, u.localita, u.biografia AS biografia_utente,
+                           c.biografia AS biografia_chef, c.specializzazione, c.tipologia_cucina, c.prezzo_base,
+                           c.anni_esperienza, c.stato_verifica, c.valutazione_media, c.numero_recensioni
+                    FROM utenti u INNER JOIN chef c ON c.id_utente = u.id_utente
+                    ORDER BY u.cognome ASC, u.nome ASC';
+            $statement = FRolePersistence::connection()->prepare($sql);
+            $statement->execute();
+
+            return array_map(static fn (array $row): EChef => self::hydrate($row), $statement->fetchAll());
+        });
+    }
+
     public static function search(string $localita, string $tipologiaCucina, float $budgetMax, int $valutazioneMin): array
     {
         return FRolePersistence::run('search chef', static function () use ($localita, $tipologiaCucina, $budgetMax, $valutazioneMin): array {
-            $where = ['u.stato = :stato'];
-            $params = ['stato' => EUtente::STATO_ATTIVO];
+            $where = [
+                'u.stato = :stato',
+                'c.stato_verifica = :stato_verifica',
+                'EXISTS (SELECT 1 FROM certificazioni cert WHERE cert.tipo_owner = :tipo_owner_certificazione AND cert.id_owner = c.id_utente AND cert.stato = :stato_certificazione AND cert.data_scadenza IS NOT NULL AND cert.data_scadenza >= CURDATE())'
+            ];
+            $params = [
+                'stato' => EUtente::STATO_ATTIVO,
+                'stato_verifica' => EChef::STATO_VERIFICA_VERIFICATO,
+                'tipo_owner_certificazione' => ECertificazione::OWNER_CHEF,
+                'stato_certificazione' => ECertificazione::STATO_APPROVATA,
+            ];
 
             $localita = strtolower(trim($localita));
             if ($localita !== '') {
