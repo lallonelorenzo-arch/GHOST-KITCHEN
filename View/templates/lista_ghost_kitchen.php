@@ -16,7 +16,12 @@ $valutazioneSelezionata = ((int) ($filtri['valutazioneMin'] ?? 0) > 0) ? (string
     <form class="filter-shell" method="get" action="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">
         <div class="filter-search-row">
             <label class="search-field" aria-label="Cerca ghost kitchen per citta o indirizzo">
-                <span class="search-icon" aria-hidden="true">&#128269;</span>
+                <span class="search-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m16 16 4 4"></path>
+                    </svg>
+                </span>
                 <input name="localita" value="<?= V::e($localitaSelezionata) ?>" placeholder="Cerca citta, zona o indirizzo">
             </label>
             <button class="filter-button" type="button" data-filter-toggle aria-expanded="true">
@@ -59,7 +64,7 @@ $valutazioneSelezionata = ((int) ($filtri['valutazioneMin'] ?? 0) > 0) ? (string
         </div>
     </form>
     <p class="result-count"><?= $numeroGhostKitchen ?> <?= $numeroGhostKitchen === 1 ? 'cucina trovata' : 'cucine trovate' ?></p>
-    <div class="card-grid two">
+    <div class="card-grid two results-grid">
         <?php foreach ($ghostKitchen as $ghostKitchenItem): ?>
             <?php $ghostKitchen = $ghostKitchenItem; ?>
             <?php require __DIR__ . '/partials/ghost_kitchen_card.php'; ?>

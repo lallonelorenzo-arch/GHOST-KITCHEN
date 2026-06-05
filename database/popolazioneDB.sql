@@ -33,19 +33,19 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- UTENTI
 -- =========================================================
 -- Credenziali demo: tutte le password sono Password123!
-INSERT INTO utenti (id_utente, nome, cognome, email, password_hash, telefono, stato) VALUES
-(1, 'Marco', 'Rinaldi', 'marco.rinaldi@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111001', 'attivo'),
-(2, 'Giulia', 'Conti', 'giulia.conti@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111002', 'attivo'),
-(3, 'Luca', 'Ferri', 'luca.ferri@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111003', 'attivo'),
-(4, 'Sara', 'Neri', 'sara.neri@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111004', 'attivo'),
-(5, 'Alessandro', 'Bassi', 'alessandro.bassi@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111005', 'attivo'),
-(6, 'Federica', 'Greco', 'federica.greco@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111006', 'attivo'),
-(7, 'Davide', 'Romano', 'davide.romano@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111007', 'attivo'),
-(8, 'Marta', 'De Luca', 'marta.deluca@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111008', 'attivo'),
-(9, 'Paolo', 'Galli', 'paolo.galli@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111009', 'attivo'),
-(10, 'Elisa', 'Moretti', 'elisa.moretti@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111010', 'sospeso'),
-(11, 'Stefano', 'Costa', 'stefano.costa@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111011', 'attivo'),
-(12, 'Irene', 'Villa', 'irene.villa@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111012', 'attivo');
+INSERT INTO utenti (id_utente, nome, cognome, email, password_hash, telefono, stato, localita) VALUES
+(1, 'Marco', 'Rinaldi', 'marco.rinaldi@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111001', 'attivo', 'Milano'),
+(2, 'Giulia', 'Conti', 'giulia.conti@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111002', 'attivo', 'Roma'),
+(3, 'Luca', 'Ferri', 'luca.ferri@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111003', 'attivo', 'Firenze'),
+(4, 'Sara', 'Neri', 'sara.neri@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111004', 'attivo', 'Torino'),
+(5, 'Alessandro', 'Bassi', 'alessandro.bassi@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111005', 'attivo', 'Milano'),
+(6, 'Federica', 'Greco', 'federica.greco@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111006', 'attivo', 'Roma'),
+(7, 'Davide', 'Romano', 'davide.romano@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111007', 'attivo', 'Firenze'),
+(8, 'Marta', 'De Luca', 'marta.deluca@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111008', 'attivo', 'Torino'),
+(9, 'Paolo', 'Galli', 'paolo.galli@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111009', 'attivo', 'Milano'),
+(10, 'Elisa', 'Moretti', 'elisa.moretti@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111010', 'sospeso', 'Roma'),
+(11, 'Stefano', 'Costa', 'stefano.costa@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111011', 'attivo', 'Bologna'),
+(12, 'Irene', 'Villa', 'irene.villa@gk.it', '$2y$10$DPTPyYss2m27Fb1j6iLU8eTSaveO/QeQ/69DqO4iIVLpEdVTkVTKa', '+393331111012', 'attivo', 'Napoli');
 
 -- =========================================================
 -- RUOLI

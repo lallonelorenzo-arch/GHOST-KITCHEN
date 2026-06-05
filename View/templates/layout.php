@@ -25,6 +25,9 @@ if ($utenteCorrente !== null) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Ghost Kitchen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= V::e(V::asset('css/app.css')) ?>">
     <script>window.GK_BASE_URL = <?= json_encode((string) ($GLOBALS['view_base_url'] ?? ''), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;</script>
     <script defer src="<?= V::e(V::asset('js/app.js')) ?>?v=<?= V::e((string) @filemtime(dirname(__DIR__, 2) . '/public/assets/js/app.js')) ?>"></script>
@@ -85,9 +88,5 @@ if ($utenteCorrente !== null) {
 <main>
     <?php require $contentTemplate; ?>
 </main>
-<footer class="footer">
-    <span>Ghost Kitchen</span>
-    <span>Prenotazioni, cucine e chef in un unico spazio operativo.</span>
-</footer>
 </body>
 </html>

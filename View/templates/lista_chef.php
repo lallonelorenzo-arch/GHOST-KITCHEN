@@ -3,6 +3,7 @@ use ViewHelpers as V;
 /** @var array $chef */
 /** @var array $filtri */
 $numeroChef = count($chef);
+$localitaSelezionata = (string) ($filtri['localita'] ?? '');
 $tipologiaSelezionata = (string) ($filtri['tipologiaCucina'] ?? '');
 $budgetSelezionato = ((float) ($filtri['budgetMax'] ?? 0) > 0) ? (string) $filtri['budgetMax'] : '';
 $valutazioneSelezionata = ((int) ($filtri['valutazioneMin'] ?? 0) > 0) ? (string) $filtri['valutazioneMin'] : '';
@@ -16,7 +17,12 @@ $valutazioneSelezionata = ((int) ($filtri['valutazioneMin'] ?? 0) > 0) ? (string
     <form class="filter-shell" method="get" action="<?= V::e(V::url('/ricerca/chef')) ?>">
         <div class="filter-search-row">
             <label class="search-field" aria-label="Cerca chef per cucina o specialita">
-                <span class="search-icon" aria-hidden="true">&#128269;</span>
+                <span class="search-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m16 16 4 4"></path>
+                    </svg>
+                </span>
                 <input name="tipologiaCucina" value="<?= V::e($tipologiaSelezionata) ?>" placeholder="Cerca cucina, specialita o stile">
             </label>
             <button class="filter-button" type="button" data-filter-toggle aria-expanded="true">
@@ -33,6 +39,14 @@ $valutazioneSelezionata = ((int) ($filtri['valutazioneMin'] ?? 0) > 0) ? (string
                         <option value="">Tutte</option>
                         <?php foreach (['Italiana', 'Mediterranea', 'Giapponese', 'Fusion', 'Vegetariana'] as $tipologia): ?>
                             <option value="<?= V::e($tipologia) ?>" <?= strcasecmp($tipologiaSelezionata, $tipologia) === 0 ? 'selected' : '' ?>><?= V::e($tipologia) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </label>
+                <label>Localita
+                    <select name="localita">
+                        <option value="" <?= $localitaSelezionata === '' ? 'selected' : '' ?>>Tutte</option>
+                        <?php foreach (['Milano', 'Roma', 'Firenze', 'Torino', 'Napoli'] as $localita): ?>
+                            <option value="<?= V::e($localita) ?>" <?= strcasecmp($localitaSelezionata, $localita) === 0 ? 'selected' : '' ?>><?= V::e($localita) ?></option>
                         <?php endforeach; ?>
                     </select>
                 </label>
@@ -59,7 +73,7 @@ $valutazioneSelezionata = ((int) ($filtri['valutazioneMin'] ?? 0) > 0) ? (string
         </div>
     </form>
     <p class="result-count"><?= $numeroChef ?> chef <?= $numeroChef === 1 ? 'trovato' : 'trovati' ?></p>
-    <div class="card-grid three">
+    <div class="card-grid three results-grid">
         <?php foreach ($chef as $chefItem): ?>
             <?php $chef = $chefItem; ?>
             <?php require __DIR__ . '/partials/chef_card.php'; ?>

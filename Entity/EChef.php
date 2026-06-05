@@ -31,6 +31,9 @@ class EChef extends EUtente
         string $passwordHash = '',
         string $telefono = '',
         string $stato = self::STATO_ATTIVO,
+        string $fotoProfilo = '',
+        string $localita = '',
+        string $biografiaUtente = '',
         string $biografia = '',
         string $specializzazione = '',
         string $tipologiaCucina = '',
@@ -48,7 +51,10 @@ class EChef extends EUtente
             $passwordHash,
             $telefono,
             self::TIPO_CHEF,
-            $stato
+            $stato,
+            $fotoProfilo,
+            $localita,
+            $biografiaUtente
         );
 
         $this->setBiografia($biografia);

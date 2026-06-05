@@ -16,7 +16,8 @@ class FChef
     {
         return FRolePersistence::run('load chef', static function () use ($id): ?EChef {
             $sql = 'SELECT u.id_utente, u.nome, u.cognome, u.email, u.password_hash, u.telefono, u.stato,
-                           c.biografia, c.specializzazione, c.tipologia_cucina, c.prezzo_base,
+                           u.foto_profilo, u.localita, u.biografia AS biografia_utente,
+                           c.biografia AS biografia_chef, c.specializzazione, c.tipologia_cucina, c.prezzo_base,
                            c.anni_esperienza, c.stato_verifica, c.valutazione_media, c.numero_recensioni
                     FROM utenti u INNER JOIN chef c ON c.id_utente = u.id_utente
                     WHERE u.id_utente = :id LIMIT 1';
@@ -68,10 +69,14 @@ class FChef
     public static function search(string $localita, string $tipologiaCucina, float $budgetMax, int $valutazioneMin): array
     {
         return FRolePersistence::run('search chef', static function () use ($localita, $tipologiaCucina, $budgetMax, $valutazioneMin): array {
-            // TODO: lo schema non contiene una localita dello chef; il filtro localita e ignorato finche non sara modellato.
             $where = ['u.stato = :stato'];
             $params = ['stato' => EUtente::STATO_ATTIVO];
 
+            $localita = strtolower(trim($localita));
+            if ($localita !== '') {
+                $where[] = 'LOWER(u.localita) = :localita';
+                $params['localita'] = $localita;
+            }
             $tipologiaCucina = strtolower(trim($tipologiaCucina));
             if ($tipologiaCucina !== '') {
                 $where[] = '(LOWER(c.tipologia_cucina) = :tipologia OR LOWER(c.specializzazione) LIKE :specializzazione)';
@@ -88,7 +93,8 @@ class FChef
             }
 
             $sql = 'SELECT u.id_utente, u.nome, u.cognome, u.email, u.password_hash, u.telefono, u.stato,
-                           c.biografia, c.specializzazione, c.tipologia_cucina, c.prezzo_base,
+                           u.foto_profilo, u.localita, u.biografia AS biografia_utente,
+                           c.biografia AS biografia_chef, c.specializzazione, c.tipologia_cucina, c.prezzo_base,
                            c.anni_esperienza, c.stato_verifica, c.valutazione_media, c.numero_recensioni
                     FROM utenti u INNER JOIN chef c ON c.id_utente = u.id_utente
                     WHERE ' . implode(' AND ', $where) . '
@@ -102,7 +108,7 @@ class FChef
 
     private static function hydrate(array $row): EChef
     {
-        return new EChef((int) $row['id_utente'], (string) $row['nome'], (string) $row['cognome'], (string) $row['email'], (string) $row['password_hash'], (string) $row['telefono'], (string) $row['stato'], (string) ($row['biografia'] ?? ''), (string) ($row['specializzazione'] ?? ''), (string) ($row['tipologia_cucina'] ?? ''), (float) ($row['prezzo_base'] ?? 0), (int) $row['anni_esperienza'], (string) $row['stato_verifica'], (float) $row['valutazione_media'], (int) $row['numero_recensioni']);
+        return new EChef((int) $row['id_utente'], (string) $row['nome'], (string) $row['cognome'], (string) $row['email'], (string) $row['password_hash'], (string) $row['telefono'], (string) $row['stato'], (string) ($row['foto_profilo'] ?? ''), (string) ($row['localita'] ?? ''), (string) ($row['biografia_utente'] ?? ''), (string) ($row['biografia_chef'] ?? ''), (string) ($row['specializzazione'] ?? ''), (string) ($row['tipologia_cucina'] ?? ''), (float) ($row['prezzo_base'] ?? 0), (int) $row['anni_esperienza'], (string) $row['stato_verifica'], (float) $row['valutazione_media'], (int) $row['numero_recensioni']);
     }
 
     private static function roleValues(EChef $chef): array
