@@ -12,6 +12,7 @@ $utenteRuoli = $utenteCorrente !== null && is_array($utenteCorrente['ruoli'] ?? 
 $isAdminUser = in_array('admin', $utenteRuoli, true) || in_array('amministratore', $utenteRuoli, true);
 $isChefUser = in_array('chef', $utenteRuoli, true);
 $isGestoreUser = in_array('gestore', $utenteRuoli, true);
+$richiesteInAttesa = $utenteCorrente !== null ? (int) ($utenteCorrente['richiesteInAttesa'] ?? 0) : 0;
 $fotoProfilo = $utenteCorrente !== null ? (string) ($utenteCorrente['fotoProfilo'] ?? '') : '';
 $iniziali = '';
 if ($utenteCorrente !== null) {
@@ -28,7 +29,7 @@ if ($utenteCorrente !== null) {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= V::e(V::asset('css/app.css')) ?>">
+    <link rel="stylesheet" href="<?= V::e(V::asset('css/app.css')) ?>?v=<?= V::e((string) @filemtime(dirname(__DIR__, 2) . '/public/assets/css/app.css')) ?>">
     <script>window.GK_BASE_URL = <?= json_encode((string) ($GLOBALS['view_base_url'] ?? ''), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;</script>
     <script defer src="<?= V::e(V::asset('js/app.js')) ?>?v=<?= V::e((string) @filemtime(dirname(__DIR__, 2) . '/public/assets/js/app.js')) ?>"></script>
 </head>
@@ -46,19 +47,22 @@ if ($utenteCorrente !== null) {
         </a>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-label="Apri menu">Menu</button>
         <div class="nav-links" data-nav-links>
-            <?php if (!$isAdminUser): ?>
+            <?php if ($isChefUser && !$isAdminUser): ?>
+                <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
+                <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard')) ?>">Dashboard</a>
+            <?php elseif (!$isAdminUser): ?>
                 <a class="<?= V::e(trim($isActive('/ricerca/chef'))) ?>" href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova Chef</a>
                 <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
             <?php endif; ?>
             <?php if ($utenteCorrente !== null): ?>
-                <?php if (!$isAdminUser): ?>
+                <?php if (!$isAdminUser && !$isChefUser): ?>
                     <a class="<?= V::e(trim($isActive('/prenotazioni'))) ?>" href="<?= V::e(V::url('/prenotazioni')) ?>">Le mie prenotazioni</a>
                 <?php endif; ?>
-                <?php if ($isChefUser || $isGestoreUser): ?>
+                <?php if (($isChefUser || $isGestoreUser) && !$isChefUser): ?>
                     <a class="<?= V::e(trim($isActive('/disponibilita'))) ?>" href="<?= V::e(V::url('/disponibilita')) ?>">Disponibilita</a>
                     <a class="<?= V::e(trim($isActive('/richieste'))) ?>" href="<?= V::e(V::url('/richieste')) ?>">Richieste</a>
                 <?php endif; ?>
-                <?php if ($isChefUser): ?>
+                <?php if ($isChefUser && $isAdminUser): ?>
                     <a class="<?= V::e(trim($isActive('/mie-certificazioni'))) ?>" href="<?= V::e(V::url('/mie-certificazioni')) ?>">Le mie certificazioni</a>
                 <?php endif; ?>
                 <?php if ($isAdminUser): ?>

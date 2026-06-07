@@ -231,6 +231,7 @@ class FPersistentManager
     public static function loadTargetSegnalazione(string $tipoTarget, int $idTarget): mixed { return FSegnalazione::loadTarget($tipoTarget, $idTarget); }
     public static function getStatisticheDashboard(array $filtri): array { return FStatisticheDashboard::getStatisticheDashboard($filtri); }
     public static function loadRichiestePrenotazioneChef(int $idChef): array { return FPrenotazioneChef::loadRichieste($idChef); }
+    public static function loadPrenotazioniRicevuteChef(int $idChef): array { return FPrenotazioneChef::loadByChef($idChef); }
     public static function loadRichiestePrenotazioneGhostKitchenByGestore(int $idGestore): array { return FPrenotazioneGhostKitchen::loadRichiesteByGestore($idGestore); }
     public static function loadPrenotazioniChefByRichiedente(int $idUtente): array { return FPrenotazioneChef::loadByRichiedente($idUtente); }
     public static function loadPrenotazioniGhostKitchenByRichiedente(int $idUtente): array { return FPrenotazioneGhostKitchen::loadByRichiedente($idUtente); }

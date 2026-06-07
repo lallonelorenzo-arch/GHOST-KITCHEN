@@ -80,6 +80,29 @@ class FPrenotazioneChef
         });
     }
 
+    public static function loadByChef(int $idChef): array
+    {
+        return FBaseJoinPersistence::run('load prenotazioni ricevute chef', static function () use ($idChef): array {
+            $sql = 'SELECT p.*, pc.id_chef, pc.id_menu, pc.indirizzo_servizio, pc.numero_persone, pc.richieste_speciali
+                    FROM prenotazioni p INNER JOIN prenotazioni_chef pc ON pc.id_prenotazione = p.id_prenotazione
+                    WHERE pc.id_chef = :id_chef
+                    ORDER BY FIELD(p.stato, :in_attesa, :accettata, :rifiutata, :pagata, :completata, :cancellata),
+                             p.data_servizio ASC, p.ora_inizio ASC';
+            $statement = FBaseJoinPersistence::connection()->prepare($sql);
+            $statement->execute([
+                'id_chef' => $idChef,
+                'in_attesa' => EPrenotazione::STATO_IN_ATTESA,
+                'accettata' => EPrenotazione::STATO_ACCETTATA,
+                'rifiutata' => EPrenotazione::STATO_RIFIUTATA,
+                'pagata' => EPrenotazione::STATO_PAGATA,
+                'completata' => EPrenotazione::STATO_COMPLETATA,
+                'cancellata' => EPrenotazione::STATO_CANCELLATA,
+            ]);
+
+            return array_map(static fn (array $row): EPrenotazioneChef => self::hydrate($row), $statement->fetchAll());
+        });
+    }
+
     public static function verificaRecensibile(int $idPrenotazione, int $idAutore): array
     {
         $prenotazione = self::load($idPrenotazione);

@@ -67,7 +67,107 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  const activateRevenuePoint = (point) => {
+    const chart = point.closest('.revenue-chart');
+    const tooltip = chart ? chart.querySelector('[data-revenue-tooltip]') : null;
+    const cursor = chart ? chart.querySelector('[data-revenue-cursor]') : null;
+    const label = chart ? chart.querySelector('[data-revenue-label]') : null;
+    const value = chart ? chart.querySelector('[data-revenue-value]') : null;
+    const x = Number(point.dataset.x || 0);
+    const y = Number(point.dataset.y || 0);
+
+    if (!chart || !tooltip || !cursor || !label || !value) {
+      return;
+    }
+
+    chart.querySelectorAll('[data-chart-point]').forEach((item) => {
+      item.classList.toggle('is-active', item === point);
+      item.setAttribute('r', item === point ? '6' : '5');
+    });
+
+    cursor.setAttribute('x1', String(x));
+    cursor.setAttribute('x2', String(x));
+    tooltip.setAttribute('transform', `translate(${Math.min(478, Math.max(78, x + 16))} ${Math.max(58, y - 16)})`);
+    label.textContent = point.dataset.label || '';
+    value.textContent = `Ricavo: €${point.dataset.value || '0,00'}`;
+  };
+
+  document.querySelectorAll('[data-chart-point]').forEach((point) => {
+    point.addEventListener('mouseenter', () => activateRevenuePoint(point));
+    point.addEventListener('focus', () => activateRevenuePoint(point));
+    point.addEventListener('click', () => activateRevenuePoint(point));
+  });
+
+  const activateBarPoint = (bar) => {
+    const shell = bar.closest('.bar-chart-shell');
+    const tooltip = shell ? shell.querySelector('[data-bar-tooltip]') : null;
+    const label = shell ? shell.querySelector('[data-bar-label]') : null;
+    const value = shell ? shell.querySelector('[data-bar-value]') : null;
+
+    if (!shell || !tooltip || !label || !value) {
+      return;
+    }
+
+    shell.querySelectorAll('[data-bar-point]').forEach((item) => {
+      item.classList.toggle('is-active', item === bar);
+    });
+
+    label.textContent = bar.dataset.label || '';
+    value.textContent = `${bar.dataset.value || '0'} prenotazioni`;
+    tooltip.hidden = false;
+
+    const shellBox = shell.getBoundingClientRect();
+    const barBox = bar.getBoundingClientRect();
+    const x = barBox.left - shellBox.left + (barBox.width / 2);
+    tooltip.style.left = `${x}px`;
+  };
+
+  document.querySelectorAll('[data-bar-point]').forEach((bar) => {
+    bar.addEventListener('mouseenter', () => activateBarPoint(bar));
+    bar.addEventListener('focus', () => activateBarPoint(bar));
+    bar.addEventListener('click', () => activateBarPoint(bar));
+  });
+
+  document.querySelectorAll('.bar-chart-shell').forEach((shell) => {
+    shell.addEventListener('mouseleave', () => {
+      const tooltip = shell.querySelector('[data-bar-tooltip]');
+      if (tooltip) {
+        tooltip.hidden = true;
+      }
+      shell.querySelectorAll('[data-bar-point]').forEach((item) => item.classList.remove('is-active'));
+    });
+  });
+
+  const toggleRequestCard = (requestToggle) => {
+    const card = requestToggle.closest('.request-card');
+    const detail = card ? card.querySelector('.request-card-detail') : null;
+    const chevron = requestToggle.querySelector('.request-chevron');
+
+    if (detail) {
+      const nextOpen = detail.hasAttribute('hidden');
+      detail.toggleAttribute('hidden', !nextOpen);
+      card.classList.toggle('is-open', nextOpen);
+      requestToggle.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+      if (chevron) {
+        chevron.innerHTML = nextOpen ? '&#8963;' : '&#8964;';
+      }
+    }
+  };
+
+  document.addEventListener('keydown', (event) => {
+    const requestToggle = event.target.closest('[data-request-toggle]');
+    if (requestToggle && (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault();
+      toggleRequestCard(requestToggle);
+    }
+  });
+
   document.addEventListener('click', (event) => {
+    const requestToggle = event.target.closest('[data-request-toggle]');
+    if (requestToggle) {
+      toggleRequestCard(requestToggle);
+    }
+
     const passwordButton = event.target.closest('[data-password-toggle]');
     if (passwordButton) {
       const field = passwordButton.closest('.password-field');

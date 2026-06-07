@@ -168,7 +168,9 @@ class CPrenotazioneChef
 
         if (!$this->canPrenotareComeCliente($accesso)) {
             $data['accessoRichiesto'] = true;
-            $data['messaggioAccesso'] = 'Accedi come cliente per confermare la prenotazione. Per ora la pagina mostra i dati reali disponibili.';
+            $data['messaggioAccesso'] = in_array('chef', $accesso['ruoli'] ?? [], true)
+                ? 'Gli account chef non possono prenotare altri chef.'
+                : 'Accedi come cliente per confermare la prenotazione. Per ora la pagina mostra i dati reali disponibili.';
             return $data;
         }
 
@@ -231,6 +233,10 @@ class CPrenotazioneChef
 
     private function canPrenotareComeCliente(array $accesso): bool
     {
+        if (in_array('chef', $accesso['ruoli'] ?? [], true)) {
+            return false;
+        }
+
         return ($accesso['isLogged'] ?? false) === true
             && in_array('cliente', $accesso['ruoli'] ?? [], true)
             && (int) ($accesso['idUtente'] ?? 0) > 0;

@@ -35,9 +35,9 @@ $hero = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?crop=entro
             <h2>Chef in evidenza</h2>
             <p>Professionisti disponibili per cene private, degustazioni e servizi personalizzati.</p>
         </div>
-        <a href="<?= V::e(V::url('/ricerca/chef')) ?>">Vedi tutti</a>
+        <a class="see-all-link" href="<?= V::e(V::url('/ricerca/chef')) ?>">Vedi tutti <span aria-hidden="true">&rarr;</span></a>
     </div>
-    <div class="card-grid four">
+    <div class="card-grid four featured-chef-grid">
         <?php foreach ($chefInEvidenza as $chef): ?>
             <?php require __DIR__ . '/partials/chef_card.php'; ?>
         <?php endforeach; ?>

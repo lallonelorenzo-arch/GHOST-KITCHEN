@@ -221,17 +221,21 @@ INSERT INTO prenotazioni (id_prenotazione, id_richiedente, data_creazione, data_
 (7, 1, '2026-05-12 16:20:00', '2026-06-08', '14:00:00', '19:00:00', 'pagata', 190.00, 'Batch cooking settimanale.'),
 (8, 6, '2026-05-01 13:10:00', '2026-05-07', '10:00:00', '15:00:00', 'completata', 170.00, 'Produzione sushi catering.'),
 (9, 2, '2026-05-18 18:00:00', '2026-06-25', '08:00:00', '12:00:00', 'in_attesa', 116.00, 'Prep brunch aziendale.'),
-(10, 7, '2026-05-08 17:45:00', '2026-06-18', '16:00:00', '21:00:00', 'rifiutata', 155.00, 'Richiesta orario serale non confermata.');
+(10, 7, '2026-05-08 17:45:00', '2026-06-18', '16:00:00', '21:00:00', 'rifiutata', 155.00, 'Richiesta orario serale non confermata.'),
+(11, 2, '2026-06-07 16:45:00', '2026-06-15', '20:00:00', '23:30:00', 'in_attesa', 480.00, 'Vorremmo una cena speciale per il nostro anniversario, con piatti a base di pesce e vini abbinati.'),
+(12, 3, '2026-06-07 17:10:00', '2026-06-20', '13:00:00', '16:00:00', 'in_attesa', 720.00, 'Pranzo aziendale per il team, preferiamo un menu vegetariano gourmet con servizio rapido.');
 
 -- =========================================================
--- PRENOTAZIONI CHEF (5)
+-- PRENOTAZIONI CHEF (7)
 -- =========================================================
 INSERT INTO prenotazioni_chef (id_prenotazione, id_chef, id_menu, indirizzo_servizio, numero_persone, richieste_speciali) VALUES
 (1, 5, 1, 'Via Solferino 12, Milano', 12, 'No lattosio per due ospiti.'),
 (2, 5, 2, 'Corso Sempione 55, Milano', 9, 'Prediligere opzioni pesce.'),
 (3, 6, 3, 'Via Appia Nuova 310, Roma', 8, 'Tavolo interno climatizzato.'),
 (4, 6, 4, 'Via Tuscolana 101, Roma', 6, 'Menu ridotto piccante moderato.'),
-(5, 8, 7, 'Via Po 9, Torino', 8, 'Antipasti serviti al centro tavola.');
+(5, 8, 7, 'Via Po 9, Torino', 8, 'Antipasti serviti al centro tavola.'),
+(11, 5, 2, 'Milano, Via Brera 12', 6, 'Cena privata - Menu degustazione mediterraneo'),
+(12, 5, 1, 'Milano, Via Tortona 31', 12, 'Pranzo aziendale - Menu vegetariano gourmet');
 
 -- =========================================================
 -- PRENOTAZIONI GHOST KITCHEN (5)

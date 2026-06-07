@@ -84,12 +84,20 @@ class CGestioneRichieste
     }
 
 
-    public function visualizzaRichiesteWeb(array $accesso): array
+    public function visualizzaRichiesteWeb(array $accesso, array $query = []): array
     {
+        $filtro = strtolower(trim((string) ($query['stato'] ?? 'tutte')));
+        if (!in_array($filtro, ['tutte', EPrenotazione::STATO_IN_ATTESA, EPrenotazione::STATO_ACCETTATA, EPrenotazione::STATO_RIFIUTATA], true)) {
+            $filtro = 'tutte';
+        }
+
         $data = [
             'accesso' => $accesso,
             'richiesteChef' => [],
             'richiesteGhostKitchen' => [],
+            'richiestePrenotazione' => [],
+            'richiesteInAttesa' => 0,
+            'filtroRichieste' => $filtro,
         ];
 
         if (($accesso['isLogged'] ?? false) !== true) {
@@ -100,6 +108,11 @@ class CGestioneRichieste
         $ruoli = $accesso['ruoli'] ?? [];
         if (in_array('chef', $ruoli, true)) {
             $data['richiesteChef'] = $this->visualizzaRichieste('chef', (int) $accesso['idUtente'])['richieste'];
+            $richiestePrenotazione = $this->preparaRichiesteChef((int) $accesso['idUtente']);
+            $data['richiestePrenotazione'] = $filtro === 'tutte'
+                ? $richiestePrenotazione
+                : array_values(array_filter($richiestePrenotazione, static fn (array $item): bool => $item['stato'] === $filtro));
+            $data['richiesteInAttesa'] = count($data['richiesteChef']);
         }
 
         if (in_array('gestore', $ruoli, true)) {
@@ -109,6 +122,25 @@ class CGestioneRichieste
         return $data;
     }
 
+    private function preparaRichiesteChef(int $idChef): array
+    {
+        return array_map(static function (EPrenotazioneChef $richiesta): array {
+            $utente = FPersistentManager::loadUtente((int) $richiesta->getIdRichiedente());
+            $nome = $utente !== null ? trim($utente->getNome() . ' ' . $utente->getCognome()) : 'Cliente #' . $richiesta->getIdRichiedente();
+            $iniziali = $utente !== null
+                ? strtoupper(substr($utente->getNome(), 0, 1) . substr($utente->getCognome(), 0, 1))
+                : 'CL';
+
+            return [
+                'prenotazione' => $richiesta,
+                'nomeRichiedente' => $nome,
+                'iniziali' => $iniziali !== '' ? $iniziali : 'CL',
+                'stato' => $richiesta->getStato(),
+                'descrizione' => trim('Cena privata - ' . ($richiesta->getRichiesteSpeciali() ?: 'Servizio chef')),
+            ];
+        }, FPersistentManager::loadPrenotazioniRicevuteChef($idChef));
+    }
+
     public function gestisciRichiestaWeb(string $tipoPrenotazione, int $idPrenotazione, string $azione, array $accesso, array $post = []): array
     {
         if (!in_array($azione, ['accetta', 'rifiuta'], true)) {
@@ -116,11 +148,11 @@ class CGestioneRichieste
         }
 
         if (!$this->puoGestire($tipoPrenotazione, $accesso)) {
-            return $this->esito('Accesso non consentito', 'Non hai permessi per gestire questa richiesta.', false, '/richieste');
+            return $this->esito('Accesso non consentito', 'Non hai permessi per gestire questa richiesta.', false, '/dashboard?tab=richieste');
         }
 
         if (!$this->richiestaGestibileDaAccesso($tipoPrenotazione, $idPrenotazione, $accesso)) {
-            return $this->esito('Accesso non consentito', 'La richiesta non risulta collegata al tuo profilo.', false, '/richieste');
+            return $this->esito('Accesso non consentito', 'La richiesta non risulta collegata al tuo profilo.', false, '/dashboard?tab=richieste');
         }
 
         try {
@@ -129,15 +161,15 @@ class CGestioneRichieste
                 : $this->rifiutaRichiesta($tipoPrenotazione, $idPrenotazione, (string) ($post['motivo'] ?? ''));
 
             if (isset($result['errore'])) {
-                return $this->esito('Richiesta non aggiornata', (string) $result['errore'], false, '/richieste');
+                return $this->esito('Richiesta non aggiornata', (string) $result['errore'], false, '/dashboard?tab=richieste');
             }
 
-            return $this->esito('Richiesta aggiornata', (string) ($result['messaggio'] ?? 'Operazione completata.'), true, '/richieste');
+            return $this->esito('Richiesta aggiornata', (string) ($result['messaggio'] ?? 'Operazione completata.'), true, '/dashboard?tab=richieste');
         } catch (InvalidArgumentException $exception) {
-            return $this->esito('Richiesta non aggiornata', $exception->getMessage(), false, '/richieste');
+            return $this->esito('Richiesta non aggiornata', $exception->getMessage(), false, '/dashboard?tab=richieste');
         } catch (Throwable $exception) {
             error_log('[CGestioneRichieste] ' . $exception->getMessage());
-            return $this->esito('Richiesta non aggiornata', 'Non e stato possibile aggiornare la richiesta. Riprova piu tardi.', false, '/richieste');
+            return $this->esito('Richiesta non aggiornata', 'Non e stato possibile aggiornare la richiesta. Riprova piu tardi.', false, '/dashboard?tab=richieste');
         }
     }
 

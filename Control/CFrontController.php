@@ -183,6 +183,11 @@ class CFrontController
                 return;
             }
 
+            if ($method === 'GET' && preg_match('#^/utente/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                $this->renderController('CProfiloUtente', 'visualizzaProfiloClienteWeb', 'utente_profilo', [(int) $matches[1], $this->accessContext()]);
+                return;
+            }
+
             if (!$this->routeExistsForAnyMethod($path)) {
                 $this->renderError(404, 'Pagina non trovata', 'La pagina richiesta non esiste.');
                 return;
@@ -215,7 +220,7 @@ class CFrontController
                 '/profilo' => $method === 'POST' ? [$accessContext, $post, $_FILES] : [$accessContext, $query],
                 '/prenotazioni' => [$accessContext],
                 '/disponibilita' => [$accessContext, $query],
-                '/richieste' => [$accessContext],
+                '/richieste' => [$accessContext, $query],
                 '/dashboard' => [$accessContext, $query],
                 '/moderazione' => [$accessContext],
                 '/utenti' => [$accessContext],
@@ -229,6 +234,12 @@ class CFrontController
             if ($path === '/logout') {
                 $this->callController($controller, $action, []);
                 $this->redirect('/');
+                return;
+            }
+
+            if ($path === '/dashboard' && in_array('chef', $accessContext['ruoli'] ?? [], true) && !in_array('admin', $accessContext['ruoli'] ?? [], true) && !in_array('amministratore', $accessContext['ruoli'] ?? [], true)) {
+                $data = $this->callController('CDashboardChef', 'visualizzaDashboardWeb', [$accessContext, $query]);
+                ViewRenderer::render('dashboard_chef', is_array($data) ? $data : [], $this->sharedViewData());
                 return;
             }
 
@@ -368,6 +379,10 @@ class CFrontController
             return true;
         }
 
+        if (preg_match('#^/utente/[1-9][0-9]*$#', $path) === 1) {
+            return true;
+        }
+
         foreach (self::ALLOWED_ROUTES as $routes) {
             if (array_key_exists($path, $routes)) {
                 return true;
@@ -381,6 +396,10 @@ class CFrontController
     {
         $ruoli = FSession::getRuoli();
         if (in_array('admin', $ruoli, true) || in_array('amministratore', $ruoli, true)) {
+            return '/dashboard';
+        }
+
+        if (in_array('chef', $ruoli, true)) {
             return '/dashboard';
         }
 
@@ -409,6 +428,11 @@ class CFrontController
     private function sharedViewData(): array
     {
         FSession::start();
+        $ruoli = FSession::getRuoli();
+        $richiesteInAttesa = 0;
+        if (FSession::isLogged() && in_array('chef', $ruoli, true) && FSession::getIdUtente() !== null) {
+            $richiesteInAttesa = count(FPersistentManager::loadRichiestePrenotazioneChef((int) FSession::getIdUtente()));
+        }
 
         return [
             'baseUrl' => $this->baseUrl(),
@@ -418,8 +442,9 @@ class CFrontController
                 'cognome' => FSession::getCognome(),
                 'email' => FSession::getEmail(),
                 'fotoProfilo' => $this->currentUtente()?->getFotoProfilo() ?? FSession::getFotoProfilo(),
-                'ruoli' => FSession::getRuoli(),
+                'ruoli' => $ruoli,
                 'ruolo' => FSession::getRuoloAttivo(),
+                'richiesteInAttesa' => $richiesteInAttesa,
             ] : null,
         ];
     }
@@ -438,7 +463,11 @@ class CFrontController
         $isChef = in_array('chef', $ruoli, true);
         $isGestore = in_array('gestore', $ruoli, true);
 
-        if (in_array($path, ['/dashboard', '/moderazione', '/utenti', '/certificazioni'], true)) {
+        if ($path === '/dashboard') {
+            return $isAdmin || $isChef;
+        }
+
+        if (in_array($path, ['/moderazione', '/utenti', '/certificazioni'], true)) {
             return $isAdmin;
         }
 
