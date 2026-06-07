@@ -20,7 +20,15 @@ class FDisponibilitaGhostKitchen extends FAbstractTable
     }
     public static function loadByGhostKitchen(int $idGhostKitchen): array
     {
-        return static::fetchAllWhere('id_ghost_kitchen = :id', ['id' => $idGhostKitchen]);
+        return static::fetchAllWhere('id_ghost_kitchen = :id ORDER BY data ASC, ora_inizio ASC', ['id' => $idGhostKitchen]);
+    }
+
+    public static function loadBySlot(int $idGhostKitchen, string $data, string $oraInizio, string $oraFine): ?EDisponibilitaGhostKitchen
+    {
+        return static::fetchOneWhere(
+            'id_ghost_kitchen = :id_ghost_kitchen AND data = :data AND ora_inizio = :ora_inizio AND ora_fine = :ora_fine',
+            ['id_ghost_kitchen' => $idGhostKitchen, 'data' => $data, 'ora_inizio' => $oraInizio, 'ora_fine' => $oraFine]
+        );
     }
 
     public static function verificaDisponibilita(int $idGhostKitchen, string $data, string $oraInizio, string $oraFine): bool

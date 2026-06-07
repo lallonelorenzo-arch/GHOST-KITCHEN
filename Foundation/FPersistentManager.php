@@ -84,9 +84,9 @@ class FPersistentManager
         return FUtente::emailExists($email);
     }
 
-    public static function registraAccount(EUtente $utente, array $ruoli, array $chefData = [], array $certificazioni = []): int|false
+    public static function registraAccount(EUtente $utente, array $ruoli, array $chefData = [], array $certificazioni = [], array $ghostKitchenData = []): int|false
     {
-        return FRegistrazione::registra($utente, $ruoli, $chefData, $certificazioni);
+        return FRegistrazione::registra($utente, $ruoli, $chefData, $certificazioni, $ghostKitchenData);
     }
 
     public static function verificaCredenziali(string $email, string $password): ?EUtente
@@ -175,6 +175,8 @@ class FPersistentManager
     public static function loadAttrezzatureByGhostKitchen(int $idGhostKitchen): array { return FAttrezzatura::loadByGhostKitchen($idGhostKitchen); }
     public static function loadDisponibilitaChef(int $idChef): array { return FDisponibilitaChef::loadByChef($idChef); }
     public static function loadDisponibilitaGhostKitchen(int $idGhostKitchen): array { return FDisponibilitaGhostKitchen::loadByGhostKitchen($idGhostKitchen); }
+    public static function loadDisponibilitaChefBySlot(int $idChef, string $data, string $oraInizio, string $oraFine): ?EDisponibilitaChef { return FDisponibilitaChef::loadBySlot($idChef, $data, $oraInizio, $oraFine); }
+    public static function loadDisponibilitaGhostKitchenBySlot(int $idGhostKitchen, string $data, string $oraInizio, string $oraFine): ?EDisponibilitaGhostKitchen { return FDisponibilitaGhostKitchen::loadBySlot($idGhostKitchen, $data, $oraInizio, $oraFine); }
     public static function loadMetodiPagamentoByUtente(int $idUtente): array { return FMetodoPagamento::loadByUtente($idUtente); }
     public static function loadPagamentiByUtente(int $idUtente): array { return FPagamento::loadByUtente($idUtente); }
     public static function loadSegnalazioniDaModerare(): array { return FSegnalazione::loadByStato(ESegnalazione::STATO_APERTA); }
@@ -233,6 +235,7 @@ class FPersistentManager
     public static function loadRichiestePrenotazioneChef(int $idChef): array { return FPrenotazioneChef::loadRichieste($idChef); }
     public static function loadPrenotazioniRicevuteChef(int $idChef): array { return FPrenotazioneChef::loadByChef($idChef); }
     public static function loadRichiestePrenotazioneGhostKitchenByGestore(int $idGestore): array { return FPrenotazioneGhostKitchen::loadRichiesteByGestore($idGestore); }
+    public static function loadPrenotazioniRicevuteGhostKitchenByGestore(int $idGestore): array { return FPrenotazioneGhostKitchen::loadByGestore($idGestore); }
     public static function loadPrenotazioniChefByRichiedente(int $idUtente): array { return FPrenotazioneChef::loadByRichiedente($idUtente); }
     public static function loadPrenotazioniGhostKitchenByRichiedente(int $idUtente): array { return FPrenotazioneGhostKitchen::loadByRichiedente($idUtente); }
     public static function loadRecensione(int $idRecensione): ?ERecensione { return FRecensione::load($idRecensione); }

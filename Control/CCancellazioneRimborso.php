@@ -114,8 +114,10 @@ class CCancellazioneRimborso
 
         if ($tipoPrenotazione === ECancellazione::PRENOTAZIONE_CHEF) {
             FPersistentManager::updatePrenotazioneChef($prenotazione);
+            $this->liberaSlotChef($prenotazione);
         } else {
             FPersistentManager::updatePrenotazioneGhostKitchen($prenotazione);
+            $this->liberaSlotGhostKitchen($prenotazione);
         }
 
         return [
@@ -218,5 +220,34 @@ class CCancellazioneRimborso
             throw new InvalidArgumentException($messaggio);
         }
     }
-}
 
+    private function liberaSlotChef(EPrenotazioneChef $prenotazione): void
+    {
+        $slot = FPersistentManager::loadDisponibilitaChefBySlot(
+            (int) $prenotazione->getIdChef(),
+            $prenotazione->getDataServizio(),
+            $prenotazione->getOraInizio(),
+            $prenotazione->getOraFine()
+        );
+
+        if ($slot !== null && $slot->isOccupata()) {
+            $slot->libera();
+            FPersistentManager::updateDisponibilitaChef($slot);
+        }
+    }
+
+    private function liberaSlotGhostKitchen(EPrenotazioneGhostKitchen $prenotazione): void
+    {
+        $slot = FPersistentManager::loadDisponibilitaGhostKitchenBySlot(
+            (int) $prenotazione->getIdGhostKitchen(),
+            $prenotazione->getDataServizio(),
+            $prenotazione->getOraInizio(),
+            $prenotazione->getOraFine()
+        );
+
+        if ($slot !== null && $slot->getStato() === EDisponibilitaGhostKitchen::STATO_OCCUPATA) {
+            $slot->libera();
+            FPersistentManager::updateDisponibilitaGhostKitchen($slot);
+        }
+    }
+}

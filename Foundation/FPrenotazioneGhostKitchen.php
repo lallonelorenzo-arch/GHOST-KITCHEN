@@ -81,6 +81,22 @@ class FPrenotazioneGhostKitchen
         });
     }
 
+    public static function loadByGestore(int $idGestore): array
+    {
+        return FBaseJoinPersistence::run('load prenotazioni ghost kitchen gestore', static function () use ($idGestore): array {
+            $sql = 'SELECT p.*, pgk.id_ghost_kitchen, pgk.tipo_richiedente
+                    FROM prenotazioni p
+                    INNER JOIN prenotazioni_ghost_kitchen pgk ON pgk.id_prenotazione = p.id_prenotazione
+                    INNER JOIN ghost_kitchen gk ON gk.id_ghost_kitchen = pgk.id_ghost_kitchen
+                    WHERE gk.id_gestore = :id_gestore
+                    ORDER BY p.data_servizio DESC, p.ora_inizio DESC';
+            $statement = FBaseJoinPersistence::connection()->prepare($sql);
+            $statement->execute(['id_gestore' => $idGestore]);
+
+            return array_map(static fn (array $row): EPrenotazioneGhostKitchen => self::hydrate($row), $statement->fetchAll());
+        });
+    }
+
     public static function verificaRecensibile(int $idPrenotazione, int $idAutore): array
     {
         $prenotazione = self::load($idPrenotazione);

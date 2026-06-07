@@ -38,7 +38,7 @@ $ghostKitchenPrenotabile = $ghostKitchenPrenotabile ?? true;
             </article>
 
             <?php if ($ghostKitchenPrenotabile): ?>
-            <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>">
+            <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>" data-booking-form>
                 <h2>Dati richiesta</h2>
                 <p class="muted-text">Tipo richiedente: <?= V::e($tipoRichiedente ?? 'non disponibile') ?></p>
                 <div class="ops-form-row">
@@ -67,20 +67,12 @@ $ghostKitchenPrenotabile = $ghostKitchenPrenotabile ?? true;
             </article>
         <?php endif; ?>
 
-        <section class="ops-panel">
-            <h2>Disponibilita ghost kitchen</h2>
-            <div class="ops-list">
-                <?php foreach ($disponibilita as $slot): ?>
-                    <div class="ops-list-item">
-                        <strong><?= V::e($slot->getData()) ?></strong>
-                        <span><?= V::e($slot->getOraInizio()) ?> - <?= V::e($slot->getOraFine()) ?></span>
-                        <span class="badge"><?= V::e($slot->getStato()) ?></span>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            <?php if ($disponibilita === []): ?>
-                <p class="muted-text">Nessuno slot pubblicato per questa ghost kitchen.</p>
-            <?php endif; ?>
-        </section>
+        <?php
+        $calendarSlots = $disponibilita;
+        $calendarTitle = 'Calendario disponibilita ghost kitchen';
+        $calendarEmptyText = 'Nessuno slot pubblicato per questa ghost kitchen.';
+        $calendarSelectable = $ghostKitchenPrenotabile && empty($accessoRichiesto);
+        include __DIR__ . '/partials/booking_calendar.php';
+        ?>
     <?php endif; ?>
 </section>

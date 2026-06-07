@@ -68,6 +68,7 @@ class CGestioneRichieste
             }
             $prenotazione->rifiuta();
             FPersistentManager::updatePrenotazioneChef($prenotazione);
+            $this->liberaSlotChef($prenotazione);
         } else {
             $prenotazione = FPersistentManager::loadPrenotazioneGhostKitchen($idPrenotazione);
             if ($prenotazione === null) {
@@ -78,6 +79,7 @@ class CGestioneRichieste
             }
             $prenotazione->rifiuta();
             FPersistentManager::updatePrenotazioneGhostKitchen($prenotazione);
+            $this->liberaSlotGhostKitchen($prenotazione);
         }
 
         return ['messaggio' => 'Richiesta rifiutata', 'prenotazione' => $prenotazione, 'motivo' => $motivo];
@@ -143,16 +145,17 @@ class CGestioneRichieste
 
     public function gestisciRichiestaWeb(string $tipoPrenotazione, int $idPrenotazione, string $azione, array $accesso, array $post = []): array
     {
+        $ritornoDashboard = $this->dashboardRitorno($tipoPrenotazione);
         if (!in_array($azione, ['accetta', 'rifiuta'], true)) {
             return $this->esito('Azione non valida', 'L azione richiesta non e disponibile.', false, '/richieste');
         }
 
         if (!$this->puoGestire($tipoPrenotazione, $accesso)) {
-            return $this->esito('Accesso non consentito', 'Non hai permessi per gestire questa richiesta.', false, '/dashboard?tab=richieste');
+            return $this->esito('Accesso non consentito', 'Non hai permessi per gestire questa richiesta.', false, $ritornoDashboard);
         }
 
         if (!$this->richiestaGestibileDaAccesso($tipoPrenotazione, $idPrenotazione, $accesso)) {
-            return $this->esito('Accesso non consentito', 'La richiesta non risulta collegata al tuo profilo.', false, '/dashboard?tab=richieste');
+            return $this->esito('Accesso non consentito', 'La richiesta non risulta collegata al tuo profilo.', false, $ritornoDashboard);
         }
 
         try {
@@ -161,15 +164,15 @@ class CGestioneRichieste
                 : $this->rifiutaRichiesta($tipoPrenotazione, $idPrenotazione, (string) ($post['motivo'] ?? ''));
 
             if (isset($result['errore'])) {
-                return $this->esito('Richiesta non aggiornata', (string) $result['errore'], false, '/dashboard?tab=richieste');
+                return $this->esito('Richiesta non aggiornata', (string) $result['errore'], false, $ritornoDashboard);
             }
 
-            return $this->esito('Richiesta aggiornata', (string) ($result['messaggio'] ?? 'Operazione completata.'), true, '/dashboard?tab=richieste');
+            return $this->esito('Richiesta aggiornata', (string) ($result['messaggio'] ?? 'Operazione completata.'), true, $ritornoDashboard);
         } catch (InvalidArgumentException $exception) {
-            return $this->esito('Richiesta non aggiornata', $exception->getMessage(), false, '/dashboard?tab=richieste');
+            return $this->esito('Richiesta non aggiornata', $exception->getMessage(), false, $ritornoDashboard);
         } catch (Throwable $exception) {
             error_log('[CGestioneRichieste] ' . $exception->getMessage());
-            return $this->esito('Richiesta non aggiornata', 'Non e stato possibile aggiornare la richiesta. Riprova piu tardi.', false, '/dashboard?tab=richieste');
+            return $this->esito('Richiesta non aggiornata', 'Non e stato possibile aggiornare la richiesta. Riprova piu tardi.', false, $ritornoDashboard);
         }
     }
 
@@ -224,5 +227,41 @@ class CGestioneRichieste
 
         return $tipoPrenotazione;
     }
-}
 
+    private function dashboardRitorno(string $tipoPrenotazione): string
+    {
+        return $tipoPrenotazione === 'ghost_kitchen'
+            ? '/dashboard?ruolo=gestore&tab=richieste'
+            : '/dashboard?ruolo=chef&tab=richieste';
+    }
+
+    private function liberaSlotChef(EPrenotazioneChef $prenotazione): void
+    {
+        $slot = FPersistentManager::loadDisponibilitaChefBySlot(
+            (int) $prenotazione->getIdChef(),
+            $prenotazione->getDataServizio(),
+            $prenotazione->getOraInizio(),
+            $prenotazione->getOraFine()
+        );
+
+        if ($slot !== null && $slot->isOccupata()) {
+            $slot->libera();
+            FPersistentManager::updateDisponibilitaChef($slot);
+        }
+    }
+
+    private function liberaSlotGhostKitchen(EPrenotazioneGhostKitchen $prenotazione): void
+    {
+        $slot = FPersistentManager::loadDisponibilitaGhostKitchenBySlot(
+            (int) $prenotazione->getIdGhostKitchen(),
+            $prenotazione->getDataServizio(),
+            $prenotazione->getOraInizio(),
+            $prenotazione->getOraFine()
+        );
+
+        if ($slot !== null && $slot->getStato() === EDisponibilitaGhostKitchen::STATO_OCCUPATA) {
+            $slot->libera();
+            FPersistentManager::updateDisponibilitaGhostKitchen($slot);
+        }
+    }
+}

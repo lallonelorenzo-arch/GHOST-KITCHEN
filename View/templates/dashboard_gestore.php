@@ -3,22 +3,22 @@ use ViewHelpers as V;
 /** @var array $accesso */
 /** @var array $metriche */
 /** @var string $tabAttiva */
-/** @var string $currentPath */
 /** @var array $fatturatoMensile */
 /** @var array $prenotazioniSettimanali */
 /** @var array $prossimePrenotazioni */
 /** @var array $prenotazioniTabella */
 /** @var array $richiestePrenotazione */
-/** @var array $statisticheChef */
+/** @var array $statisticheGestore */
+/** @var array $ghostKitchenGestore */
 /** @var string $filtroRichieste */
 $nome = trim((string) ($accesso['nome'] ?? ''));
-$nome = $nome !== '' ? $nome : 'Chef';
-$currentPath = (string) ($currentPath ?? '/dashboard');
+$nome = $nome !== '' ? $nome : 'Gestore';
 $filtroRichieste = (string) ($filtroRichieste ?? 'tutte');
 $tabs = [
     'panoramica' => 'Panoramica',
     'prenotazioni' => 'Prenotazioni',
     'richieste' => 'Richieste',
+    'ghost_kitchen' => 'Ghost Kitchen',
     'calendario' => 'Calendario',
     'statistiche' => 'Statistiche',
 ];
@@ -27,7 +27,8 @@ $prenotazioniSettimanali = $prenotazioniSettimanali ?? [];
 $prossimePrenotazioni = $prossimePrenotazioni ?? [];
 $prenotazioniTabella = $prenotazioniTabella ?? [];
 $richiestePrenotazione = $richiestePrenotazione ?? [];
-$statisticheChef = $statisticheChef ?? [];
+$statisticheGestore = $statisticheGestore ?? [];
+$ghostKitchenGestore = $ghostKitchenGestore ?? [];
 $maxFatturatoRaw = max(1, ...array_map(static fn (array $p): float => (float) $p['value'], $fatturatoMensile));
 $maxFatturato = max(1000, (int) ceil($maxFatturatoRaw / 1000) * 1000);
 $maxSettimana = max(1, ...array_map(static fn (array $p): int => (int) $p['value'], $prenotazioniSettimanali));
@@ -80,18 +81,18 @@ $statusLabels = [
     'rifiutata' => 'Rifiutata',
     'cancellata' => 'Cancellata',
 ];
-$statiStatistiche = $statisticheChef['stati'] ?? [];
+$statiStatistiche = $statisticheGestore['stati'] ?? [];
 $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $value, $statiStatistiche)));
 ?>
 <section class="chef-dashboard-hero">
-    <h1>Dashboard</h1>
+    <h1>Dashboard Gestore</h1>
     <p>Benvenuto, <?= V::e($nome) ?>!</p>
 </section>
 
 <section class="section chef-dashboard">
-    <nav class="chef-dashboard-tabs" aria-label="Sezioni dashboard chef">
+    <nav class="chef-dashboard-tabs" aria-label="Sezioni dashboard gestore">
         <?php foreach ($tabs as $key => $label): ?>
-            <a class="<?= $tabAttiva === $key ? 'is-active' : '' ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'chef', 'tab' => $key])) ?>">
+            <a class="<?= $tabAttiva === $key ? 'is-active' : '' ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'gestore', 'tab' => $key])) ?>">
                 <?= V::e($label) ?>
                 <?php if ($key === 'richieste' && (int) ($metriche['richiesteInAttesa'] ?? 0) > 0): ?>
                     <span class="nav-badge"><?= V::e(min((int) $metriche['richiesteInAttesa'], 99)) ?></span>
@@ -103,9 +104,9 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
     <?php if ($tabAttiva === 'panoramica'): ?>
     <div class="chef-metric-grid">
         <article class="chef-metric-card">
-            <span class="metric-icon warm"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg></span>
-            <strong><?= V::e($metriche['prenotazioniTotali'] ?? 0) ?></strong>
-            <p>Prenotazioni Totali</p>
+            <span class="metric-icon warm"><svg viewBox="0 0 24 24"><path d="M3 21h18"></path><path d="M5 21V7l8-4v18"></path><path d="M19 21V11l-6-4"></path><path d="M9 9h1M9 13h1M9 17h1M15 13h1M15 17h1"></path></svg></span>
+            <strong><?= V::e($metriche['ghostKitchenTotali'] ?? 0) ?></strong>
+            <p>Ghost Kitchen</p>
         </article>
         <article class="chef-metric-card">
             <span class="metric-icon sage metric-euro" aria-hidden="true">&euro;</span>
@@ -119,8 +120,8 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
         </article>
         <article class="chef-metric-card">
             <span class="metric-icon blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg></span>
-            <strong><?= V::e((string) round((float) ($metriche['oreLavorate'] ?? 0))) ?></strong>
-            <p>Ore Lavorate</p>
+            <strong><?= V::e((string) round((float) ($metriche['oreOccupate'] ?? 0))) ?></strong>
+            <p>Ore Occupate</p>
         </article>
     </div>
 
@@ -181,7 +182,7 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
     <section class="chef-dashboard-panel upcoming-panel">
         <header>
             <h2>Prossime Prenotazioni</h2>
-            <a href="<?= V::e(V::url('/dashboard', ['ruolo' => 'chef', 'tab' => 'prenotazioni'])) ?>">Vedi tutte &rarr;</a>
+            <a href="<?= V::e(V::url('/dashboard', ['ruolo' => 'gestore', 'tab' => 'prenotazioni'])) ?>">Vedi tutte &rarr;</a>
         </header>
         <div class="upcoming-list">
             <?php foreach ($prossimePrenotazioni as $item): ?>
@@ -209,8 +210,8 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                 <table class="booking-table">
                     <thead>
                         <tr>
-                            <th>Cliente</th>
-                            <th>Servizio</th>
+                            <th>Richiedente</th>
+                            <th>Ghost Kitchen</th>
                             <th>Data</th>
                             <th>Dettagli</th>
                             <th>Totale</th>
@@ -222,13 +223,13 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                     <?php foreach ($prenotazioniTabella as $item): ?>
                         <?php $prenotazione = $item['prenotazione']; ?>
                         <tr>
-                            <td><a class="table-client-link" href="<?= V::e(V::url('/utente/' . (int) $item['clienteId'])) ?>"><?= V::e($item['clienteNome']) ?></a></td>
-                            <td><?= V::e($item['servizio']) ?></td>
+                            <td><a class="table-client-link" href="<?= V::e(V::url('/utente/' . (int) $item['richiedenteId'])) ?>"><?= V::e($item['richiedenteNome']) ?></a></td>
+                            <td><?= V::e($item['ghostKitchen']) ?></td>
                             <td><strong><?= V::e(date('j/n/Y', strtotime($prenotazione->getDataServizio()) ?: time())) ?></strong><span><?= V::e($formatOra($prenotazione->getOraInizio())) ?></span></td>
                             <td><?= V::e($item['dettagli']) ?></td>
                             <td><strong class="table-total">&euro;<?= V::e(V::money($prenotazione->getImportoTotale())) ?></strong></td>
                             <td><span class="request-status status-<?= V::e($item['stato']) ?>"><?= V::e($statusLabels[$item['stato']] ?? $item['stato']) ?></span></td>
-                            <td><button class="table-detail-link" type="button" data-modal-open="booking-detail-<?= V::e((int) $prenotazione->getIdPrenotazione()) ?>">Dettagli</button></td>
+                            <td><button class="table-detail-link" type="button" data-modal-open="gk-booking-detail-<?= V::e((int) $prenotazione->getIdPrenotazione()) ?>">Dettagli</button></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -236,24 +237,24 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
             </div>
             <?php foreach ($prenotazioniTabella as $item): ?>
                 <?php $prenotazione = $item['prenotazione']; ?>
-                <?php $modalId = 'booking-detail-' . (int) $prenotazione->getIdPrenotazione(); ?>
+                <?php $modalId = 'gk-booking-detail-' . (int) $prenotazione->getIdPrenotazione(); ?>
                 <dialog class="booking-detail-modal" id="<?= V::e($modalId) ?>" aria-labelledby="<?= V::e($modalId) ?>-title">
                     <div class="booking-detail-box">
                         <header>
                             <div>
                                 <span>Prenotazione #<?= V::e((int) $prenotazione->getIdPrenotazione()) ?></span>
-                                <h2 id="<?= V::e($modalId) ?>-title"><?= V::e($item['servizio']) ?></h2>
+                                <h2 id="<?= V::e($modalId) ?>-title"><?= V::e($item['ghostKitchen']) ?></h2>
                             </div>
                             <button type="button" class="modal-close-button" data-modal-close aria-label="Chiudi dettaglio">&times;</button>
                         </header>
                         <div class="booking-detail-grid">
                             <section>
-                                <h3>Cliente</h3>
+                                <h3>Richiedente</h3>
                                 <dl>
-                                    <div><dt>Nome</dt><dd><?= V::e($item['clienteNome']) ?></dd></div>
-                                    <div><dt>Email</dt><dd><?= V::e($item['clienteEmail'] !== '' ? $item['clienteEmail'] : 'Non indicata') ?></dd></div>
-                                    <div><dt>Telefono</dt><dd><?= V::e($item['clienteTelefono'] !== '' ? $item['clienteTelefono'] : 'Non indicato') ?></dd></div>
-                                    <div><dt>Localita</dt><dd><?= V::e($item['clienteLocalita'] !== '' ? $item['clienteLocalita'] : 'Non indicata') ?></dd></div>
+                                    <div><dt>Nome</dt><dd><?= V::e($item['richiedenteNome']) ?></dd></div>
+                                    <div><dt>Email</dt><dd><?= V::e($item['richiedenteEmail'] !== '' ? $item['richiedenteEmail'] : 'Non indicata') ?></dd></div>
+                                    <div><dt>Telefono</dt><dd><?= V::e($item['richiedenteTelefono'] !== '' ? $item['richiedenteTelefono'] : 'Non indicato') ?></dd></div>
+                                    <div><dt>Localita</dt><dd><?= V::e($item['richiedenteLocalita'] !== '' ? $item['richiedenteLocalita'] : 'Non indicata') ?></dd></div>
                                 </dl>
                             </section>
                             <section>
@@ -261,19 +262,16 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                                 <dl>
                                     <div><dt>Data</dt><dd><?= V::e($formatDataLunga($prenotazione->getDataServizio())) ?></dd></div>
                                     <div><dt>Orario</dt><dd><?= V::e($formatOra($prenotazione->getOraInizio())) ?> - <?= V::e($formatOra($prenotazione->getOraFine())) ?></dd></div>
-                                    <div><dt>Indirizzo</dt><dd><?= V::e($prenotazione->getIndirizzoServizio()) ?></dd></div>
-                                    <div><dt>Ospiti</dt><dd><?= V::e($prenotazione->getNumeroPersone()) ?></dd></div>
+                                    <div><dt>Spazio</dt><dd><?= V::e($item['indirizzoGhostKitchen'] !== '' ? $item['indirizzoGhostKitchen'] : 'Non disponibile') ?></dd></div>
+                                    <div><dt>Tipo</dt><dd><?= V::e($prenotazione->getTipoRichiedente()) ?></dd></div>
                                     <div><dt>Totale</dt><dd>&euro;<?= V::e(V::money($prenotazione->getImportoTotale())) ?></dd></div>
                                     <div><dt>Stato</dt><dd><span class="request-status status-<?= V::e($item['stato']) ?>"><?= V::e($statusLabels[$item['stato']] ?? $item['stato']) ?></span></dd></div>
                                 </dl>
                             </section>
                         </div>
                         <section class="booking-detail-notes">
-                            <h3>Note e richieste</h3>
-                            <p><?= V::e($prenotazione->getRichiesteSpeciali() !== '' ? $prenotazione->getRichiesteSpeciali() : 'Nessuna richiesta speciale.') ?></p>
-                            <?php if ($prenotazione->getNote() !== ''): ?>
-                                <p><?= V::e($prenotazione->getNote()) ?></p>
-                            <?php endif; ?>
+                            <h3>Note</h3>
+                            <p><?= V::e($prenotazione->getNote() !== '' ? $prenotazione->getNote() : 'Nessuna nota aggiuntiva.') ?></p>
                         </section>
                     </div>
                 </dialog>
@@ -291,7 +289,7 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                 </div>
                 <nav class="requests-tabs" aria-label="Filtro richieste">
                     <?php foreach ($requestFilters as $key => $label): ?>
-                        <a class="<?= $filtroRichieste === $key ? 'is-active' : '' ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'chef', 'tab' => 'richieste', 'filtro' => $key])) ?>"><?= V::e($label) ?></a>
+                        <a class="<?= $filtroRichieste === $key ? 'is-active' : '' ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'gestore', 'tab' => 'richieste', 'filtro' => $key])) ?>"><?= V::e($label) ?></a>
                     <?php endforeach; ?>
                 </nav>
             </header>
@@ -310,34 +308,34 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                             </div>
                             <div class="request-summary">
                                 <strong><?= V::e($formatData($richiesta->getDataServizio())) ?> &middot; <?= V::e($formatOra($richiesta->getOraInizio())) ?></strong>
-                                <span><?= V::e($richiesta->getNumeroPersone()) ?> ospiti &middot; &euro;<?= V::e(V::money($richiesta->getImportoTotale())) ?></span>
+                                <span><?= V::e($richiesta->getTipoRichiedente()) ?> &middot; &euro;<?= V::e(V::money($richiesta->getImportoTotale())) ?></span>
                             </div>
                             <span class="request-chevron" aria-hidden="true"><?= $isOpen ? '&#8963;' : '&#8964;' ?></span>
                         </div>
                         <div class="request-card-detail" <?= $isOpen ? '' : 'hidden' ?>>
-                                <div class="request-detail-grid">
-                                    <span><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><?= V::e($formatDataLunga($richiesta->getDataServizio())) ?> alle <?= V::e($formatOra($richiesta->getOraInizio())) ?></span>
-                                    <span><svg viewBox="0 0 24 24"><path d="M12 21s7-5.2 7-11a7 7 0 0 0-14 0c0 5.8 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg><?= V::e($item['indirizzo']) ?></span>
-                                    <span><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"></path><circle cx="12" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg><?= V::e($richiesta->getNumeroPersone()) ?> ospiti</span>
-                                    <span><svg viewBox="0 0 24 24"><path d="M15 6.5A5 5 0 1 0 15 17M4 10h8M4 14h8"></path></svg>Budget: &euro;<?= V::e(V::money($richiesta->getImportoTotale())) ?></span>
+                            <div class="request-detail-grid">
+                                <span><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><?= V::e($formatDataLunga($richiesta->getDataServizio())) ?> alle <?= V::e($formatOra($richiesta->getOraInizio())) ?></span>
+                                <span><svg viewBox="0 0 24 24"><path d="M12 21s7-5.2 7-11a7 7 0 0 0-14 0c0 5.8 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg><?= V::e($item['indirizzo']) ?></span>
+                                <span><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"></path><circle cx="12" cy="7" r="4"></circle></svg><?= V::e($richiesta->getTipoRichiedente()) ?></span>
+                                <span><svg viewBox="0 0 24 24"><path d="M15 6.5A5 5 0 1 0 15 17M4 10h8M4 14h8"></path></svg>Budget: &euro;<?= V::e(V::money($richiesta->getImportoTotale())) ?></span>
+                            </div>
+                            <div class="request-message">
+                                <span>Messaggio del richiedente</span>
+                                <p>"<?= V::e($item['messaggio']) ?>"</p>
+                            </div>
+                            <small class="request-received"><?= V::e($item['ricevuta']) ?></small>
+                            <?php if ($item['stato'] === 'in_attesa'): ?>
+                                <div class="request-actions">
+                                    <form method="post" action="<?= V::e(V::url('/richieste/ghost-kitchen/' . $richiesta->getIdPrenotazione() . '/accetta')) ?>">
+                                        <button class="btn request-accept" type="submit">Accetta richiesta</button>
+                                    </form>
+                                    <form method="post" action="<?= V::e(V::url('/richieste/ghost-kitchen/' . $richiesta->getIdPrenotazione() . '/rifiuta')) ?>">
+                                        <button class="btn request-refuse" type="submit">Rifiuta</button>
+                                    </form>
                                 </div>
-                                <div class="request-message">
-                                    <span>Messaggio del cliente</span>
-                                    <p>"<?= V::e($item['messaggio']) ?>"</p>
-                                </div>
-                                <small class="request-received"><?= V::e($item['ricevuta']) ?></small>
-                                <?php if ($item['stato'] === 'in_attesa'): ?>
-                                    <div class="request-actions">
-                                        <form method="post" action="<?= V::e(V::url('/richieste/chef/' . $richiesta->getIdPrenotazione() . '/accetta')) ?>">
-                                            <button class="btn request-accept" type="submit">Accetta richiesta</button>
-                                        </form>
-                                        <form method="post" action="<?= V::e(V::url('/richieste/chef/' . $richiesta->getIdPrenotazione() . '/rifiuta')) ?>">
-                                            <button class="btn request-refuse" type="submit">Rifiuta</button>
-                                        </form>
-                                    </div>
-                                <?php else: ?>
-                                    <p class="request-locked">Richiesta gia <?= V::e(strtolower($statusLabels[$item['stato']] ?? $item['stato'])) ?>.</p>
-                                <?php endif; ?>
+                            <?php else: ?>
+                                <p class="request-locked">Richiesta gia <?= V::e(strtolower($statusLabels[$item['stato']] ?? $item['stato'])) ?>.</p>
+                            <?php endif; ?>
                         </div>
                     </article>
                 <?php endforeach; ?>
@@ -346,27 +344,48 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                 <?php endif; ?>
             </div>
         </section>
+    <?php elseif ($tabAttiva === 'ghost_kitchen'): ?>
+        <section class="ghost-kitchen-management-grid">
+            <?php foreach ($ghostKitchenGestore as $ghostKitchen): ?>
+                <article class="ghost-kitchen-management-card">
+                    <header>
+                        <h2><?= V::e($ghostKitchen->getNome()) ?></h2>
+                        <span class="request-status status-<?= V::e($ghostKitchen->getStato()) ?>"><?= V::e($ghostKitchen->getStato()) ?></span>
+                    </header>
+                    <p><?= V::e($ghostKitchen->getDescrizione()) ?></p>
+                    <dl>
+                        <div><dt>Indirizzo</dt><dd><?= V::e($ghostKitchen->getIndirizzo()) ?>, <?= V::e($ghostKitchen->getCitta()) ?></dd></div>
+                        <div><dt>Prezzo</dt><dd>&euro;<?= V::e(V::money($ghostKitchen->getPrezzoOrario())) ?>/h</dd></div>
+                        <div><dt>Capienza</dt><dd><?= V::e($ghostKitchen->getCapienza()) ?> persone</dd></div>
+                        <div><dt>Valutazione</dt><dd><?= V::e($ghostKitchen->getValutazioneMedia()) ?> / 5</dd></div>
+                    </dl>
+                </article>
+            <?php endforeach; ?>
+            <?php if ($ghostKitchenGestore === []): ?>
+                <div class="empty-state">Nessuna ghost kitchen collegata al tuo profilo.</div>
+            <?php endif; ?>
+        </section>
     <?php elseif ($tabAttiva === 'statistiche'): ?>
         <section class="chef-stats-layout">
             <div class="chef-metric-grid chef-stats-grid">
                 <article class="chef-metric-card">
                     <span class="metric-icon sage" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5"></path><path d="M4 19h16"></path><path d="M8 16l3-4 3 2 5-7"></path></svg></span>
-                    <strong><?= V::e((string) round((float) ($statisticheChef['tassoConferma'] ?? 0))) ?>%</strong>
+                    <strong><?= V::e((string) round((float) ($statisticheGestore['tassoConferma'] ?? 0))) ?>%</strong>
                     <p>Tasso Conferma</p>
                 </article>
                 <article class="chef-metric-card">
-                    <span class="metric-icon warm" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"></path><circle cx="12" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path></svg></span>
-                    <strong><?= V::e((string) (int) ($statisticheChef['ospitiServiti'] ?? 0)) ?></strong>
-                    <p>Ospiti Serviti</p>
+                    <span class="metric-icon warm" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h18"></path><path d="M5 12v7h14v-7"></path><path d="M7 12V8a5 5 0 0 1 10 0v4"></path></svg></span>
+                    <strong><?= V::e(number_format((float) ($statisticheGestore['orePrenotate'] ?? 0), 0, ',', '.')) ?></strong>
+                    <p>Ore Prenotate</p>
                 </article>
                 <article class="chef-metric-card">
                     <span class="metric-icon gold" aria-hidden="true">&euro;</span>
-                    <strong>&euro;<?= V::e(V::money((float) ($statisticheChef['importoMedio'] ?? 0))) ?></strong>
+                    <strong>&euro;<?= V::e(V::money((float) ($statisticheGestore['importoMedio'] ?? 0))) ?></strong>
                     <p>Importo Medio</p>
                 </article>
                 <article class="chef-metric-card">
                     <span class="metric-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg></span>
-                    <strong><?= V::e(number_format((float) ($statisticheChef['durataMedia'] ?? 0), 1, ',', '.')) ?>h</strong>
+                    <strong><?= V::e(number_format((float) ($statisticheGestore['durataMedia'] ?? 0), 1, ',', '.')) ?>h</strong>
                     <p>Durata Media</p>
                 </article>
             </div>

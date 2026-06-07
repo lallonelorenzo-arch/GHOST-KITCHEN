@@ -8,13 +8,14 @@ require_once __DIR__ . '/../Entity/EUtente.php';
 require_once __DIR__ . '/../Entity/ECertificazione.php';
 require_once __DIR__ . '/../Entity/EChef.php';
 require_once __DIR__ . '/../Entity/EGestore.php';
+require_once __DIR__ . '/../Entity/EGhostKitchen.php';
 
 /**
  * @internal Servizio Foundation per creare un account multi-ruolo in transazione.
  */
 class FRegistrazione
 {
-    public static function registra(EUtente $utente, array $ruoli, array $chefData = [], array $certificazioni = []): int|false
+    public static function registra(EUtente $utente, array $ruoli, array $chefData = [], array $certificazioni = [], array $ghostKitchenData = []): int|false
     {
         $ruoli = self::normalizzaRuoli($ruoli);
         if ($ruoli === []) {
@@ -43,6 +44,9 @@ class FRegistrazione
 
             if (in_array(EUtente::TIPO_GESTORE, $ruoli, true)) {
                 self::insertGestore($connection, $idUtente);
+                if ($ghostKitchenData !== []) {
+                    self::insertGhostKitchen($connection, $idUtente, $ghostKitchenData);
+                }
             }
 
             $connection->commit();
@@ -84,6 +88,26 @@ class FRegistrazione
             'prezzo_base' => max(0, (float) ($chefData['prezzoBase'] ?? 0)),
             'anni_esperienza' => max(0, (int) ($chefData['anniEsperienza'] ?? 0)),
             'stato_verifica' => EChef::STATO_VERIFICA_IN_ATTESA,
+        ]);
+    }
+
+    private static function insertGhostKitchen(PDO $connection, int $idGestore, array $ghostKitchenData): void
+    {
+        $statement = $connection->prepare(
+            'INSERT INTO ghost_kitchen (id_gestore, nome, descrizione, indirizzo, citta, cap, prezzo_orario, capienza, mq, stato, valutazione_media, numero_recensioni)
+             VALUES (:id_gestore, :nome, :descrizione, :indirizzo, :citta, :cap, :prezzo_orario, :capienza, :mq, :stato, 0.00, 0)'
+        );
+        $statement->execute([
+            'id_gestore' => $idGestore,
+            'nome' => trim((string) ($ghostKitchenData['nome'] ?? '')),
+            'descrizione' => trim((string) ($ghostKitchenData['descrizione'] ?? '')),
+            'indirizzo' => trim((string) ($ghostKitchenData['indirizzo'] ?? '')),
+            'citta' => trim((string) ($ghostKitchenData['citta'] ?? '')),
+            'cap' => trim((string) ($ghostKitchenData['cap'] ?? '')),
+            'prezzo_orario' => max(0, (float) ($ghostKitchenData['prezzoOrario'] ?? 0)),
+            'capienza' => max(1, (int) ($ghostKitchenData['capienza'] ?? 1)),
+            'mq' => max(1, (float) ($ghostKitchenData['mq'] ?? 1)),
+            'stato' => EGhostKitchen::STATO_SOSPESA,
         ]);
     }
 

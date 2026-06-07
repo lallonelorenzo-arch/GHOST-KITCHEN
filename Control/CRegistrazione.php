@@ -50,6 +50,15 @@ class CRegistrazione
                 }
             }
 
+            $ghostKitchenData = [];
+            if (in_array(EUtente::TIPO_GESTORE, $ruoli, true)) {
+                $ghostKitchenData = $this->ghostKitchenData($post);
+                $erroreGhostKitchen = $this->validaGhostKitchenData($ghostKitchenData);
+                if ($erroreGhostKitchen !== null) {
+                    return $this->formData($post, $erroreGhostKitchen);
+                }
+            }
+
             $utente = new EUtente(
                 null,
                 $nome,
@@ -64,7 +73,7 @@ class CRegistrazione
                 $biografia
             );
 
-            $idUtente = FPersistentManager::registraAccount($utente, $ruoli, $chefData, $certificazioni);
+            $idUtente = FPersistentManager::registraAccount($utente, $ruoli, $chefData, $certificazioni, $ghostKitchenData);
             if ($idUtente === false) {
                 return $this->formData($post, 'Non e stato possibile completare la registrazione.');
             }
@@ -93,8 +102,20 @@ class CRegistrazione
             return 'Inserisci una email valida.';
         }
 
+        if (strlen($nome) > 100 || strlen($cognome) > 100) {
+            return 'Nome e cognome non possono superare 100 caratteri.';
+        }
+
+        if (strlen($telefono) > 30) {
+            return 'Il telefono non puo superare 30 caratteri.';
+        }
+
         if ($password === '' || strlen($password) < 8) {
             return 'La password deve contenere almeno 8 caratteri.';
+        }
+
+        if (strlen($password) > 128) {
+            return 'La password non puo superare 128 caratteri.';
         }
 
         if ($password !== $confermaPassword) {
@@ -103,6 +124,13 @@ class CRegistrazione
 
         if ($ruoli === []) {
             return 'Seleziona almeno un tipo di account.';
+        }
+
+        if (
+            in_array(EUtente::TIPO_CLIENTE, $ruoli, true) &&
+            (in_array(EUtente::TIPO_CHEF, $ruoli, true) || in_array(EUtente::TIPO_GESTORE, $ruoli, true))
+        ) {
+            return 'Cliente non puo essere combinato con ruoli professionali. Puoi scegliere solo cliente oppure chef e gestore.';
         }
 
         return null;
@@ -135,18 +163,73 @@ class CRegistrazione
         ];
     }
 
+    private function ghostKitchenData(array $post): array
+    {
+        return [
+            'nome' => trim((string) ($post['ghostKitchenNome'] ?? '')),
+            'descrizione' => trim((string) ($post['ghostKitchenDescrizione'] ?? '')),
+            'indirizzo' => trim((string) ($post['ghostKitchenIndirizzo'] ?? '')),
+            'citta' => trim((string) ($post['ghostKitchenCitta'] ?? '')),
+            'cap' => trim((string) ($post['ghostKitchenCap'] ?? '')),
+            'prezzoOrario' => (float) str_replace(',', '.', (string) ($post['ghostKitchenPrezzoOrario'] ?? '0')),
+            'capienza' => (int) ($post['ghostKitchenCapienza'] ?? 0),
+            'mq' => (float) str_replace(',', '.', (string) ($post['ghostKitchenMq'] ?? '0')),
+        ];
+    }
+
     private function validaChefData(array $chefData): ?string
     {
         if ((string) $chefData['specializzazione'] === '' || (string) $chefData['tipologiaCucina'] === '') {
             return 'Per il profilo chef inserisci specializzazione e tipologia di cucina.';
         }
 
+        if (strlen((string) $chefData['specializzazione']) > 150 || strlen((string) $chefData['tipologiaCucina']) > 80) {
+            return 'Specializzazione e tipologia cucina sono troppo lunghe.';
+        }
+
         if ((float) $chefData['prezzoBase'] <= 0) {
             return 'Per il profilo chef inserisci un prezzo base valido.';
         }
 
+        if ((float) $chefData['prezzoBase'] > 10000) {
+            return 'Il prezzo base chef non puo superare 10.000 euro.';
+        }
+
         if ((int) $chefData['anniEsperienza'] < 0) {
             return 'Gli anni di esperienza non possono essere negativi.';
+        }
+
+        if ((int) $chefData['anniEsperienza'] > 80) {
+            return 'Gli anni di esperienza chef non possono superare 80.';
+        }
+
+        return null;
+    }
+
+    private function validaGhostKitchenData(array $data): ?string
+    {
+        if ($data['nome'] === '' || $data['descrizione'] === '' || $data['indirizzo'] === '' || $data['citta'] === '' || $data['cap'] === '') {
+            return 'Per il profilo gestore inserisci i dati principali della ghost kitchen.';
+        }
+
+        if (strlen((string) $data['nome']) > 150 || strlen((string) $data['indirizzo']) > 255 || strlen((string) $data['citta']) > 100) {
+            return 'Nome, indirizzo o citta della ghost kitchen sono troppo lunghi.';
+        }
+
+        if (!preg_match('/^[0-9]{5}$/', (string) $data['cap'])) {
+            return 'Inserisci un CAP valido di 5 cifre per la ghost kitchen.';
+        }
+
+        if ((float) $data['prezzoOrario'] <= 0 || (float) $data['prezzoOrario'] > 1000) {
+            return 'Il prezzo orario della ghost kitchen deve essere tra 1 e 1.000 euro.';
+        }
+
+        if ((int) $data['capienza'] <= 0 || (int) $data['capienza'] > 500) {
+            return 'La capienza della ghost kitchen deve essere tra 1 e 500 persone.';
+        }
+
+        if ((float) $data['mq'] <= 0 || (float) $data['mq'] > 5000) {
+            return 'I metri quadri della ghost kitchen devono essere tra 1 e 5.000.';
         }
 
         return null;

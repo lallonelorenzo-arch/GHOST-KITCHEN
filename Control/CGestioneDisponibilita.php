@@ -27,11 +27,18 @@ class CGestioneDisponibilita
         }
 
         $tipoOwner = $this->normalizzaTipoOwner($tipoOwner);
+        $this->validaSlotTemporale($data, $oraInizio, $oraFine);
 
         if ($tipoOwner === 'chef') {
+            if (FPersistentManager::loadDisponibilitaChefBySlot($idOwner, trim($data), trim($oraInizio), trim($oraFine)) !== null) {
+                return ['errore' => 'Esiste gia una disponibilita chef per questo slot.'];
+            }
             $disponibilita = new EDisponibilitaChef(null, $idOwner, trim($data), trim($oraInizio), trim($oraFine), EDisponibilitaChef::STATO_LIBERA);
             $saved = FPersistentManager::storeDisponibilitaChef($disponibilita);
         } else {
+            if (FPersistentManager::loadDisponibilitaGhostKitchenBySlot($idOwner, trim($data), trim($oraInizio), trim($oraFine)) !== null) {
+                return ['errore' => 'Esiste gia una disponibilita ghost kitchen per questo slot.'];
+            }
             $disponibilita = new EDisponibilitaGhostKitchen(null, $idOwner, trim($data), trim($oraInizio), trim($oraFine), EDisponibilitaGhostKitchen::STATO_LIBERA);
             $saved = FPersistentManager::storeDisponibilitaGhostKitchen($disponibilita);
         }
@@ -157,6 +164,10 @@ class CGestioneDisponibilita
                 (string) ($post['oraFine'] ?? '')
             );
 
+            if (isset($result['errore'])) {
+                return $this->esito('Errore disponibilita chef', (string) $result['errore'], false, '/disponibilita');
+            }
+
             return $this->esito('Disponibilita chef', (string) ($result['messaggio'] ?? 'Disponibilita aggiornata.'), true, '/disponibilita');
         } catch (InvalidArgumentException $exception) {
             return $this->esito('Errore disponibilita chef', $exception->getMessage(), false, '/disponibilita');
@@ -185,6 +196,10 @@ class CGestioneDisponibilita
                 (string) ($post['oraInizio'] ?? ''),
                 (string) ($post['oraFine'] ?? '')
             );
+
+            if (isset($result['errore'])) {
+                return $this->esito('Errore disponibilita ghost kitchen', (string) $result['errore'], false, '/disponibilita?idGhostKitchen=' . $idGhostKitchen);
+            }
 
             return $this->esito('Disponibilita ghost kitchen', (string) ($result['messaggio'] ?? 'Disponibilita aggiornata.'), true, '/disponibilita?idGhostKitchen=' . $idGhostKitchen);
         } catch (InvalidArgumentException $exception) {
@@ -225,5 +240,26 @@ class CGestioneDisponibilita
 
         return $tipoOwner;
     }
-}
 
+    private function validaSlotTemporale(string $data, string $oraInizio, string $oraFine): void
+    {
+        $data = trim($data);
+        $oraInizio = trim($oraInizio);
+        $oraFine = trim($oraFine);
+
+        $giorno = DateTimeImmutable::createFromFormat('!Y-m-d', $data);
+        if ($giorno === false || $giorno->format('Y-m-d') !== $data) {
+            throw new InvalidArgumentException('Inserisci una data valida.');
+        }
+
+        if ($giorno < new DateTimeImmutable('today')) {
+            throw new InvalidArgumentException('Non puoi pubblicare disponibilita nel passato.');
+        }
+
+        $inizio = DateTimeImmutable::createFromFormat('H:i', $oraInizio) ?: DateTimeImmutable::createFromFormat('H:i:s', $oraInizio);
+        $fine = DateTimeImmutable::createFromFormat('H:i', $oraFine) ?: DateTimeImmutable::createFromFormat('H:i:s', $oraFine);
+        if ($inizio === false || $fine === false || $fine <= $inizio) {
+            throw new InvalidArgumentException('Ora fine deve essere successiva all ora inizio.');
+        }
+    }
+}

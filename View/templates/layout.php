@@ -12,6 +12,15 @@ $utenteRuoli = $utenteCorrente !== null && is_array($utenteCorrente['ruoli'] ?? 
 $isAdminUser = in_array('admin', $utenteRuoli, true) || in_array('amministratore', $utenteRuoli, true);
 $isChefUser = in_array('chef', $utenteRuoli, true);
 $isGestoreUser = in_array('gestore', $utenteRuoli, true);
+$dashboardRole = strtolower(trim((string) ($_GET['ruolo'] ?? '')));
+if ($dashboardRole !== 'gestore' || !$isGestoreUser) {
+    $dashboardRole = ($isChefUser && !$isAdminUser) ? 'chef' : ($isGestoreUser ? 'gestore' : $utenteRuolo);
+}
+$utenteRuoloVisualizzato = $utenteRuolo;
+if ($currentPath === '/dashboard' && !$isAdminUser) {
+    $utenteRuoloVisualizzato = $dashboardRole === 'gestore' ? 'Gestore GK' : ($dashboardRole === 'chef' ? 'Chef' : $utenteRuolo);
+}
+$bodyClass = $currentPath === '/dashboard' && $dashboardRole === 'gestore' && !$isAdminUser ? 'theme-gestore' : 'theme-chef';
 $richiesteInAttesa = $utenteCorrente !== null ? (int) ($utenteCorrente['richiesteInAttesa'] ?? 0) : 0;
 $fotoProfilo = $utenteCorrente !== null ? (string) ($utenteCorrente['fotoProfilo'] ?? '') : '';
 $iniziali = '';
@@ -33,7 +42,7 @@ if ($utenteCorrente !== null) {
     <script>window.GK_BASE_URL = <?= json_encode((string) ($GLOBALS['view_base_url'] ?? ''), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;</script>
     <script defer src="<?= V::e(V::asset('js/app.js')) ?>?v=<?= V::e((string) @filemtime(dirname(__DIR__, 2) . '/public/assets/js/app.js')) ?>"></script>
 </head>
-<body>
+<body class="<?= V::e($bodyClass) ?>">
 <header class="site-header">
     <nav class="navbar">
         <a class="brand" href="<?= V::e(V::url('/')) ?>">
@@ -49,10 +58,19 @@ if ($utenteCorrente !== null) {
         <div class="nav-links" data-nav-links>
             <?php if ($isChefUser && !$isAdminUser): ?>
                 <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
-                <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard')) ?>">Dashboard</a>
+                <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard', $isGestoreUser && $dashboardRole === 'gestore' ? ['ruolo' => 'gestore'] : ['ruolo' => 'chef'])) ?>">Dashboard</a>
+                <?php if ($isGestoreUser): ?>
+                    <span class="nav-role-toggle" aria-label="Cambia dashboard">
+                        <a class="<?= $dashboardRole === 'chef' ? 'is-active' : '' ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'chef'])) ?>">Chef</a>
+                        <a class="<?= $dashboardRole === 'gestore' ? 'is-active' : '' ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'gestore'])) ?>">Ghost</a>
+                    </span>
+                <?php endif; ?>
             <?php elseif (!$isAdminUser): ?>
                 <a class="<?= V::e(trim($isActive('/ricerca/chef'))) ?>" href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova Chef</a>
                 <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
+                <?php if ($isGestoreUser): ?>
+                    <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'gestore'])) ?>">Dashboard</a>
+                <?php endif; ?>
             <?php endif; ?>
             <?php if ($utenteCorrente !== null): ?>
                 <?php if (!$isAdminUser && !$isChefUser): ?>
@@ -85,7 +103,7 @@ if ($utenteCorrente !== null) {
                     </span>
                     <span class="user-copy">
                         <strong><?= V::e($utenteNome) ?></strong>
-                        <span><?= V::e($utenteRuolo !== '' ? $utenteRuolo : 'account') ?></span>
+                        <span><?= V::e($utenteRuoloVisualizzato !== '' ? $utenteRuoloVisualizzato : 'account') ?></span>
                     </span>
                 </a>
                 <a class="btn btn-ghost" href="<?= V::e(V::url('/logout')) ?>">Logout</a>

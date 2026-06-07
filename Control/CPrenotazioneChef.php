@@ -97,6 +97,11 @@ class CPrenotazioneChef
             return ['errore' => 'Chef non prenotabile: certificazioni non approvate o scadute.'];
         }
 
+        $erroreSlot = $this->validaSlotPrenotazione($dataServizio, $oraInizio, $oraFine);
+        if ($erroreSlot !== null) {
+            return ['errore' => $erroreSlot];
+        }
+
         if (!FPersistentManager::verificaDisponibilitaChef($idChef, $dataServizio, $oraInizio, $oraFine)) {
             return ['errore' => 'Chef non disponibile nello slot richiesto'];
         }
@@ -130,6 +135,8 @@ class CPrenotazioneChef
         if ($prenotazioneSalvata === false) {
             return ['errore' => 'Prenotazione non salvata. Riprova piu tardi.'];
         }
+
+        $this->occupaSlotChef($idChef, $dataServizio, $oraInizio, $oraFine);
 
         return [
             'prenotazione' => $prenotazioneSalvata,
@@ -242,5 +249,35 @@ class CPrenotazioneChef
             && (int) ($accesso['idUtente'] ?? 0) > 0;
     }
 
-}
+    private function occupaSlotChef(int $idChef, string $dataServizio, string $oraInizio, string $oraFine): void
+    {
+        $slot = FPersistentManager::loadDisponibilitaChefBySlot($idChef, $dataServizio, $oraInizio, $oraFine);
+        if ($slot === null || !$slot->isLibera()) {
+            return;
+        }
 
+        $slot->occupa();
+        FPersistentManager::updateDisponibilitaChef($slot);
+    }
+
+    private function validaSlotPrenotazione(string $dataServizio, string $oraInizio, string $oraFine): ?string
+    {
+        $giorno = DateTimeImmutable::createFromFormat('!Y-m-d', trim($dataServizio));
+        if ($giorno === false || $giorno->format('Y-m-d') !== trim($dataServizio)) {
+            return 'Inserisci una data servizio valida.';
+        }
+
+        if ($giorno < new DateTimeImmutable('today')) {
+            return 'Non puoi prenotare uno slot nel passato.';
+        }
+
+        $inizio = DateTimeImmutable::createFromFormat('H:i', trim($oraInizio)) ?: DateTimeImmutable::createFromFormat('H:i:s', trim($oraInizio));
+        $fine = DateTimeImmutable::createFromFormat('H:i', trim($oraFine)) ?: DateTimeImmutable::createFromFormat('H:i:s', trim($oraFine));
+        if ($inizio === false || $fine === false || $fine <= $inizio) {
+            return 'Ora fine deve essere successiva all ora inizio.';
+        }
+
+        return null;
+    }
+
+}

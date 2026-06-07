@@ -237,10 +237,24 @@ class CFrontController
                 return;
             }
 
-            if ($path === '/dashboard' && in_array('chef', $accessContext['ruoli'] ?? [], true) && !in_array('admin', $accessContext['ruoli'] ?? [], true) && !in_array('amministratore', $accessContext['ruoli'] ?? [], true)) {
-                $data = $this->callController('CDashboardChef', 'visualizzaDashboardWeb', [$accessContext, $query]);
-                ViewRenderer::render('dashboard_chef', is_array($data) ? $data : [], $this->sharedViewData());
-                return;
+            if ($path === '/dashboard' && !in_array('admin', $accessContext['ruoli'] ?? [], true) && !in_array('amministratore', $accessContext['ruoli'] ?? [], true)) {
+                $ruoliDashboard = $accessContext['ruoli'] ?? [];
+                $ruoloDashboard = strtolower(trim((string) ($query['ruolo'] ?? '')));
+                if ($ruoloDashboard === 'gestore' && in_array('gestore', $ruoliDashboard, true)) {
+                    $data = $this->callController('CDashboardGestore', 'visualizzaDashboardWeb', [$accessContext, $query]);
+                    ViewRenderer::render('dashboard_gestore', is_array($data) ? $data : [], $this->sharedViewData());
+                    return;
+                }
+                if (in_array('chef', $ruoliDashboard, true)) {
+                    $data = $this->callController('CDashboardChef', 'visualizzaDashboardWeb', [$accessContext, $query]);
+                    ViewRenderer::render('dashboard_chef', is_array($data) ? $data : [], $this->sharedViewData());
+                    return;
+                }
+                if (in_array('gestore', $ruoliDashboard, true)) {
+                    $data = $this->callController('CDashboardGestore', 'visualizzaDashboardWeb', [$accessContext, $query]);
+                    ViewRenderer::render('dashboard_gestore', is_array($data) ? $data : [], $this->sharedViewData());
+                    return;
+                }
             }
 
             $data = $this->callController($controller, $action, $params);
@@ -403,6 +417,10 @@ class CFrontController
             return '/dashboard';
         }
 
+        if (in_array('gestore', $ruoli, true)) {
+            return '/dashboard?ruolo=gestore';
+        }
+
         return '/';
     }
 
@@ -432,6 +450,9 @@ class CFrontController
         $richiesteInAttesa = 0;
         if (FSession::isLogged() && in_array('chef', $ruoli, true) && FSession::getIdUtente() !== null) {
             $richiesteInAttesa = count(FPersistentManager::loadRichiestePrenotazioneChef((int) FSession::getIdUtente()));
+        }
+        if (FSession::isLogged() && in_array('gestore', $ruoli, true) && FSession::getIdUtente() !== null) {
+            $richiesteInAttesa += count(FPersistentManager::loadRichiestePrenotazioneGhostKitchenByGestore((int) FSession::getIdUtente()));
         }
 
         return [
@@ -464,7 +485,7 @@ class CFrontController
         $isGestore = in_array('gestore', $ruoli, true);
 
         if ($path === '/dashboard') {
-            return $isAdmin || $isChef;
+            return $isAdmin || $isChef || $isGestore;
         }
 
         if (in_array($path, ['/moderazione', '/utenti', '/certificazioni'], true)) {

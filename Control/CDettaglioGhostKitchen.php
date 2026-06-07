@@ -18,6 +18,7 @@ class CDettaglioGhostKitchen
 
         return [
             'ghostKitchen' => $ghostKitchen,
+            'gestore' => $ghostKitchen->getIdGestore() !== null ? FPersistentManager::loadGestore((int) $ghostKitchen->getIdGestore()) : null,
             'attrezzature' => FPersistentManager::loadAttrezzatureByGhostKitchen($idGhostKitchen),
             'disponibilitaPubbliche' => FPersistentManager::loadDisponibilitaGhostKitchen($idGhostKitchen),
             'mediaPrincipale' => FPersistentManager::getMediaPrincipale('ghost_kitchen', $idGhostKitchen),
@@ -28,4 +29,3 @@ class CDettaglioGhostKitchen
         ];
     }
 }
-

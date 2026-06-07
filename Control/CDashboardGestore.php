@@ -3,32 +3,31 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
-class CDashboardChef
+class CDashboardGestore
 {
     public function visualizzaDashboardWeb(array $accesso, array $query = []): array
     {
-        if (($accesso['isLogged'] ?? false) !== true || !in_array('chef', $accesso['ruoli'] ?? [], true)) {
+        if (($accesso['isLogged'] ?? false) !== true || !in_array('gestore', $accesso['ruoli'] ?? [], true)) {
             return ['messaggioAccesso' => 'Non hai permessi per questa sezione.'];
         }
 
-        $idChef = (int) ($accesso['idUtente'] ?? 0);
-        $prenotazioni = $idChef > 0 ? FPersistentManager::loadPrenotazioniRicevuteChef($idChef) : [];
-        $inAttesa = array_values(array_filter($prenotazioni, static fn (EPrenotazioneChef $p): bool => $p->getStato() === EPrenotazione::STATO_IN_ATTESA));
-        $accettate = array_values(array_filter($prenotazioni, static fn (EPrenotazioneChef $p): bool => in_array($p->getStato(), [EPrenotazione::STATO_ACCETTATA, EPrenotazione::STATO_PAGATA, EPrenotazione::STATO_COMPLETATA], true)));
-        $fatturato = array_reduce($accettate, static fn (float $totale, EPrenotazioneChef $p): float => $totale + $p->getImportoTotale(), 0.0);
-        $fatturatoMese = array_reduce($accettate, static function (float $totale, EPrenotazioneChef $p): float {
+        $idGestore = (int) ($accesso['idUtente'] ?? 0);
+        $ghostKitchen = $idGestore > 0 ? FPersistentManager::loadGhostKitchenByGestore($idGestore) : [];
+        $prenotazioni = $idGestore > 0 ? FPersistentManager::loadPrenotazioniRicevuteGhostKitchenByGestore($idGestore) : [];
+        $inAttesa = array_values(array_filter($prenotazioni, static fn (EPrenotazioneGhostKitchen $p): bool => $p->getStato() === EPrenotazione::STATO_IN_ATTESA));
+        $accettate = array_values(array_filter($prenotazioni, static fn (EPrenotazioneGhostKitchen $p): bool => in_array($p->getStato(), [EPrenotazione::STATO_ACCETTATA, EPrenotazione::STATO_PAGATA, EPrenotazione::STATO_COMPLETATA], true)));
+        $fatturato = array_reduce($accettate, static fn (float $totale, EPrenotazioneGhostKitchen $p): float => $totale + $p->getImportoTotale(), 0.0);
+        $fatturatoMese = array_reduce($accettate, static function (float $totale, EPrenotazioneGhostKitchen $p): float {
             return str_starts_with($p->getDataServizio(), date('Y-m')) ? $totale + $p->getImportoTotale() : $totale;
         }, 0.0);
-        $ore = array_reduce($accettate, static function (float $totale, EPrenotazioneChef $p): float {
+        $ore = array_reduce($accettate, static function (float $totale, EPrenotazioneGhostKitchen $p): float {
             $inizio = strtotime($p->getOraInizio());
             $fine = strtotime($p->getOraFine());
             return $totale + ($inizio !== false && $fine !== false ? max(0, ($fine - $inizio) / 3600) : 0);
         }, 0.0);
 
-        $chef = FPersistentManager::loadChef($idChef);
-
         $tabAttiva = strtolower(trim((string) ($query['tab'] ?? 'panoramica')));
-        if (!in_array($tabAttiva, ['panoramica', 'prenotazioni', 'richieste', 'calendario', 'statistiche'], true)) {
+        if (!in_array($tabAttiva, ['panoramica', 'prenotazioni', 'richieste', 'calendario', 'statistiche', 'ghost_kitchen'], true)) {
             $tabAttiva = 'panoramica';
         }
         $filtroRichieste = strtolower(trim((string) ($query['filtro'] ?? 'tutte')));
@@ -40,21 +39,34 @@ class CDashboardChef
             'accesso' => $accesso,
             'tabAttiva' => $tabAttiva,
             'filtroRichieste' => $filtroRichieste,
+            'ghostKitchenGestore' => $ghostKitchen,
             'metriche' => [
+                'ghostKitchenTotali' => count($ghostKitchen),
                 'prenotazioniTotali' => count($prenotazioni),
                 'richiesteInAttesa' => count($inAttesa),
                 'fatturato' => $fatturato,
                 'fatturatoMese' => $fatturatoMese,
-                'valutazioneMedia' => $chef !== null ? $chef->getValutazioneMedia() : 0,
-                'oreLavorate' => $ore,
+                'oreOccupate' => $ore,
+                'valutazioneMedia' => $this->valutazioneMediaGhostKitchen($ghostKitchen),
             ],
             'fatturatoMensile' => $this->fatturatoMensile($accettate),
             'prenotazioniSettimanali' => $this->prenotazioniSettimanali($prenotazioni),
             'prossimePrenotazioni' => $this->prossimePrenotazioni($prenotazioni),
             'prenotazioniTabella' => $this->prenotazioniTabella($prenotazioni),
             'richiestePrenotazione' => $this->richiestePrenotazione($prenotazioni),
-            'statisticheChef' => $this->statisticheChef($prenotazioni, $accettate),
+            'statisticheGestore' => $this->statisticheGestore($prenotazioni, $accettate),
         ];
+    }
+
+    private function valutazioneMediaGhostKitchen(array $ghostKitchen): float
+    {
+        $valutate = array_values(array_filter($ghostKitchen, static fn (EGhostKitchen $gk): bool => $gk->getNumeroRecensioni() > 0));
+        if ($valutate === []) {
+            return 0.0;
+        }
+
+        $totale = array_reduce($valutate, static fn (float $sum, EGhostKitchen $gk): float => $sum + $gk->getValutazioneMedia(), 0.0);
+        return round($totale / count($valutate), 2);
     }
 
     private function fatturatoMensile(array $prenotazioni): array
@@ -64,14 +76,11 @@ class CDashboardChef
         for ($i = 6; $i >= 0; $i--) {
             $timestamp = strtotime('-' . $i . ' months');
             $key = date('Y-m', $timestamp);
-            $punti[$key] = [
-                'label' => $mesi[(int) date('n', $timestamp)],
-                'value' => 0.0,
-            ];
+            $punti[$key] = ['label' => $mesi[(int) date('n', $timestamp)], 'value' => 0.0];
         }
 
         foreach ($prenotazioni as $prenotazione) {
-            if (!$prenotazione instanceof EPrenotazioneChef) {
+            if (!$prenotazione instanceof EPrenotazioneGhostKitchen) {
                 continue;
             }
             $key = substr($prenotazione->getDataServizio(), 0, 7);
@@ -96,7 +105,7 @@ class CDashboardChef
         ];
 
         foreach ($prenotazioni as $prenotazione) {
-            if (!$prenotazione instanceof EPrenotazioneChef) {
+            if (!$prenotazione instanceof EPrenotazioneGhostKitchen) {
                 continue;
             }
             $timestamp = strtotime($prenotazione->getDataServizio());
@@ -110,22 +119,23 @@ class CDashboardChef
 
     private function prossimePrenotazioni(array $prenotazioni): array
     {
-        $future = array_values(array_filter($prenotazioni, static function (EPrenotazioneChef $p): bool {
+        $future = array_values(array_filter($prenotazioni, static function (EPrenotazioneGhostKitchen $p): bool {
             return strtotime($p->getDataServizio() . ' ' . $p->getOraInizio()) >= strtotime('today')
                 && in_array($p->getStato(), [EPrenotazione::STATO_IN_ATTESA, EPrenotazione::STATO_ACCETTATA, EPrenotazione::STATO_PAGATA], true);
         }));
 
-        usort($future, static fn (EPrenotazioneChef $a, EPrenotazioneChef $b): int => strcmp($a->getDataServizio() . $a->getOraInizio(), $b->getDataServizio() . $b->getOraInizio()));
+        usort($future, static fn (EPrenotazioneGhostKitchen $a, EPrenotazioneGhostKitchen $b): int => strcmp($a->getDataServizio() . $a->getOraInizio(), $b->getDataServizio() . $b->getOraInizio()));
         $future = array_slice($future, 0, 3);
 
-        return array_map(static function (EPrenotazioneChef $prenotazione): array {
+        return array_map(static function (EPrenotazioneGhostKitchen $prenotazione): array {
             $utente = FPersistentManager::loadUtente((int) $prenotazione->getIdRichiedente());
-            $nome = $utente !== null ? trim($utente->getNome() . ' ' . $utente->getCognome()) : 'Cliente #' . $prenotazione->getIdRichiedente();
+            $ghostKitchen = FPersistentManager::loadGhostKitchen((int) $prenotazione->getIdGhostKitchen());
+            $nome = $utente !== null ? trim($utente->getNome() . ' ' . $utente->getCognome()) : 'Richiedente #' . $prenotazione->getIdRichiedente();
 
             return [
                 'prenotazione' => $prenotazione,
                 'nome' => $nome,
-                'descrizione' => $prenotazione->getRichiesteSpeciali() ?: 'Menu degustazione',
+                'descrizione' => $ghostKitchen !== null ? $ghostKitchen->getNome() : 'Ghost kitchen',
                 'stato' => $prenotazione->getStato(),
             ];
         }, $future);
@@ -133,25 +143,50 @@ class CDashboardChef
 
     private function prenotazioniTabella(array $prenotazioni): array
     {
-        return array_map(static function (EPrenotazioneChef $prenotazione): array {
+        return array_map(static function (EPrenotazioneGhostKitchen $prenotazione): array {
             $utente = FPersistentManager::loadUtente((int) $prenotazione->getIdRichiedente());
-            $menu = FPersistentManager::loadMenu((int) $prenotazione->getIdMenu());
+            $ghostKitchen = FPersistentManager::loadGhostKitchen((int) $prenotazione->getIdGhostKitchen());
 
             return [
                 'prenotazione' => $prenotazione,
-                'clienteId' => $prenotazione->getIdRichiedente(),
-                'clienteNome' => $utente !== null ? trim($utente->getNome() . ' ' . $utente->getCognome()) : 'Cliente #' . $prenotazione->getIdRichiedente(),
-                'clienteEmail' => $utente !== null ? $utente->getEmail() : '',
-                'clienteTelefono' => $utente !== null ? $utente->getTelefono() : '',
-                'clienteLocalita' => $utente !== null ? $utente->getLocalita() : '',
-                'servizio' => $menu !== null ? $menu->getNome() : ($prenotazione->getRichiesteSpeciali() ?: 'Servizio chef'),
-                'dettagli' => $prenotazione->getNumeroPersone() . ' ospiti',
+                'richiedenteId' => $prenotazione->getIdRichiedente(),
+                'richiedenteNome' => $utente !== null ? trim($utente->getNome() . ' ' . $utente->getCognome()) : 'Richiedente #' . $prenotazione->getIdRichiedente(),
+                'richiedenteEmail' => $utente !== null ? $utente->getEmail() : '',
+                'richiedenteTelefono' => $utente !== null ? $utente->getTelefono() : '',
+                'richiedenteLocalita' => $utente !== null ? $utente->getLocalita() : '',
+                'ghostKitchen' => $ghostKitchen !== null ? $ghostKitchen->getNome() : 'Ghost kitchen #' . $prenotazione->getIdGhostKitchen(),
+                'indirizzoGhostKitchen' => $ghostKitchen !== null ? trim($ghostKitchen->getIndirizzo() . ', ' . $ghostKitchen->getCitta()) : '',
+                'dettagli' => $prenotazione->getTipoRichiedente() === EPrenotazioneGhostKitchen::TIPO_RICHIEDENTE_CHEF ? 'Richiesta chef' : 'Richiesta cliente',
                 'stato' => $prenotazione->getStato(),
             ];
         }, $prenotazioni);
     }
 
-    private function statisticheChef(array $prenotazioni, array $prenotazioniValide): array
+    private function richiestePrenotazione(array $prenotazioni): array
+    {
+        return array_map(static function (EPrenotazioneGhostKitchen $richiesta): array {
+            $utente = FPersistentManager::loadUtente((int) $richiesta->getIdRichiedente());
+            $ghostKitchen = FPersistentManager::loadGhostKitchen((int) $richiesta->getIdGhostKitchen());
+            $nome = $utente !== null ? trim($utente->getNome() . ' ' . $utente->getCognome()) : 'Richiedente #' . $richiesta->getIdRichiedente();
+            $iniziali = $utente !== null
+                ? strtoupper(substr($utente->getNome(), 0, 1) . substr($utente->getCognome(), 0, 1))
+                : 'GK';
+
+            return [
+                'prenotazione' => $richiesta,
+                'nomeRichiedente' => $nome,
+                'iniziali' => $iniziali !== '' ? $iniziali : 'GK',
+                'stato' => $richiesta->getStato(),
+                'servizio' => $ghostKitchen !== null ? $ghostKitchen->getNome() : 'Ghost kitchen',
+                'descrizione' => 'Prenotazione spazio - ' . ($ghostKitchen !== null ? $ghostKitchen->getNome() : 'Ghost kitchen'),
+                'indirizzo' => $ghostKitchen !== null ? trim($ghostKitchen->getIndirizzo() . ', ' . $ghostKitchen->getCitta()) : 'Indirizzo non disponibile',
+                'messaggio' => $richiesta->getNote() !== '' ? $richiesta->getNote() : 'Nessun messaggio aggiuntivo.',
+                'ricevuta' => self::tempoTrascorso($richiesta->getDataCreazione()),
+            ];
+        }, $prenotazioni);
+    }
+
+    private function statisticheGestore(array $prenotazioni, array $prenotazioniValide): array
     {
         $stati = [
             EPrenotazione::STATO_IN_ATTESA => 0,
@@ -161,15 +196,13 @@ class CDashboardChef
             EPrenotazione::STATO_RIFIUTATA => 0,
             EPrenotazione::STATO_CANCELLATA => 0,
         ];
-        $ospiti = 0;
         $durataTotale = 0.0;
         $importoMedio = 0.0;
 
         foreach ($prenotazioni as $prenotazione) {
-            if (!$prenotazione instanceof EPrenotazioneChef) {
+            if (!$prenotazione instanceof EPrenotazioneGhostKitchen) {
                 continue;
             }
-
             $stato = $prenotazione->getStato();
             if (array_key_exists($stato, $stati)) {
                 $stati[$stato]++;
@@ -177,11 +210,9 @@ class CDashboardChef
         }
 
         foreach ($prenotazioniValide as $prenotazione) {
-            if (!$prenotazione instanceof EPrenotazioneChef) {
+            if (!$prenotazione instanceof EPrenotazioneGhostKitchen) {
                 continue;
             }
-
-            $ospiti += $prenotazione->getNumeroPersone();
             $inizio = strtotime($prenotazione->getOraInizio());
             $fine = strtotime($prenotazione->getOraFine());
             $durataTotale += $inizio !== false && $fine !== false ? max(0, ($fine - $inizio) / 3600) : 0;
@@ -192,36 +223,11 @@ class CDashboardChef
 
         return [
             'stati' => $stati,
-            'ospitiServiti' => $ospiti,
+            'orePrenotate' => $durataTotale,
             'durataMedia' => $numeroValide > 0 ? $durataTotale / $numeroValide : 0.0,
             'importoMedio' => $numeroValide > 0 ? $importoMedio / $numeroValide : 0.0,
             'tassoConferma' => count($prenotazioni) > 0 ? ($numeroValide / count($prenotazioni)) * 100 : 0.0,
         ];
-    }
-
-    private function richiestePrenotazione(array $richieste): array
-    {
-        return array_map(static function (EPrenotazioneChef $richiesta): array {
-            $utente = FPersistentManager::loadUtente((int) $richiesta->getIdRichiedente());
-            $menu = FPersistentManager::loadMenu((int) $richiesta->getIdMenu());
-            $nome = $utente !== null ? trim($utente->getNome() . ' ' . $utente->getCognome()) : 'Cliente #' . $richiesta->getIdRichiedente();
-            $iniziali = $utente !== null
-                ? strtoupper(substr($utente->getNome(), 0, 1) . substr($utente->getCognome(), 0, 1))
-                : 'CL';
-            $menuNome = $menu !== null ? $menu->getNome() : 'Menu personalizzato';
-
-            return [
-                'prenotazione' => $richiesta,
-                'nomeRichiedente' => $nome,
-                'iniziali' => $iniziali !== '' ? $iniziali : 'CL',
-                'stato' => $richiesta->getStato(),
-                'servizio' => $menuNome,
-                'descrizione' => 'Cena privata - ' . $menuNome,
-                'indirizzo' => $richiesta->getIndirizzoServizio(),
-                'messaggio' => $richiesta->getNote() !== '' ? $richiesta->getNote() : ($richiesta->getRichiesteSpeciali() ?: 'Nessun messaggio aggiuntivo.'),
-                'ricevuta' => self::tempoTrascorso($richiesta->getDataCreazione()),
-            ];
-        }, $richieste);
     }
 
     private static function tempoTrascorso(string $dataCreazione): string

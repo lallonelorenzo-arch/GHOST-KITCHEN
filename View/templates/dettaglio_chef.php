@@ -66,8 +66,34 @@ $rating = $chef->getValutazioneMedia();
         <span>per esperienza</span>
         <div class="booking-actions">
             <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/chef/' . $chef->getIdChef())) ?>">Prenota ora</a>
-            <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Chef</a>
+            <button class="btn btn-ghost" type="button" data-modal-open="chef-contact-modal">Contatta Chef</button>
             <a class="btn btn-ghost" href="<?= V::e(V::url('/segnalazione/chef/' . $chef->getIdChef())) ?>">Segnala profilo</a>
         </div>
     </aside>
 </section>
+
+<dialog class="booking-detail-modal contact-modal" id="chef-contact-modal" aria-labelledby="chef-contact-title">
+    <div class="booking-detail-box">
+        <header>
+            <div>
+                <span>Recapiti chef</span>
+                <h2 id="chef-contact-title"><?= V::e($chef->getNome() . ' ' . $chef->getCognome()) ?></h2>
+            </div>
+            <button type="button" class="modal-close-button" data-modal-close aria-label="Chiudi contatti">&times;</button>
+        </header>
+        <dl class="contact-detail-list">
+            <div>
+                <dt>Email</dt>
+                <dd><a href="mailto:<?= V::e($chef->getEmail()) ?>"><?= V::e($chef->getEmail() !== '' ? $chef->getEmail() : 'Non disponibile') ?></a></dd>
+            </div>
+            <div>
+                <dt>Telefono</dt>
+                <dd><a href="tel:<?= V::e($chef->getTelefono()) ?>"><?= V::e($chef->getTelefono() !== '' ? $chef->getTelefono() : 'Non disponibile') ?></a></dd>
+            </div>
+            <div>
+                <dt>Localita</dt>
+                <dd><?= V::e($chef->getLocalita() !== '' ? $chef->getLocalita() : 'Non indicata') ?></dd>
+            </div>
+        </dl>
+    </div>
+</dialog>

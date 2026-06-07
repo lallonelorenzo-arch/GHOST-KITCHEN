@@ -4,8 +4,10 @@ use ViewHelpers as V;
 /** @var array $attrezzature */
 /** @var array $disponibilitaPubbliche */
 /** @var mixed $mediaPrincipale */
+/** @var EGestore|null $gestore */
 $image = V::mediaUrl($mediaPrincipale ?? null, 'https://images.unsplash.com/photo-1767785990437-dfe1fe516fe8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200');
 $rating = $ghostKitchen->getValutazioneMedia();
+$gestore = $gestore ?? null;
 ?>
 <section class="detail-hero" style="background-image: linear-gradient(0deg, rgba(44,24,16,.9), rgba(44,24,16,.25)), url('<?= V::e($image) ?>')">
     <a class="back-link" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Torna alle cucine</a>
@@ -53,8 +55,46 @@ $rating = $ghostKitchen->getValutazioneMedia();
         </div>
         <div class="booking-actions">
             <a class="btn btn-accent" href="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>">Prenota ora</a>
-            <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Contatta Gestore</a>
+            <button class="btn btn-ghost" type="button" data-modal-open="gestore-contact-modal">Contatta Gestore</button>
             <a class="btn btn-ghost" href="<?= V::e(V::url('/segnalazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>">Segnala cucina</a>
         </div>
     </aside>
 </section>
+
+<dialog class="booking-detail-modal contact-modal" id="gestore-contact-modal" aria-labelledby="gestore-contact-title">
+    <div class="booking-detail-box">
+        <header>
+            <div>
+                <span>Recapiti gestore</span>
+                <h2 id="gestore-contact-title"><?= V::e($gestore !== null ? trim($gestore->getNome() . ' ' . $gestore->getCognome()) : 'Gestore') ?></h2>
+            </div>
+            <button type="button" class="modal-close-button" data-modal-close aria-label="Chiudi contatti">&times;</button>
+        </header>
+        <dl class="contact-detail-list">
+            <div>
+                <dt>Email</dt>
+                <dd>
+                    <?php if ($gestore !== null && $gestore->getEmail() !== ''): ?>
+                        <a href="mailto:<?= V::e($gestore->getEmail()) ?>"><?= V::e($gestore->getEmail()) ?></a>
+                    <?php else: ?>
+                        Non disponibile
+                    <?php endif; ?>
+                </dd>
+            </div>
+            <div>
+                <dt>Telefono</dt>
+                <dd>
+                    <?php if ($gestore !== null && $gestore->getTelefono() !== ''): ?>
+                        <a href="tel:<?= V::e($gestore->getTelefono()) ?>"><?= V::e($gestore->getTelefono()) ?></a>
+                    <?php else: ?>
+                        Non disponibile
+                    <?php endif; ?>
+                </dd>
+            </div>
+            <div>
+                <dt>Ghost kitchen</dt>
+                <dd><?= V::e($ghostKitchen->getNome()) ?></dd>
+            </div>
+        </dl>
+    </div>
+</dialog>

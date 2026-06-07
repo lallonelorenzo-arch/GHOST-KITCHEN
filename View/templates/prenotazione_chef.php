@@ -42,7 +42,7 @@ $certificazioniInRegola = $certificazioniInRegola ?? true;
             </article>
 
             <?php if ($certificazioniInRegola): ?>
-            <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/prenotazione/chef/' . $chef->getIdChef())) ?>">
+            <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/prenotazione/chef/' . $chef->getIdChef())) ?>" data-booking-form>
                 <h2>Dati richiesta</h2>
                 <label>Menu
                     <select name="idMenu" required>
@@ -92,20 +92,12 @@ $certificazioniInRegola = $certificazioniInRegola ?? true;
             </article>
         <?php endif; ?>
 
-        <section class="ops-panel">
-            <h2>Disponibilita chef</h2>
-            <div class="ops-list">
-                <?php foreach ($disponibilitaChef as $slot): ?>
-                    <div class="ops-list-item">
-                        <strong><?= V::e($slot->getData()) ?></strong>
-                        <span><?= V::e($slot->getOraInizio()) ?> - <?= V::e($slot->getOraFine()) ?></span>
-                        <span class="badge"><?= V::e($slot->getStato()) ?></span>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            <?php if ($disponibilitaChef === []): ?>
-                <p class="muted-text">Nessuno slot pubblicato per questo chef.</p>
-            <?php endif; ?>
-        </section>
+        <?php
+        $calendarSlots = $disponibilitaChef;
+        $calendarTitle = 'Calendario disponibilita chef';
+        $calendarEmptyText = 'Nessuno slot pubblicato per questo chef.';
+        $calendarSelectable = $certificazioniInRegola && empty($accessoRichiesto);
+        include __DIR__ . '/partials/booking_calendar.php';
+        ?>
     <?php endif; ?>
 </section>
