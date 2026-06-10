@@ -76,11 +76,11 @@ if ($utenteCorrente !== null) {
                 <?php if (!$isAdminUser && !$isChefUser): ?>
                     <a class="<?= V::e(trim($isActive('/prenotazioni'))) ?>" href="<?= V::e(V::url('/prenotazioni')) ?>">Le mie prenotazioni</a>
                 <?php endif; ?>
-                <?php if (($isChefUser || $isGestoreUser) && !$isChefUser): ?>
+                <?php if (($isChefUser || $isGestoreUser) && !$isAdminUser): ?>
                     <a class="<?= V::e(trim($isActive('/disponibilita'))) ?>" href="<?= V::e(V::url('/disponibilita')) ?>">Disponibilita</a>
                     <a class="<?= V::e(trim($isActive('/richieste'))) ?>" href="<?= V::e(V::url('/richieste')) ?>">Richieste</a>
                 <?php endif; ?>
-                <?php if ($isChefUser && $isAdminUser): ?>
+                <?php if ($isChefUser && !$isAdminUser): ?>
                     <a class="<?= V::e(trim($isActive('/mie-certificazioni'))) ?>" href="<?= V::e(V::url('/mie-certificazioni')) ?>">Le mie certificazioni</a>
                 <?php endif; ?>
                 <?php if ($isAdminUser): ?>
