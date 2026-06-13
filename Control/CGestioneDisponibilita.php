@@ -111,82 +111,80 @@ class CGestioneDisponibilita
     }
 
 
-    public function mostraDisponibilitaWeb(array $accesso, array $query = []): array
-    {
-        $data = [
-            'accesso' => $accesso,
-            'calendarioChef' => null,
-            'calendarioGhostKitchen' => null,
-            'idGhostKitchen' => (int) ($query['idGhostKitchen'] ?? 0),
-            'ghostKitchenGestore' => [],
-        ];
-
-        if (($accesso['isLogged'] ?? false) !== true) {
-            $data['messaggioAccesso'] = 'Non hai permessi per questa sezione.';
-            return $data;
-        }
-
-        $ruoli = $accesso['ruoli'] ?? [];
-        if (in_array('chef', $ruoli, true)) {
-            $data['calendarioChef'] = $this->visualizzaCalendario('chef', (int) $accesso['idUtente']);
-        }
-
-        if (in_array('gestore', $ruoli, true)) {
-            $data['ghostKitchenGestore'] = FPersistentManager::loadGhostKitchenByGestore((int) $accesso['idUtente']);
-            if ($data['idGhostKitchen'] <= 0 && count($data['ghostKitchenGestore']) === 1) {
-                $data['idGhostKitchen'] = (int) $data['ghostKitchenGestore'][0]->getId();
-            }
-
-            if ($data['idGhostKitchen'] > 0) {
-                $data['calendarioGhostKitchen'] = $this->visualizzaCalendario('ghost_kitchen', $data['idGhostKitchen']);
-            } elseif ($data['ghostKitchenGestore'] === []) {
-                $data['messaggioGestore'] = 'Nessuna ghost kitchen risulta collegata al tuo profilo gestore.';
-            } else {
-                $data['messaggioGestore'] = 'Seleziona una ghost kitchen da gestire.';
-            }
-        }
-
-        return $data;
-    }
-
     public function aggiungiDisponibilitaChefWeb(array $accesso, array $post): array
     {
         if (($accesso['isLogged'] ?? false) !== true || !in_array('chef', $accesso['ruoli'] ?? [], true)) {
-            return $this->esito('Accesso richiesto', 'Serve un utente con ruolo chef per aggiungere disponibilita.', false, '/disponibilita');
+            return $this->esito('Accesso richiesto', 'Serve un utente con ruolo chef per aggiungere disponibilita.', false, '/dashboard?ruolo=chef&tab=disponibilita');
         }
 
         try {
-            $result = $this->aggiungiDisponibilita(
-                'chef',
-                (int) $accesso['idUtente'],
-                (string) ($post['data'] ?? ''),
-                (string) ($post['oraInizio'] ?? ''),
-                (string) ($post['oraFine'] ?? '')
-            );
-
-            if (isset($result['errore'])) {
-                return $this->esito('Errore disponibilita chef', (string) $result['errore'], false, '/disponibilita');
+            $fasce = is_array($post['fasce'] ?? null) ? $post['fasce'] : [];
+            if ($fasce === []) {
+                $fasciaSingola = trim((string) ($post['fascia'] ?? ''));
+                if ($fasciaSingola !== '') {
+                    $fasce = [$fasciaSingola];
+                }
             }
 
-            return $this->esito('Disponibilita chef', (string) ($result['messaggio'] ?? 'Disponibilita aggiornata.'), true, '/disponibilita');
+            if ($fasce === []) {
+                $result = $this->aggiungiDisponibilita(
+                    'chef',
+                    (int) $accesso['idUtente'],
+                    (string) ($post['data'] ?? ''),
+                    (string) ($post['oraInizio'] ?? ''),
+                    (string) ($post['oraFine'] ?? '')
+                );
+                if (isset($result['errore'])) {
+                    return $this->esito('Errore disponibilita chef', (string) $result['errore'], false, '/dashboard?ruolo=chef&tab=disponibilita');
+                }
+                return $this->esito('Disponibilita chef', 'Disponibilita aggiornata.', true, '/dashboard?ruolo=chef&tab=disponibilita');
+            }
+
+            $create = 0;
+            $errors = [];
+            foreach (array_unique($fasce) as $fascia) {
+                [$oraInizio, $oraFine] = EDisponibilitaChef::orariPerFascia((string) $fascia);
+                $result = $this->aggiungiDisponibilita(
+                    'chef',
+                    (int) $accesso['idUtente'],
+                    (string) ($post['data'] ?? ''),
+                    $oraInizio,
+                    $oraFine
+                );
+                if (isset($result['errore'])) {
+                    $errors[] = ucfirst((string) $fascia) . ': ' . $result['errore'];
+                } else {
+                    $create++;
+                }
+            }
+
+            if ($create === 0) {
+                return $this->esito('Disponibilita chef', implode(' ', $errors), false, '/dashboard?ruolo=chef&tab=disponibilita');
+            }
+
+            $message = $create === 1 ? 'Fascia pubblicata.' : 'Fasce pranzo e cena pubblicate.';
+            if ($errors !== []) {
+                $message .= ' ' . implode(' ', $errors);
+            }
+            return $this->esito('Disponibilita chef', $message, true, '/dashboard?ruolo=chef&tab=disponibilita');
         } catch (InvalidArgumentException $exception) {
-            return $this->esito('Errore disponibilita chef', $exception->getMessage(), false, '/disponibilita');
+            return $this->esito('Errore disponibilita chef', $exception->getMessage(), false, '/dashboard?ruolo=chef&tab=disponibilita');
         } catch (Throwable $exception) {
             error_log('[CGestioneDisponibilita] ' . $exception->getMessage());
-            return $this->esito('Errore disponibilita chef', 'Non e stato possibile aggiornare la disponibilita. Riprova piu tardi.', false, '/disponibilita');
+            return $this->esito('Errore disponibilita chef', 'Non e stato possibile aggiornare la disponibilita. Riprova piu tardi.', false, '/dashboard?ruolo=chef&tab=disponibilita');
         }
     }
 
     public function aggiungiDisponibilitaGhostKitchenWeb(array $accesso, array $post): array
     {
         if (($accesso['isLogged'] ?? false) !== true || !in_array('gestore', $accesso['ruoli'] ?? [], true)) {
-            return $this->esito('Accesso richiesto', 'Serve un utente con ruolo gestore per aggiungere disponibilita.', false, '/disponibilita');
+            return $this->esito('Accesso richiesto', 'Serve un utente con ruolo gestore per aggiungere disponibilita.', false, '/dashboard?ruolo=gestore&tab=disponibilita');
         }
 
         try {
             $idGhostKitchen = (int) ($post['idGhostKitchen'] ?? 0);
             if (!$this->gestorePossiedeGhostKitchen((int) $accesso['idUtente'], $idGhostKitchen)) {
-                return $this->esito('Accesso non consentito', 'Puoi aggiungere disponibilita solo alle ghost kitchen collegate al tuo profilo.', false, '/disponibilita');
+                return $this->esito('Accesso non consentito', 'Puoi aggiungere disponibilita solo alle ghost kitchen collegate al tuo profilo.', false, '/dashboard?ruolo=gestore&tab=disponibilita');
             }
 
             $result = $this->aggiungiDisponibilita(
@@ -198,15 +196,64 @@ class CGestioneDisponibilita
             );
 
             if (isset($result['errore'])) {
-                return $this->esito('Errore disponibilita ghost kitchen', (string) $result['errore'], false, '/disponibilita?idGhostKitchen=' . $idGhostKitchen);
+                return $this->esito('Errore disponibilita ghost kitchen', (string) $result['errore'], false, '/dashboard?ruolo=gestore&tab=disponibilita');
             }
 
-            return $this->esito('Disponibilita ghost kitchen', (string) ($result['messaggio'] ?? 'Disponibilita aggiornata.'), true, '/disponibilita?idGhostKitchen=' . $idGhostKitchen);
+            return $this->esito('Disponibilita ghost kitchen', (string) ($result['messaggio'] ?? 'Disponibilita aggiornata.'), true, '/dashboard?ruolo=gestore&tab=disponibilita');
         } catch (InvalidArgumentException $exception) {
-            return $this->esito('Errore disponibilita ghost kitchen', $exception->getMessage(), false, '/disponibilita');
+            return $this->esito('Errore disponibilita ghost kitchen', $exception->getMessage(), false, '/dashboard?ruolo=gestore&tab=disponibilita');
         } catch (Throwable $exception) {
             error_log('[CGestioneDisponibilita] ' . $exception->getMessage());
-            return $this->esito('Errore disponibilita ghost kitchen', 'Non e stato possibile aggiornare la disponibilita. Riprova piu tardi.', false, '/disponibilita');
+            return $this->esito('Errore disponibilita ghost kitchen', 'Non e stato possibile aggiornare la disponibilita. Riprova piu tardi.', false, '/dashboard?ruolo=gestore&tab=disponibilita');
+        }
+    }
+
+    public function aggiornaStatoDisponibilitaWeb(string $tipoOwner, int $idDisponibilita, string $azione, array $accesso): array
+    {
+        $tipoOwner = $this->normalizzaTipoOwner($tipoOwner);
+        $azione = strtolower(trim($azione));
+        $isChef = $tipoOwner === 'chef';
+        $ritorno = $isChef
+            ? '/dashboard?ruolo=chef&tab=disponibilita'
+            : '/dashboard?ruolo=gestore&tab=disponibilita';
+
+        if (($accesso['isLogged'] ?? false) !== true) {
+            return $this->esito('Accesso richiesto', 'Accedi per gestire la disponibilita.', false, $ritorno);
+        }
+
+        $slot = $isChef
+            ? FPersistentManager::loadDisponibilitaChefById($idDisponibilita)
+            : FPersistentManager::loadDisponibilitaGhostKitchenById($idDisponibilita);
+        if ($slot === null) {
+            return $this->esito('Disponibilita', 'Slot non trovato.', false, $ritorno);
+        }
+
+        if ($isChef) {
+            if (!in_array('chef', $accesso['ruoli'] ?? [], true) || (int) $slot->getIdChef() !== (int) ($accesso['idUtente'] ?? 0)) {
+                return $this->esito('Accesso non consentito', 'Lo slot non appartiene al tuo profilo chef.', false, $ritorno);
+            }
+        } elseif (!in_array('gestore', $accesso['ruoli'] ?? [], true)
+            || !$this->gestorePossiedeGhostKitchen((int) ($accesso['idUtente'] ?? 0), (int) $slot->getIdGhostKitchen())
+        ) {
+            return $this->esito('Accesso non consentito', 'Lo slot non appartiene a una tua Ghost Kitchen.', false, $ritorno);
+        }
+
+        if ($slot->getStato() === 'occupata') {
+            return $this->esito('Disponibilita', 'Uno slot occupato non puo essere modificato manualmente.', false, $ritorno);
+        }
+
+        try {
+            $result = match ($azione) {
+                'blocca' => $this->bloccaDisponibilita($tipoOwner, $idDisponibilita),
+                'libera' => $this->liberaDisponibilita($tipoOwner, $idDisponibilita),
+                default => ['errore' => 'Azione non valida.'],
+            };
+
+            return isset($result['errore'])
+                ? $this->esito('Disponibilita', (string) $result['errore'], false, $ritorno)
+                : $this->esito('Disponibilita', (string) ($result['messaggio'] ?? 'Slot aggiornato.'), true, $ritorno);
+        } catch (InvalidArgumentException $exception) {
+            return $this->esito('Disponibilita', $exception->getMessage(), false, $ritorno);
         }
     }
 

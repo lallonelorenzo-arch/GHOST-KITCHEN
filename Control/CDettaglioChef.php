@@ -2,10 +2,11 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Foundation/FPersistentManager.php';
+require_once __DIR__ . '/../Foundation/FSession.php';
 
 class CDettaglioChef
 {
-    public function visualizzaDettaglioChef(int $idChef): array
+    public function visualizzaDettaglioChef(int $idChef, array $accesso = []): array
     {
         if ($idChef <= 0) {
             throw new InvalidArgumentException('ID chef non valido.');
@@ -20,7 +21,10 @@ class CDettaglioChef
         }
 
         $fotoProfilo = FPersistentManager::getMediaPrincipale('chef', $idChef);
-        $menuChef = FPersistentManager::loadMenuByChef($idChef);
+        $menuChef = array_values(array_filter(
+            FPersistentManager::loadMenuByChef($idChef),
+            static fn (EMenu $menu): bool => $menu->isAttivo()
+        ));
         $menuDettagliati = [];
 
         foreach ($menuChef as $menu) {
@@ -39,11 +43,41 @@ class CDettaglioChef
             ];
         }
 
+        $disponibilita = array_values(array_filter(
+            FPersistentManager::loadDisponibilitaChef($idChef),
+            static fn (EDisponibilitaChef $slot): bool =>
+                $slot->isLibera() && $slot->getData() >= date('Y-m-d')
+        ));
+        $utente = ($accesso['isLogged'] ?? false) === true
+            ? FPersistentManager::loadUtente((int) ($accesso['idUtente'] ?? 0))
+            : null;
+        $ruoli = $accesso['ruoli'] ?? [];
+        $ruoloAttivo = (string) ($accesso['ruoloAttivo'] ?? '');
+        $canBook = ($accesso['isLogged'] ?? false) === true
+            && $ruoloAttivo !== 'chef'
+            && (in_array('cliente', $ruoli, true) || in_array('gestore', $ruoli, true));
+
         return [
             'chef' => $chef,
             'fotoProfilo' => $fotoProfilo,
             'menu' => $menuDettagliati,
             'certificazioni' => FPersistentManager::loadCertificazioniApprovateByChef($idChef),
+            'disponibilitaChef' => $disponibilita,
+            'accesso' => $accesso,
+            'canBookChef' => $canBook,
+            'chefPrenotabile' => FPersistentManager::chefHaCertificazioniInRegola($idChef),
+            'indirizzoSalvato' => [
+                'indirizzo' => $utente?->getIndirizzo() ?? '',
+                'citta' => $utente?->getCitta() ?? '',
+                'provincia' => $utente?->getProvincia() ?? '',
+                'numeroCivico' => $utente?->getNumeroCivico() ?? '',
+            ],
+            'bookingCsrfToken' => $utente !== null
+                ? FSession::csrfToken('chef_booking')
+                : '',
+            'metodiPagamento' => $utente !== null
+                ? FPersistentManager::loadMetodiPagamentoByUtente((int) $utente->getIdUtente())
+                : [],
             'azioni' => [
                 'prenotaChef' => '/PrenotazioneChef/avviaPrenotazioneChef'
             ]

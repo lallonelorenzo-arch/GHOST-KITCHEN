@@ -74,9 +74,12 @@ ksort($slotsByMonth);
                             $attrs = $tag === 'button'
                                 ? ' type="button" aria-pressed="false" data-slot-select data-date="' . V::e($slot->getData()) . '" data-start="' . V::e($slot->getOraInizio()) . '" data-end="' . V::e($slot->getOraFine()) . '"'
                                 : '';
+                            $slotLabel = method_exists($slot, 'getFasciaServizio')
+                                ? ucfirst($slot->getFasciaServizio())
+                                : substr($slot->getOraInizio(), 0, 5) . '-' . substr($slot->getOraFine(), 0, 5);
                             ?>
                             <<?= $tag ?> class="calendar-slot status-<?= V::e($slot->getStato()) ?>"<?= $attrs ?>>
-                                <strong><?= V::e(substr($slot->getOraInizio(), 0, 5)) ?>-<?= V::e(substr($slot->getOraFine(), 0, 5)) ?></strong>
+                                <strong><?= V::e($slotLabel) ?></strong>
                                 <small><?= V::e($slot->getStato()) ?></small>
                             </<?= $tag ?>>
                         <?php endforeach; ?>

@@ -9,7 +9,12 @@ use ViewHelpers as V;
 /** @var array $prossimePrenotazioni */
 /** @var array $prenotazioniTabella */
 /** @var array $richiestePrenotazione */
-/** @var array $statisticheChef */
+/** @var EChef|null $profiloChef */
+/** @var array $menuChef */
+/** @var array $piattiMenuChef */
+/** @var array $recensioniChef */
+/** @var array $certificazioniChef */
+/** @var array $disponibilitaChef */
 /** @var string $filtroRichieste */
 $nome = trim((string) ($accesso['nome'] ?? ''));
 $nome = $nome !== '' ? $nome : 'Chef';
@@ -17,17 +22,23 @@ $currentPath = (string) ($currentPath ?? '/dashboard');
 $filtroRichieste = (string) ($filtroRichieste ?? 'tutte');
 $tabs = [
     'panoramica' => 'Panoramica',
-    'prenotazioni' => 'Prenotazioni',
+    'prenotazioni' => 'Prenotazioni ricevute',
     'richieste' => 'Richieste',
-    'calendario' => 'Calendario',
-    'statistiche' => 'Statistiche',
+    'disponibilita' => 'Disponibilita',
+    'profilo' => 'Profilo pubblico',
+    'recensioni' => 'Recensioni',
 ];
 $fatturatoMensile = $fatturatoMensile ?? [];
 $prenotazioniSettimanali = $prenotazioniSettimanali ?? [];
 $prossimePrenotazioni = $prossimePrenotazioni ?? [];
 $prenotazioniTabella = $prenotazioniTabella ?? [];
 $richiestePrenotazione = $richiestePrenotazione ?? [];
-$statisticheChef = $statisticheChef ?? [];
+$profiloChef = $profiloChef ?? null;
+$menuChef = $menuChef ?? [];
+$piattiMenuChef = $piattiMenuChef ?? [];
+$recensioniChef = $recensioniChef ?? [];
+$certificazioniChef = $certificazioniChef ?? [];
+$disponibilitaChef = $disponibilitaChef ?? [];
 $maxFatturatoRaw = max(1, ...array_map(static fn (array $p): float => (float) $p['value'], $fatturatoMensile));
 $maxFatturato = max(1000, (int) ceil($maxFatturatoRaw / 1000) * 1000);
 $maxSettimana = max(1, ...array_map(static fn (array $p): int => (int) $p['value'], $prenotazioniSettimanali));
@@ -80,8 +91,6 @@ $statusLabels = [
     'rifiutata' => 'Rifiutata',
     'cancellata' => 'Cancellata',
 ];
-$statiStatistiche = $statisticheChef['stati'] ?? [];
-$maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $value, $statiStatistiche)));
 ?>
 <section class="chef-dashboard-hero">
     <h1>Dashboard</h1>
@@ -193,7 +202,7 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                     </span>
                     <time>
                         <strong><?= V::e($formatData($prenotazione->getDataServizio())) ?></strong>
-                        <small><?= V::e($formatOra($prenotazione->getOraInizio())) ?></small>
+                        <small><?= V::e(ucfirst(EDisponibilitaChef::fasciaDaOra($prenotazione->getOraInizio()))) ?></small>
                     </time>
                     <em class="request-status status-<?= V::e($item['stato']) ?>"><?= V::e($statusLabels[$item['stato']] ?? $item['stato']) ?></em>
                 </article>
@@ -224,7 +233,7 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                         <tr>
                             <td><a class="table-client-link" href="<?= V::e(V::url('/utente/' . (int) $item['clienteId'])) ?>"><?= V::e($item['clienteNome']) ?></a></td>
                             <td><?= V::e($item['servizio']) ?></td>
-                            <td><strong><?= V::e(date('j/n/Y', strtotime($prenotazione->getDataServizio()) ?: time())) ?></strong><span><?= V::e($formatOra($prenotazione->getOraInizio())) ?></span></td>
+                            <td><strong><?= V::e(date('j/n/Y', strtotime($prenotazione->getDataServizio()) ?: time())) ?></strong><span><?= V::e(ucfirst(EDisponibilitaChef::fasciaDaOra($prenotazione->getOraInizio()))) ?></span></td>
                             <td><?= V::e($item['dettagli']) ?></td>
                             <td><strong class="table-total">&euro;<?= V::e(V::money($prenotazione->getImportoTotale())) ?></strong></td>
                             <td><span class="request-status status-<?= V::e($item['stato']) ?>"><?= V::e($statusLabels[$item['stato']] ?? $item['stato']) ?></span></td>
@@ -260,7 +269,7 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                                 <h3>Servizio</h3>
                                 <dl>
                                     <div><dt>Data</dt><dd><?= V::e($formatDataLunga($prenotazione->getDataServizio())) ?></dd></div>
-                                    <div><dt>Orario</dt><dd><?= V::e($formatOra($prenotazione->getOraInizio())) ?> - <?= V::e($formatOra($prenotazione->getOraFine())) ?></dd></div>
+                                    <div><dt>Servizio</dt><dd><?= V::e(ucfirst(EDisponibilitaChef::fasciaDaOra($prenotazione->getOraInizio()))) ?></dd></div>
                                     <div><dt>Indirizzo</dt><dd><?= V::e($prenotazione->getIndirizzoServizio()) ?></dd></div>
                                     <div><dt>Ospiti</dt><dd><?= V::e($prenotazione->getNumeroPersone()) ?></dd></div>
                                     <div><dt>Totale</dt><dd>&euro;<?= V::e(V::money($prenotazione->getImportoTotale())) ?></dd></div>
@@ -271,6 +280,7 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                         <section class="booking-detail-notes">
                             <h3>Note e richieste</h3>
                             <p><?= V::e($prenotazione->getRichiesteSpeciali() !== '' ? $prenotazione->getRichiesteSpeciali() : 'Nessuna richiesta speciale.') ?></p>
+                            <p>Abbinamento vini: <strong><?= $prenotazione->hasAbbinamentoVini() ? 'Si' : 'No' ?></strong></p>
                             <?php if ($prenotazione->getNote() !== ''): ?>
                                 <p><?= V::e($prenotazione->getNote()) ?></p>
                             <?php endif; ?>
@@ -281,6 +291,198 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
             <?php if ($prenotazioniTabella === []): ?>
                 <div class="empty-state">Nessuna prenotazione ricevuta.</div>
             <?php endif; ?>
+        </section>
+    <?php elseif ($tabAttiva === 'disponibilita'): ?>
+        <?php
+        $availabilityRole = 'chef';
+        $availabilitySlots = $disponibilitaChef;
+        include __DIR__ . '/partials/dashboard_availability.php';
+        ?>
+    <?php elseif ($tabAttiva === 'profilo'): ?>
+        <section class="dashboard-management">
+            <div class="management-heading">
+                <div>
+                    <h2>Profilo pubblico</h2>
+                    <p>Aggiorna la sezione "Chi sono" e i dati professionali mostrati ai clienti.</p>
+                </div>
+                <?php if ($profiloChef !== null): ?>
+                    <a class="btn btn-ghost" href="<?= V::e(V::url('/chef/' . $profiloChef->getIdChef())) ?>">Visualizza profilo pubblico</a>
+                <?php endif; ?>
+            </div>
+            <?php if ($profiloChef !== null): ?>
+                <form class="ops-panel ops-form management-form" method="post" action="<?= V::e(V::url('/dashboard/chef/profilo')) ?>">
+                    <label>Chi sono
+                        <textarea name="biografia" rows="7" required><?= V::e($profiloChef->getBiografia()) ?></textarea>
+                    </label>
+                    <div class="ops-form-row">
+                        <label>Specializzazione
+                            <input type="text" name="specializzazione" value="<?= V::e($profiloChef->getSpecializzazione()) ?>" required>
+                        </label>
+                        <label>Tipologia cucina
+                            <input type="text" name="tipologiaCucina" value="<?= V::e($profiloChef->getTipologiaCucina()) ?>" required>
+                        </label>
+                    </div>
+                    <div class="ops-form-row">
+                        <label>Prezzo base
+                            <input type="number" name="prezzoBase" min="0" step="0.01" value="<?= V::e($profiloChef->getPrezzoBase()) ?>" required>
+                        </label>
+                        <label>Anni di esperienza
+                            <input type="number" name="anniEsperienza" min="0" max="<?= V::e(EChef::MAX_ANNI_ESPERIENZA) ?>" value="<?= V::e($profiloChef->getAnniEsperienza()) ?>" required>
+                        </label>
+                    </div>
+                    <button class="btn btn-accent" type="submit">Salva profilo</button>
+                </form>
+            <?php endif; ?>
+            <section class="profile-public-section" id="profilo-menu">
+                <div class="management-heading">
+                    <div>
+                        <span class="management-eyebrow">Offerta gastronomica</span>
+                        <h2>Menu</h2>
+                        <p>Crea, modifica e pubblica le proposte visibili nel profilo pubblico.</p>
+                    </div>
+                </div>
+                <form class="ops-panel ops-form management-form management-create-card" method="post" action="<?= V::e(V::url('/dashboard/chef/menu')) ?>">
+                    <input type="hidden" name="azione" value="crea">
+                    <h3>Nuovo menu</h3>
+                    <div class="ops-form-row">
+                        <label>Nome <input type="text" name="nome" required></label>
+                        <label>Prezzo per persona <input type="number" name="prezzoPersona" min="0" step="0.01" required></label>
+                    </div>
+                    <label>Descrizione <textarea name="descrizione" rows="4" required></textarea></label>
+                    <label class="management-switch">
+                        <input type="checkbox" name="attivo" value="1" checked>
+                        <span class="management-switch-control" aria-hidden="true"></span>
+                        <span class="management-switch-copy">
+                            <strong>Pubblica subito</strong>
+                            <small>Il menu sar&agrave; visibile nel tuo profilo pubblico.</small>
+                        </span>
+                    </label>
+                    <button class="btn btn-accent" type="submit">Crea menu</button>
+                </form>
+                <div class="management-card-list">
+                    <?php foreach ($menuChef as $menuItem): ?>
+                        <form class="ops-panel ops-form management-form" method="post" action="<?= V::e(V::url('/dashboard/chef/menu')) ?>">
+                            <input type="hidden" name="idMenu" value="<?= V::e((int) $menuItem->getIdMenu()) ?>">
+                            <div class="management-card-heading">
+                                <h3><?= V::e($menuItem->getNome()) ?></h3>
+                                <span class="badge <?= $menuItem->isAttivo() ? '' : 'neutral' ?>"><?= $menuItem->isAttivo() ? 'Pubblicato' : 'Non pubblicato' ?></span>
+                            </div>
+                            <div class="ops-form-row">
+                                <label>Nome <input type="text" name="nome" value="<?= V::e($menuItem->getNome()) ?>" required></label>
+                                <label>Prezzo per persona <input type="number" name="prezzoPersona" min="0" step="0.01" value="<?= V::e($menuItem->getPrezzoPersona()) ?>" required></label>
+                            </div>
+                            <label>Descrizione <textarea name="descrizione" rows="4" required><?= V::e($menuItem->getDescrizione()) ?></textarea></label>
+                            <label class="management-switch">
+                                <input type="checkbox" name="attivo" value="1" <?= $menuItem->isAttivo() ? 'checked' : '' ?>>
+                                <span class="management-switch-control" aria-hidden="true"></span>
+                                <span class="management-switch-copy">
+                                    <strong>Visibile nel profilo</strong>
+                                    <small>Disattiva per conservarlo come bozza.</small>
+                                </span>
+                            </label>
+                            <div class="actions">
+                                <button class="btn btn-accent" type="submit" name="azione" value="aggiorna">Salva</button>
+                                <?php if ($menuItem->isAttivo()): ?>
+                                    <button class="btn btn-ghost" type="submit" name="azione" value="rimuovi">Rimuovi dalla pubblicazione</button>
+                                <?php else: ?>
+                                    <button class="btn btn-ghost" type="submit" name="azione" value="pubblica">Pubblica</button>
+                                <?php endif; ?>
+                            </div>
+                        </form>
+                    <div class="ops-panel equipment-management">
+                        <h3>Piatti di <?= V::e($menuItem->getNome()) ?></h3>
+                        <?php foreach (($piattiMenuChef[(int) $menuItem->getIdMenu()] ?? []) as $piatto): ?>
+                            <form class="dish-row" method="post" action="<?= V::e(V::url('/dashboard/chef/piatto')) ?>">
+                                <input type="hidden" name="idMenu" value="<?= V::e((int) $menuItem->getIdMenu()) ?>">
+                                <input type="hidden" name="idPiatto" value="<?= V::e((int) $piatto->getIdPiatto()) ?>">
+                                <input type="text" name="nome" value="<?= V::e($piatto->getNome()) ?>" aria-label="Nome piatto" required>
+                                <select name="categoria" aria-label="Categoria piatto">
+                                    <?php foreach (['antipasto', 'primo', 'secondo', 'contorno', 'dolce', 'bevanda', 'altro'] as $categoria): ?>
+                                        <option value="<?= V::e($categoria) ?>" <?= $piatto->getCategoria() === $categoria ? 'selected' : '' ?>><?= V::e(ucfirst($categoria)) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <input type="text" name="descrizione" value="<?= V::e($piatto->getDescrizione()) ?>" placeholder="Descrizione">
+                                <input type="text" name="ingredienti" value="<?= V::e($piatto->getIngredienti()) ?>" placeholder="Ingredienti">
+                                <input type="text" name="allergeni" value="<?= V::e($piatto->getAllergeni()) ?>" placeholder="Allergeni">
+                                <input type="number" name="prezzoSupplemento" min="0" step="0.01" value="<?= V::e($piatto->getPrezzoSupplemento()) ?>" aria-label="Supplemento">
+                                <input type="number" name="ordineVisualizzazione" min="0" value="<?= V::e($piatto->getOrdineVisualizzazione()) ?>" aria-label="Ordine">
+                                <button class="btn btn-ghost" type="submit" name="azione" value="aggiorna">Salva</button>
+                                <button class="btn btn-ghost" type="submit" name="azione" value="rimuovi">Rimuovi</button>
+                            </form>
+                        <?php endforeach; ?>
+                        <form class="dish-row dish-create-row" method="post" action="<?= V::e(V::url('/dashboard/chef/piatto')) ?>">
+                            <input type="hidden" name="azione" value="crea">
+                            <input type="hidden" name="idMenu" value="<?= V::e((int) $menuItem->getIdMenu()) ?>">
+                            <input type="text" name="nome" placeholder="Nuovo piatto" required>
+                            <select name="categoria">
+                                <?php foreach (['antipasto', 'primo', 'secondo', 'contorno', 'dolce', 'bevanda', 'altro'] as $categoria): ?>
+                                    <option value="<?= V::e($categoria) ?>"><?= V::e(ucfirst($categoria)) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <input type="text" name="descrizione" placeholder="Descrizione">
+                            <input type="text" name="ingredienti" placeholder="Ingredienti">
+                            <input type="text" name="allergeni" placeholder="Allergeni">
+                            <input type="number" name="prezzoSupplemento" min="0" step="0.01" value="0" aria-label="Supplemento">
+                            <input type="number" name="ordineVisualizzazione" min="0" value="<?= V::e(count($piattiMenuChef[(int) $menuItem->getIdMenu()] ?? []) + 1) ?>" aria-label="Ordine">
+                            <button class="btn btn-accent" type="submit">Aggiungi</button>
+                        </form>
+                    </div>
+                    <?php endforeach; ?>
+                    <?php if ($menuChef === []): ?><div class="empty-state">Non hai ancora creato menu.</div><?php endif; ?>
+                </div>
+            </section>
+
+            <section class="profile-public-section" id="profilo-certificazioni">
+                <div class="management-heading">
+                    <div>
+                        <h2>Certificazioni</h2>
+                        <p>Controlla i documenti collegati al profilo e il loro stato di pubblicazione.</p>
+                    </div>
+                    <a class="btn btn-ghost" href="<?= V::e(V::url('/mie-certificazioni')) ?>">Gestisci certificazioni</a>
+                </div>
+                <div class="ops-panel">
+                    <?php if ($certificazioniChef === []): ?>
+                        <p class="muted-text">Non hai ancora caricato certificazioni.</p>
+                    <?php else: ?>
+                        <div class="profile-certificate-list">
+                            <?php foreach ($certificazioniChef as $certificazione): ?>
+                                <article>
+                                    <strong><?= V::e($certificazione->getTipo()) ?></strong>
+                                    <span class="badge <?= $certificazione->getStato() === ECertificazione::STATO_APPROVATA ? '' : 'neutral' ?>">
+                                        <?= V::e($certificazione->getStato()) ?>
+                                    </span>
+                                    <?php if ($certificazione->getDataScadenza() !== ''): ?>
+                                        <small>Scadenza <?= V::e($certificazione->getDataScadenza()) ?></small>
+                                    <?php endif; ?>
+                                </article>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </section>
+        </section>
+    <?php elseif ($tabAttiva === 'recensioni'): ?>
+        <section class="dashboard-management">
+            <div class="management-heading">
+                <div>
+                    <h2>Recensioni ricevute</h2>
+                    <p>Valutazioni pubblicate dai clienti dopo i servizi completati.</p>
+                </div>
+            </div>
+            <div class="review-management-list">
+                <?php foreach ($recensioniChef as $reviewItem): ?>
+                    <?php $review = $reviewItem['recensione']; ?>
+                    <article class="ops-panel review-management-card">
+                        <div>
+                            <strong><?= V::e($reviewItem['autore']) ?></strong>
+                            <span class="stars"><?= V::stars((float) $review->getPunteggio()) ?></span>
+                        </div>
+                        <p><?= V::e($review->getCommento() !== '' ? $review->getCommento() : 'Nessun commento.') ?></p>
+                        <small><?= V::e($review->getDataRecensione()) ?> - <?= V::e($review->getStato()) ?></small>
+                    </article>
+                <?php endforeach; ?>
+                <?php if ($recensioniChef === []): ?><div class="empty-state">Non hai ancora ricevuto recensioni.</div><?php endif; ?>
+            </div>
         </section>
     <?php elseif ($tabAttiva === 'richieste'): ?>
         <section class="dashboard-requests-panel">
@@ -309,14 +511,16 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                                 </div>
                             </div>
                             <div class="request-summary">
-                                <strong><?= V::e($formatData($richiesta->getDataServizio())) ?> &middot; <?= V::e($formatOra($richiesta->getOraInizio())) ?></strong>
+                                <strong><?= V::e($formatData($richiesta->getDataServizio())) ?> &middot; <?= V::e(ucfirst(EDisponibilitaChef::fasciaDaOra($richiesta->getOraInizio()))) ?></strong>
                                 <span><?= V::e($richiesta->getNumeroPersone()) ?> ospiti &middot; &euro;<?= V::e(V::money($richiesta->getImportoTotale())) ?></span>
                             </div>
-                            <span class="request-chevron" aria-hidden="true"><?= $isOpen ? '&#8963;' : '&#8964;' ?></span>
+                            <span class="request-chevron" aria-hidden="true">
+                                <svg viewBox="0 0 20 20" focusable="false"><path d="m5.5 7.5 4.5 4.5 4.5-4.5"></path></svg>
+                            </span>
                         </div>
                         <div class="request-card-detail" <?= $isOpen ? '' : 'hidden' ?>>
                                 <div class="request-detail-grid">
-                                    <span><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><?= V::e($formatDataLunga($richiesta->getDataServizio())) ?> alle <?= V::e($formatOra($richiesta->getOraInizio())) ?></span>
+                                    <span><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg><?= V::e($formatDataLunga($richiesta->getDataServizio())) ?> &middot; <?= V::e(ucfirst(EDisponibilitaChef::fasciaDaOra($richiesta->getOraInizio()))) ?></span>
                                     <span><svg viewBox="0 0 24 24"><path d="M12 21s7-5.2 7-11a7 7 0 0 0-14 0c0 5.8 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg><?= V::e($item['indirizzo']) ?></span>
                                     <span><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"></path><circle cx="12" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path></svg><?= V::e($richiesta->getNumeroPersone()) ?> ospiti</span>
                                     <span><svg viewBox="0 0 24 24"><path d="M15 6.5A5 5 0 1 0 15 17M4 10h8M4 14h8"></path></svg>Budget: &euro;<?= V::e(V::money($richiesta->getImportoTotale())) ?></span>
@@ -345,68 +549,6 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                     <div class="empty-state">Nessuna richiesta trovata.</div>
                 <?php endif; ?>
             </div>
-        </section>
-    <?php elseif ($tabAttiva === 'statistiche'): ?>
-        <section class="chef-stats-layout">
-            <div class="chef-metric-grid chef-stats-grid">
-                <article class="chef-metric-card">
-                    <span class="metric-icon sage" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5"></path><path d="M4 19h16"></path><path d="M8 16l3-4 3 2 5-7"></path></svg></span>
-                    <strong><?= V::e((string) round((float) ($statisticheChef['tassoConferma'] ?? 0))) ?>%</strong>
-                    <p>Tasso Conferma</p>
-                </article>
-                <article class="chef-metric-card">
-                    <span class="metric-icon warm" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-8 0v2"></path><circle cx="12" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path></svg></span>
-                    <strong><?= V::e((string) (int) ($statisticheChef['ospitiServiti'] ?? 0)) ?></strong>
-                    <p>Ospiti Serviti</p>
-                </article>
-                <article class="chef-metric-card">
-                    <span class="metric-icon gold" aria-hidden="true">&euro;</span>
-                    <strong>&euro;<?= V::e(V::money((float) ($statisticheChef['importoMedio'] ?? 0))) ?></strong>
-                    <p>Importo Medio</p>
-                </article>
-                <article class="chef-metric-card">
-                    <span class="metric-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg></span>
-                    <strong><?= V::e(number_format((float) ($statisticheChef['durataMedia'] ?? 0), 1, ',', '.')) ?>h</strong>
-                    <p>Durata Media</p>
-                </article>
-            </div>
-            <div class="chef-dashboard-panels">
-                <section class="chef-dashboard-panel chart-panel">
-                    <h2>Andamento Ricavi</h2>
-                    <svg class="line-chart revenue-chart" viewBox="0 0 660 300" role="img" aria-label="Andamento ricavi">
-                        <?php for ($tick = 0; $tick <= 4; $tick++): ?>
-                            <?php $value = ($maxFatturato / 4) * $tick; ?>
-                            <?php $y = 238 - (($value / $maxFatturato) * 198); ?>
-                            <line class="chart-grid-line" x1="58" y1="<?= V::e($y) ?>" x2="620" y2="<?= V::e($y) ?>"></line>
-                            <text class="chart-y-label" x="42" y="<?= V::e($y + 5) ?>"><?= V::e((string) (int) $value) ?></text>
-                        <?php endfor; ?>
-                        <line class="chart-axis" x1="58" y1="40" x2="58" y2="238"></line>
-                        <line class="chart-axis" x1="58" y1="238" x2="620" y2="238"></line>
-                        <polyline points="<?= V::e(implode(' ', $linePoints)) ?>"></polyline>
-                        <?php foreach ($lineChartPoints as $point): ?>
-                            <circle cx="<?= V::e($point['x']) ?>" cy="<?= V::e($point['y']) ?>" r="5"></circle>
-                            <text class="chart-x-label" x="<?= V::e($point['x']) ?>" y="270"><?= V::e($point['point']['label']) ?></text>
-                        <?php endforeach; ?>
-                    </svg>
-                </section>
-                <section class="chef-dashboard-panel">
-                    <h2>Stato Prenotazioni</h2>
-                    <div class="status-stat-list">
-                        <?php foreach ($statiStatistiche as $stato => $totale): ?>
-                            <div>
-                                <span><?= V::e($statusLabels[$stato] ?? $stato) ?></span>
-                                <i><b style="width: <?= V::e((string) (((int) $totale / $maxStati) * 100)) ?>%"></b></i>
-                                <strong><?= V::e((string) (int) $totale) ?></strong>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
-            </div>
-        </section>
-    <?php else: ?>
-        <section class="chef-dashboard-panel">
-            <h2><?= V::e($tabs[$tabAttiva] ?? 'Sezione') ?></h2>
-            <p class="muted-text">Questo pannello verra configurato nel prossimo passaggio.</p>
         </section>
     <?php endif; ?>
 </section>

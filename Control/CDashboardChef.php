@@ -28,7 +28,7 @@ class CDashboardChef
         $chef = FPersistentManager::loadChef($idChef);
 
         $tabAttiva = strtolower(trim((string) ($query['tab'] ?? 'panoramica')));
-        if (!in_array($tabAttiva, ['panoramica', 'prenotazioni', 'richieste', 'calendario', 'statistiche'], true)) {
+        if (!in_array($tabAttiva, ['panoramica', 'prenotazioni', 'richieste', 'disponibilita', 'profilo', 'recensioni'], true)) {
             $tabAttiva = 'panoramica';
         }
         $filtroRichieste = strtolower(trim((string) ($query['filtro'] ?? 'tutte')));
@@ -53,8 +53,33 @@ class CDashboardChef
             'prossimePrenotazioni' => $this->prossimePrenotazioni($prenotazioni),
             'prenotazioniTabella' => $this->prenotazioniTabella($prenotazioni),
             'richiestePrenotazione' => $this->richiestePrenotazione($prenotazioni),
-            'statisticheChef' => $this->statisticheChef($prenotazioni, $accettate),
+            'profiloChef' => $chef,
+            'menuChef' => FPersistentManager::loadMenuByChef($idChef),
+            'piattiMenuChef' => $this->piattiMenuChef($idChef),
+            'recensioniChef' => $this->recensioniChef($idChef),
+            'certificazioniChef' => FPersistentManager::loadCertificazioniByChef($idChef),
+            'disponibilitaChef' => FPersistentManager::loadDisponibilitaChef($idChef),
         ];
+    }
+
+    private function recensioniChef(int $idChef): array
+    {
+        return array_map(static function (ERecensioneChef $recensione): array {
+            $autore = FPersistentManager::loadUtente((int) $recensione->getIdAutore());
+            return [
+                'recensione' => $recensione,
+                'autore' => $autore !== null ? trim($autore->getNome() . ' ' . $autore->getCognome()) : 'Utente',
+            ];
+        }, FPersistentManager::loadRecensioniByChef($idChef));
+    }
+
+    private function piattiMenuChef(int $idChef): array
+    {
+        $result = [];
+        foreach (FPersistentManager::loadMenuByChef($idChef) as $menu) {
+            $result[(int) $menu->getIdMenu()] = FPersistentManager::loadPiattiByMenu((int) $menu->getIdMenu());
+        }
+        return $result;
     }
 
     private function fatturatoMensile(array $prenotazioni): array
@@ -149,54 +174,6 @@ class CDashboardChef
                 'stato' => $prenotazione->getStato(),
             ];
         }, $prenotazioni);
-    }
-
-    private function statisticheChef(array $prenotazioni, array $prenotazioniValide): array
-    {
-        $stati = [
-            EPrenotazione::STATO_IN_ATTESA => 0,
-            EPrenotazione::STATO_ACCETTATA => 0,
-            EPrenotazione::STATO_PAGATA => 0,
-            EPrenotazione::STATO_COMPLETATA => 0,
-            EPrenotazione::STATO_RIFIUTATA => 0,
-            EPrenotazione::STATO_CANCELLATA => 0,
-        ];
-        $ospiti = 0;
-        $durataTotale = 0.0;
-        $importoMedio = 0.0;
-
-        foreach ($prenotazioni as $prenotazione) {
-            if (!$prenotazione instanceof EPrenotazioneChef) {
-                continue;
-            }
-
-            $stato = $prenotazione->getStato();
-            if (array_key_exists($stato, $stati)) {
-                $stati[$stato]++;
-            }
-        }
-
-        foreach ($prenotazioniValide as $prenotazione) {
-            if (!$prenotazione instanceof EPrenotazioneChef) {
-                continue;
-            }
-
-            $ospiti += $prenotazione->getNumeroPersone();
-            $inizio = strtotime($prenotazione->getOraInizio());
-            $fine = strtotime($prenotazione->getOraFine());
-            $durataTotale += $inizio !== false && $fine !== false ? max(0, ($fine - $inizio) / 3600) : 0;
-            $importoMedio += $prenotazione->getImportoTotale();
-        }
-
-        $numeroValide = count($prenotazioniValide);
-
-        return [
-            'stati' => $stati,
-            'ospitiServiti' => $ospiti,
-            'durataMedia' => $numeroValide > 0 ? $durataTotale / $numeroValide : 0.0,
-            'importoMedio' => $numeroValide > 0 ? $importoMedio / $numeroValide : 0.0,
-            'tassoConferma' => count($prenotazioni) > 0 ? ($numeroValide / count($prenotazioni)) * 100 : 0.0,
-        ];
     }
 
     private function richiestePrenotazione(array $richieste): array

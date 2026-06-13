@@ -40,6 +40,28 @@ class ViewHelpers
         return $fallback;
     }
 
+    public static function cssUrl(mixed $url): string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return 'none';
+        }
+
+        $isLocalPath = str_starts_with($url, '/');
+        $isHttpUrl = preg_match('#^https?://#i', $url) === 1;
+
+        if (!$isLocalPath && !$isHttpUrl) {
+            return 'none';
+        }
+
+        if (preg_match('/[\x00-\x1F\x7F\'"()\\\\]/', $url) === 1) {
+            return 'none';
+        }
+
+        return self::e("url('" . $url . "')");
+    }
+
     public static function money(float $value): string
     {
         return number_format($value, 2, ',', '.');

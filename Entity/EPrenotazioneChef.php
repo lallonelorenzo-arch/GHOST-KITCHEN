@@ -13,6 +13,7 @@ class EPrenotazioneChef extends EPrenotazione
     private string $indirizzoServizio;
     private int $numeroPersone;
     private string $richiesteSpeciali;
+    private bool $abbinamentoVini;
 
     public function __construct(
         ?int $idPrenotazione = null,
@@ -28,7 +29,8 @@ class EPrenotazioneChef extends EPrenotazione
         ?int $idMenu = null,
         string $indirizzoServizio = '',
         int $numeroPersone = 1,
-        string $richiesteSpeciali = ''
+        string $richiesteSpeciali = '',
+        bool $abbinamentoVini = false
     ) {
         parent::__construct(
             $idPrenotazione,
@@ -47,6 +49,7 @@ class EPrenotazioneChef extends EPrenotazione
         $this->setIndirizzoServizio($indirizzoServizio);
         $this->setNumeroPersone($numeroPersone);
         $this->setRichiesteSpeciali($richiesteSpeciali);
+        $this->setAbbinamentoVini($abbinamentoVini);
     }
 
     public function getIdCliente(): ?int
@@ -121,6 +124,16 @@ class EPrenotazioneChef extends EPrenotazione
         $this->richiesteSpeciali = trim($richiesteSpeciali);
     }
 
+    public function hasAbbinamentoVini(): bool
+    {
+        return $this->abbinamentoVini;
+    }
+
+    public function setAbbinamentoVini(bool $abbinamentoVini): void
+    {
+        $this->abbinamentoVini = $abbinamentoVini;
+    }
+
     public function validaPerConferma(): void
     {
         if ($this->getIdRichiedente() === null) {
@@ -167,7 +180,8 @@ class EPrenotazioneChef extends EPrenotazione
             'idMenu' => $this->idMenu,
             'indirizzoServizio' => $this->indirizzoServizio,
             'numeroPersone' => $this->numeroPersone,
-            'richiesteSpeciali' => $this->richiesteSpeciali
+            'richiesteSpeciali' => $this->richiesteSpeciali,
+            'abbinamentoVini' => $this->abbinamentoVini
         ]);
     }
 }

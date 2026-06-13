@@ -37,7 +37,7 @@ $ghostKitchenPrenotabile = $ghostKitchenPrenotabile ?? true;
                 </dl>
             </article>
 
-            <?php if ($ghostKitchenPrenotabile): ?>
+            <?php if ($ghostKitchenPrenotabile && empty($accessoRichiesto)): ?>
             <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>" data-booking-form>
                 <h2>Dati richiesta</h2>
                 <p class="muted-text">Tipo richiedente: <?= V::e($tipoRichiedente ?? 'non disponibile') ?></p>
@@ -51,7 +51,7 @@ $ghostKitchenPrenotabile = $ghostKitchenPrenotabile ?? true;
                 </label>
                 <button class="btn btn-accent" type="submit">Invia richiesta</button>
             </form>
-            <?php else: ?>
+            <?php elseif (!$ghostKitchenPrenotabile): ?>
                 <article class="ops-panel">
                     <h2>Prenotazione bloccata</h2>
                     <p class="muted-text">Questa ghost kitchen non puo ricevere richieste finche lo stato non torna attivo.</p>

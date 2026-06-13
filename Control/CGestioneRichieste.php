@@ -86,63 +86,6 @@ class CGestioneRichieste
     }
 
 
-    public function visualizzaRichiesteWeb(array $accesso, array $query = []): array
-    {
-        $filtro = strtolower(trim((string) ($query['stato'] ?? 'tutte')));
-        if (!in_array($filtro, ['tutte', EPrenotazione::STATO_IN_ATTESA, EPrenotazione::STATO_ACCETTATA, EPrenotazione::STATO_RIFIUTATA], true)) {
-            $filtro = 'tutte';
-        }
-
-        $data = [
-            'accesso' => $accesso,
-            'richiesteChef' => [],
-            'richiesteGhostKitchen' => [],
-            'richiestePrenotazione' => [],
-            'richiesteInAttesa' => 0,
-            'filtroRichieste' => $filtro,
-        ];
-
-        if (($accesso['isLogged'] ?? false) !== true) {
-            $data['messaggioAccesso'] = 'Non hai permessi per questa sezione.';
-            return $data;
-        }
-
-        $ruoli = $accesso['ruoli'] ?? [];
-        if (in_array('chef', $ruoli, true)) {
-            $data['richiesteChef'] = $this->visualizzaRichieste('chef', (int) $accesso['idUtente'])['richieste'];
-            $richiestePrenotazione = $this->preparaRichiesteChef((int) $accesso['idUtente']);
-            $data['richiestePrenotazione'] = $filtro === 'tutte'
-                ? $richiestePrenotazione
-                : array_values(array_filter($richiestePrenotazione, static fn (array $item): bool => $item['stato'] === $filtro));
-            $data['richiesteInAttesa'] = count($data['richiesteChef']);
-        }
-
-        if (in_array('gestore', $ruoli, true)) {
-            $data['richiesteGhostKitchen'] = $this->visualizzaRichieste('gestore', (int) $accesso['idUtente'])['richieste'];
-        }
-
-        return $data;
-    }
-
-    private function preparaRichiesteChef(int $idChef): array
-    {
-        return array_map(static function (EPrenotazioneChef $richiesta): array {
-            $utente = FPersistentManager::loadUtente((int) $richiesta->getIdRichiedente());
-            $nome = $utente !== null ? trim($utente->getNome() . ' ' . $utente->getCognome()) : 'Cliente #' . $richiesta->getIdRichiedente();
-            $iniziali = $utente !== null
-                ? strtoupper(substr($utente->getNome(), 0, 1) . substr($utente->getCognome(), 0, 1))
-                : 'CL';
-
-            return [
-                'prenotazione' => $richiesta,
-                'nomeRichiedente' => $nome,
-                'iniziali' => $iniziali !== '' ? $iniziali : 'CL',
-                'stato' => $richiesta->getStato(),
-                'descrizione' => trim('Cena privata - ' . ($richiesta->getRichiesteSpeciali() ?: 'Servizio chef')),
-            ];
-        }, FPersistentManager::loadPrenotazioniRicevuteChef($idChef));
-    }
-
     public function gestisciRichiestaWeb(string $tipoPrenotazione, int $idPrenotazione, string $azione, array $accesso, array $post = []): array
     {
         $ritornoDashboard = $this->dashboardRitorno($tipoPrenotazione);

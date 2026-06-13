@@ -20,7 +20,10 @@ $fotoProfilo = (string) ($accesso['fotoProfilo'] ?? '');
 $iniziali = strtoupper(substr((string) ($accesso['nome'] ?? 'G'), 0, 1) . substr((string) ($accesso['cognome'] ?? 'K'), 0, 1));
 $iniziali = trim($iniziali) !== '' ? $iniziali : 'GK';
 $telefono = trim((string) ($accesso['telefono'] ?? $accesso['phone'] ?? ''));
-$localita = trim((string) ($accesso['localita'] ?? $accesso['location'] ?? ''));
+$indirizzo = trim((string) ($accesso['indirizzo'] ?? $accesso['via'] ?? ''));
+$citta = trim((string) ($accesso['citta'] ?? ''));
+$provincia = trim((string) ($accesso['provincia'] ?? ''));
+$numeroCivico = trim((string) ($accesso['numeroCivico'] ?? ''));
 $bio = trim((string) ($accesso['biografia'] ?? $accesso['bio'] ?? $accesso['descrizione'] ?? $accesso['descrizioneChef'] ?? ''));
 $ruoliLabel = $ruoli !== [] ? implode(', ', array_map('ucfirst', $ruoli)) : 'Nessun ruolo assegnato';
 $section = (string) ($section ?? 'profilo');
@@ -29,7 +32,9 @@ $profileFields = [
     'Nome completo' => $nome,
     'Email' => $email !== '' ? $email : 'Non disponibile',
     'Telefono' => $telefono !== '' ? $telefono : 'Non disponibile',
-    'Localita' => $localita !== '' ? $localita : 'Non disponibile',
+    'Indirizzo' => trim($indirizzo . ' ' . $numeroCivico) ?: 'Non disponibile',
+    'Città' => $citta !== '' ? $citta : 'Non disponibile',
+    'Provincia' => $provincia !== '' ? $provincia : 'Non disponibile',
     'Ruolo' => $ruoliLabel,
     'Biografia' => $bio !== '' ? $bio : 'Non disponibile',
 ];
@@ -110,8 +115,24 @@ $profileNav = [
                             <label>Telefono
                                 <input name="telefono" value="<?= V::e($telefono) ?>">
                             </label>
-                            <label>Localita
-                                <input name="localita" value="<?= V::e($localita) ?>">
+                            <label>Indirizzo
+                                <input name="indirizzo" maxlength="180" value="<?= V::e($indirizzo) ?>" autocomplete="street-address">
+                            </label>
+                            <label>Numero civico
+                                <input name="numeroCivico" maxlength="20" value="<?= V::e($numeroCivico) ?>">
+                            </label>
+                            <label>Città
+                                <input name="citta" maxlength="120" value="<?= V::e($citta) ?>" autocomplete="address-level2">
+                            </label>
+                            <label>Provincia
+                                <select name="provincia" autocomplete="address-level1">
+                                    <option value="">Seleziona</option>
+                                    <?php foreach (EUtente::SIGLE_PROVINCE_ITALIANE as $siglaProvincia): ?>
+                                        <option value="<?= V::e($siglaProvincia) ?>" <?= strtoupper($provincia) === $siglaProvincia ? 'selected' : '' ?>>
+                                            <?= V::e($siglaProvincia) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
                             </label>
                             <label>Ruolo
                                 <input value="<?= V::e($ruoliLabel) ?>" disabled>

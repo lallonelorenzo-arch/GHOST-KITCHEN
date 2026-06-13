@@ -234,7 +234,11 @@ class CPrenotazioneGhostKitchen
         }
 
         $ruoli = $accesso['ruoli'] ?? [];
-        if (($accesso['ruoloAttivo'] ?? '') === EPrenotazioneGhostKitchen::TIPO_RICHIEDENTE_CHEF || in_array('chef', $ruoli, true)) {
+        $ruoloAttivo = (string) ($accesso['ruoloAttivo'] ?? '');
+        if ($ruoloAttivo === 'gestore') {
+            return null;
+        }
+        if ($ruoloAttivo === EPrenotazioneGhostKitchen::TIPO_RICHIEDENTE_CHEF || ($ruoloAttivo === '' && in_array('chef', $ruoli, true))) {
             return EPrenotazioneGhostKitchen::TIPO_RICHIEDENTE_CHEF;
         }
 

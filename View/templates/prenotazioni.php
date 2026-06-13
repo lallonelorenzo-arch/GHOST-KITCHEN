@@ -34,7 +34,7 @@ $prenotazioni = $prenotazioni ?? [];
                     </div>
                     <dl class="ops-meta">
                         <div><dt>Stato</dt><dd><?= V::e($stato) ?></dd></div>
-                        <div><dt>Importo</dt><dd>€ <?= V::e(V::money((float) $prenotazione->getImportoTotale())) ?></dd></div>
+                        <div><dt>Importo</dt><dd>&euro; <?= V::e(V::money((float) $prenotazione->getImportoTotale())) ?></dd></div>
                         <div><dt>Tipo</dt><dd><?= V::e($tipo === 'ghost_kitchen' ? 'Ghost kitchen' : 'Chef') ?></dd></div>
                     </dl>
                     <div class="actions booking-actions-inline">

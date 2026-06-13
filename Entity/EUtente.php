@@ -16,6 +16,27 @@ class EUtente
     public const STATO_SOSPESO = 'sospeso';
     public const STATO_BANNATO = 'bannato';
 
+    public const SIGLE_PROVINCE_ITALIANE = [
+        'AG', 'AL', 'AN', 'AO', 'AP', 'AQ', 'AR', 'AT', 'AV',
+        'BA', 'BG', 'BI', 'BL', 'BN', 'BO', 'BR', 'BS', 'BT', 'BZ',
+        'CA', 'CB', 'CE', 'CH', 'CI', 'CL', 'CN', 'CO', 'CR', 'CS', 'CT', 'CZ',
+        'EN',
+        'FC', 'FE', 'FG', 'FI', 'FM', 'FR',
+        'GE', 'GO', 'GR',
+        'IM', 'IS',
+        'KR',
+        'LC', 'LE', 'LI', 'LO', 'LT', 'LU',
+        'MB', 'MC', 'ME', 'MI', 'MN', 'MO', 'MS', 'MT',
+        'NA', 'NO', 'NU',
+        'OG', 'OR', 'OT',
+        'PA', 'PC', 'PD', 'PE', 'PG', 'PI', 'PN', 'PO', 'PR', 'PT', 'PU', 'PV', 'PZ',
+        'RA', 'RC', 'RE', 'RG', 'RI', 'RM', 'RN', 'RO',
+        'SA', 'SI', 'SO', 'SP', 'SR', 'SS', 'SU', 'SV',
+        'TA', 'TE', 'TN', 'TO', 'TP', 'TR', 'TS', 'TV',
+        'UD',
+        'VA', 'VB', 'VC', 'VE', 'VI', 'VR', 'VS', 'VT', 'VV',
+    ];
+
     private ?int $id;
     private string $nome;
     private string $cognome;
@@ -27,6 +48,11 @@ class EUtente
     private string $fotoProfilo;
     private string $localita;
     private string $biografia;
+    private string $via;
+    private string $citta;
+    private string $numeroCivico;
+    private string $indirizzo;
+    private string $provincia;
 
     public function __construct(
         ?int $id = null,
@@ -39,7 +65,12 @@ class EUtente
         string $stato = self::STATO_ATTIVO,
         string $fotoProfilo = '',
         string $localita = '',
-        string $biografia = ''
+        string $biografia = '',
+        string $via = '',
+        string $citta = '',
+        string $numeroCivico = '',
+        string $indirizzo = '',
+        string $provincia = ''
     ) {
         $this->setId($id);
         $this->setNome($nome);
@@ -52,6 +83,11 @@ class EUtente
         $this->setFotoProfilo($fotoProfilo);
         $this->setLocalita($localita);
         $this->setBiografia($biografia);
+        $this->setVia($via);
+        $this->setCitta($citta);
+        $this->setNumeroCivico($numeroCivico);
+        $this->setIndirizzo($indirizzo !== '' ? $indirizzo : $via);
+        $this->setProvincia($provincia);
     }
 
     public function getId(): ?int
@@ -193,6 +229,61 @@ class EUtente
         $this->biografia = trim($biografia);
     }
 
+    public function getVia(): string
+    {
+        return $this->via;
+    }
+
+    public function setVia(string $via): void
+    {
+        $this->via = trim($via);
+    }
+
+    public function getIndirizzo(): string
+    {
+        return $this->indirizzo !== '' ? $this->indirizzo : $this->via;
+    }
+
+    public function setIndirizzo(string $indirizzo): void
+    {
+        $this->indirizzo = trim($indirizzo);
+    }
+
+    public function getCitta(): string
+    {
+        return $this->citta;
+    }
+
+    public function setCitta(string $citta): void
+    {
+        $this->citta = trim($citta);
+    }
+
+    public function getNumeroCivico(): string
+    {
+        return $this->numeroCivico;
+    }
+
+    public function setNumeroCivico(string $numeroCivico): void
+    {
+        $this->numeroCivico = trim($numeroCivico);
+    }
+
+    public function getProvincia(): string
+    {
+        return $this->provincia;
+    }
+
+    public function setProvincia(string $provincia): void
+    {
+        $this->provincia = trim($provincia);
+    }
+
+    public static function isProvinciaItaliana(string $provincia): bool
+    {
+        return in_array(strtoupper(trim($provincia)), self::SIGLE_PROVINCE_ITALIANE, true);
+    }
+
     public function setFotoProfilo(string $fotoProfilo): void
     {
         $this->fotoProfilo = trim($fotoProfilo);
@@ -246,7 +337,12 @@ class EUtente
             'stato' => $this->stato,
             'fotoProfilo' => $this->fotoProfilo,
             'localita' => $this->localita,
-            'biografia' => $this->biografia
+            'biografia' => $this->biografia,
+            'via' => $this->via,
+            'citta' => $this->citta,
+            'numeroCivico' => $this->numeroCivico,
+            'indirizzo' => $this->getIndirizzo(),
+            'provincia' => $this->provincia
         ];
 
         if ($includeSensitive) {

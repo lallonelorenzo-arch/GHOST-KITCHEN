@@ -128,6 +128,7 @@ class FPersistentManager
 
     public static function storeCliente(ECliente $cliente): ECliente|false { return self::storeAndReturn($cliente, static fn (ECliente $entity): bool|int => FCliente::store($entity), 'setIdCliente'); }
     public static function storeChef(EChef $chef): EChef|false { return self::storeAndReturn($chef, static fn (EChef $entity): bool|int => FChef::store($entity), 'setIdChef'); }
+    public static function updateChef(EChef $chef): EChef|false { return self::updateAndReturn($chef, static fn (EChef $entity): bool => FChef::update($entity)); }
     public static function storeGestore(EGestore $gestore): EGestore|false { return self::storeAndReturn($gestore, static fn (EGestore $entity): bool|int => FGestore::store($entity), 'setIdGestore'); }
     public static function updateGestore(EGestore $gestore): EGestore|false { return self::updateAndReturn($gestore, static fn (EGestore $entity): bool => FGestore::update($entity)); }
     public static function storeAmministratore(EAmministratore $amministratore): EAmministratore|false { return self::storeAndReturn($amministratore, static fn (EAmministratore $entity): bool|int => FAmministratore::store($entity), 'setIdAmministratore'); }
@@ -157,6 +158,7 @@ class FPersistentManager
     public static function loadRecensioneGhostKitchen(int $idRecensione): ?ERecensioneGhostKitchen { return FRecensioneGhostKitchen::load($idRecensione); }
 
     public static function loadMenuByChef(int $idChef): array { return FMenu::loadByChef($idChef); }
+    public static function loadRecensioniByChef(int $idChef): array { return FRecensioneChef::loadByChef($idChef); }
     public static function loadPiattiByMenu(int $idMenu): array { return FPiatto::loadByMenu($idMenu); }
     public static function getMediaByOwner(string $tipoOwner, int $idOwner): array { return FMedia::loadByOwner($tipoOwner, $idOwner); }
     public static function getMediaPrincipale(string $tipoOwner, int $idOwner): ?EMedia { return FMedia::getPrincipale($tipoOwner, $idOwner); }
@@ -199,8 +201,10 @@ class FPersistentManager
     public static function storeRecensioneGhostKitchen(ERecensioneGhostKitchen $entity): ERecensioneGhostKitchen|false { return self::storeAndReturn($entity, static fn (ERecensioneGhostKitchen $item): bool|int => FRecensioneGhostKitchen::store($item), 'setIdRecensione'); }
 
     public static function updateAttrezzatura(EAttrezzatura $entity): EAttrezzatura|false { return self::updateAndReturn($entity, static fn (EAttrezzatura $item): bool => FAttrezzatura::update($item)); }
+    public static function deleteAttrezzatura(int $idAttrezzatura): bool { return FAttrezzatura::delete($idAttrezzatura); }
     public static function updateMenu(EMenu $entity): EMenu|false { return self::updateAndReturn($entity, static fn (EMenu $item): bool => FMenu::update($item)); }
     public static function updatePiatto(EPiatto $entity): EPiatto|false { return self::updateAndReturn($entity, static fn (EPiatto $item): bool => FPiatto::update($item)); }
+    public static function deletePiatto(int $idPiatto): bool { return FPiatto::delete($idPiatto); }
     public static function updateMedia(EMedia $entity): EMedia|false { return self::updateAndReturn($entity, static fn (EMedia $item): bool => FMedia::update($item)); }
     public static function updateCertificazione(ECertificazione $entity): ECertificazione|false { return self::updateAndReturn($entity, static fn (ECertificazione $item): bool => FCertificazione::update($item)); }
     public static function updateDisponibilitaChef(EDisponibilitaChef $entity): EDisponibilitaChef|false { return self::updateAndReturn($entity, static fn (EDisponibilitaChef $item): bool => FDisponibilitaChef::update($item)); }

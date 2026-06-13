@@ -4,6 +4,7 @@ declare(strict_types=1);
 class FSession
 {
     private const UTENTE_KEY = 'utente';
+    private const CSRF_KEY = 'csrf_tokens';
 
     public static function start(): void
     {
@@ -61,6 +62,7 @@ class FSession
     {
         self::start();
         session_regenerate_id(true);
+        unset($_SESSION[self::CSRF_KEY]);
 
         $ruoli = array_values(array_unique(array_map(
             static fn (string $ruolo): string => strtolower(trim($ruolo)),
@@ -87,6 +89,7 @@ class FSession
     public static function logout(): void
     {
         self::remove(self::UTENTE_KEY);
+        self::remove(self::CSRF_KEY);
     }
 
     public static function isLogged(): bool
@@ -177,6 +180,30 @@ class FSession
     public static function requireLogin(): bool
     {
         return self::isLogged();
+    }
+
+    public static function csrfToken(string $scope): string
+    {
+        self::start();
+        $scope = trim($scope);
+        if ($scope === '') {
+            throw new InvalidArgumentException('Ambito CSRF non valido.');
+        }
+
+        $token = $_SESSION[self::CSRF_KEY][$scope] ?? null;
+        if (!is_string($token) || strlen($token) !== 64) {
+            $token = bin2hex(random_bytes(32));
+            $_SESSION[self::CSRF_KEY][$scope] = $token;
+        }
+
+        return $token;
+    }
+
+    public static function verifyCsrfToken(string $scope, string $token): bool
+    {
+        self::start();
+        $stored = $_SESSION[self::CSRF_KEY][trim($scope)] ?? null;
+        return is_string($stored) && $stored !== '' && hash_equals($stored, trim($token));
     }
 
     private static function getStringField(string $key): ?string

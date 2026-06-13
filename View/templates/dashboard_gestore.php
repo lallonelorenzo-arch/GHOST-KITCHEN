@@ -8,27 +8,28 @@ use ViewHelpers as V;
 /** @var array $prossimePrenotazioni */
 /** @var array $prenotazioniTabella */
 /** @var array $richiestePrenotazione */
-/** @var array $statisticheGestore */
 /** @var array $ghostKitchenGestore */
+/** @var array $disponibilitaGhostKitchen */
+/** @var array $attrezzatureGhostKitchen */
 /** @var string $filtroRichieste */
 $nome = trim((string) ($accesso['nome'] ?? ''));
 $nome = $nome !== '' ? $nome : 'Gestore';
 $filtroRichieste = (string) ($filtroRichieste ?? 'tutte');
 $tabs = [
     'panoramica' => 'Panoramica',
-    'prenotazioni' => 'Prenotazioni',
+    'prenotazioni' => 'Prenotazioni ricevute',
     'richieste' => 'Richieste',
     'ghost_kitchen' => 'Ghost Kitchen',
-    'calendario' => 'Calendario',
-    'statistiche' => 'Statistiche',
+    'disponibilita' => 'Disponibilita',
 ];
 $fatturatoMensile = $fatturatoMensile ?? [];
 $prenotazioniSettimanali = $prenotazioniSettimanali ?? [];
 $prossimePrenotazioni = $prossimePrenotazioni ?? [];
 $prenotazioniTabella = $prenotazioniTabella ?? [];
 $richiestePrenotazione = $richiestePrenotazione ?? [];
-$statisticheGestore = $statisticheGestore ?? [];
 $ghostKitchenGestore = $ghostKitchenGestore ?? [];
+$disponibilitaGhostKitchen = $disponibilitaGhostKitchen ?? [];
+$attrezzatureGhostKitchen = $attrezzatureGhostKitchen ?? [];
 $maxFatturatoRaw = max(1, ...array_map(static fn (array $p): float => (float) $p['value'], $fatturatoMensile));
 $maxFatturato = max(1000, (int) ceil($maxFatturatoRaw / 1000) * 1000);
 $maxSettimana = max(1, ...array_map(static fn (array $p): int => (int) $p['value'], $prenotazioniSettimanali));
@@ -81,8 +82,6 @@ $statusLabels = [
     'rifiutata' => 'Rifiutata',
     'cancellata' => 'Cancellata',
 ];
-$statiStatistiche = $statisticheGestore['stati'] ?? [];
-$maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $value, $statiStatistiche)));
 ?>
 <section class="chef-dashboard-hero">
     <h1>Dashboard Gestore</h1>
@@ -280,6 +279,13 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                 <div class="empty-state">Nessuna prenotazione ricevuta.</div>
             <?php endif; ?>
         </section>
+    <?php elseif ($tabAttiva === 'disponibilita'): ?>
+        <?php
+        $availabilityRole = 'gestore';
+        $availabilityGhostKitchens = $ghostKitchenGestore;
+        $availabilityByGhostKitchen = $disponibilitaGhostKitchen;
+        include __DIR__ . '/partials/dashboard_availability.php';
+        ?>
     <?php elseif ($tabAttiva === 'richieste'): ?>
         <section class="dashboard-requests-panel">
             <header class="requests-header">
@@ -310,7 +316,9 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
                                 <strong><?= V::e($formatData($richiesta->getDataServizio())) ?> &middot; <?= V::e($formatOra($richiesta->getOraInizio())) ?></strong>
                                 <span><?= V::e($richiesta->getTipoRichiedente()) ?> &middot; &euro;<?= V::e(V::money($richiesta->getImportoTotale())) ?></span>
                             </div>
-                            <span class="request-chevron" aria-hidden="true"><?= $isOpen ? '&#8963;' : '&#8964;' ?></span>
+                            <span class="request-chevron" aria-hidden="true">
+                                <svg viewBox="0 0 20 20" focusable="false"><path d="m5.5 7.5 4.5 4.5 4.5-4.5"></path></svg>
+                            </span>
                         </div>
                         <div class="request-card-detail" <?= $isOpen ? '' : 'hidden' ?>>
                             <div class="request-detail-grid">
@@ -345,87 +353,97 @@ $maxStati = max(1, ...array_values(array_map(static fn ($value): int => (int) $v
             </div>
         </section>
     <?php elseif ($tabAttiva === 'ghost_kitchen'): ?>
-        <section class="ghost-kitchen-management-grid">
+        <section class="dashboard-management">
+            <div class="management-heading">
+                <div>
+                    <h2>Le mie Ghost Kitchen</h2>
+                    <p>Crea e gestisci spazi, prezzi, pubblicazione e attrezzature.</p>
+                </div>
+            </div>
+            <form class="ops-panel ops-form management-form" method="post" action="<?= V::e(V::url('/dashboard/gestore/ghost-kitchen')) ?>">
+                <input type="hidden" name="azione" value="crea">
+                <h3>Nuova Ghost Kitchen</h3>
+                <div class="ops-form-row">
+                    <label>Nome <input type="text" name="nome" required></label>
+                    <label>Prezzo orario <input type="number" name="prezzoOrario" min="0" step="0.01" required></label>
+                </div>
+                <label>Descrizione <textarea name="descrizione" rows="4" required></textarea></label>
+                <div class="ops-form-row">
+                    <label>Indirizzo <input type="text" name="indirizzo" required></label>
+                    <label>Citta <input type="text" name="citta" required></label>
+                </div>
+                <div class="ops-form-row management-three-columns">
+                    <label>CAP <input type="text" name="cap" required></label>
+                    <label>Capienza <input type="number" name="capienza" min="1" required></label>
+                    <label>Metri quadri <input type="number" name="mq" min="1" step="0.01" required></label>
+                </div>
+                <button class="btn btn-accent" type="submit">Crea Ghost Kitchen</button>
+            </form>
+            <div class="management-card-list">
             <?php foreach ($ghostKitchenGestore as $ghostKitchen): ?>
-                <article class="ghost-kitchen-management-card">
-                    <header>
-                        <h2><?= V::e($ghostKitchen->getNome()) ?></h2>
-                        <span class="request-status status-<?= V::e($ghostKitchen->getStato()) ?>"><?= V::e($ghostKitchen->getStato()) ?></span>
-                    </header>
-                    <p><?= V::e($ghostKitchen->getDescrizione()) ?></p>
-                    <dl>
-                        <div><dt>Indirizzo</dt><dd><?= V::e($ghostKitchen->getIndirizzo()) ?>, <?= V::e($ghostKitchen->getCitta()) ?></dd></div>
-                        <div><dt>Prezzo</dt><dd>&euro;<?= V::e(V::money($ghostKitchen->getPrezzoOrario())) ?>/h</dd></div>
-                        <div><dt>Capienza</dt><dd><?= V::e($ghostKitchen->getCapienza()) ?> persone</dd></div>
-                        <div><dt>Valutazione</dt><dd><?= V::e($ghostKitchen->getValutazioneMedia()) ?> / 5</dd></div>
-                    </dl>
+                <?php $idGhostKitchen = (int) $ghostKitchen->getId(); ?>
+                <article class="ops-panel management-composite-card">
+                    <form class="ops-form management-form" method="post" action="<?= V::e(V::url('/dashboard/gestore/ghost-kitchen')) ?>">
+                        <input type="hidden" name="idGhostKitchen" value="<?= V::e($idGhostKitchen) ?>">
+                        <div class="management-card-heading">
+                            <h3><?= V::e($ghostKitchen->getNome()) ?></h3>
+                            <span class="request-status status-<?= V::e($ghostKitchen->getStato()) ?>"><?= V::e($ghostKitchen->getStato()) ?></span>
+                        </div>
+                        <div class="ops-form-row">
+                            <label>Nome <input type="text" name="nome" value="<?= V::e($ghostKitchen->getNome()) ?>" required></label>
+                            <label>Prezzo orario <input type="number" name="prezzoOrario" min="0" step="0.01" value="<?= V::e($ghostKitchen->getPrezzoOrario()) ?>" required></label>
+                        </div>
+                        <label>Descrizione <textarea name="descrizione" rows="4" required><?= V::e($ghostKitchen->getDescrizione()) ?></textarea></label>
+                        <div class="ops-form-row">
+                            <label>Indirizzo <input type="text" name="indirizzo" value="<?= V::e($ghostKitchen->getIndirizzo()) ?>" required></label>
+                            <label>Citta <input type="text" name="citta" value="<?= V::e($ghostKitchen->getCitta()) ?>" required></label>
+                        </div>
+                        <div class="ops-form-row management-three-columns">
+                            <label>CAP <input type="text" name="cap" value="<?= V::e($ghostKitchen->getCap()) ?>" required></label>
+                            <label>Capienza <input type="number" name="capienza" min="1" value="<?= V::e($ghostKitchen->getCapienza()) ?>" required></label>
+                            <label>Metri quadri <input type="number" name="mq" min="1" step="0.01" value="<?= V::e($ghostKitchen->getMq()) ?>" required></label>
+                        </div>
+                        <div class="actions">
+                            <button class="btn btn-accent" type="submit" name="azione" value="aggiorna">Salva dati</button>
+                            <?php if ($ghostKitchen->getStato() === EGhostKitchen::STATO_ATTIVA): ?>
+                                <button class="btn btn-ghost" type="submit" name="azione" value="rimuovi">Rimuovi dalla pubblicazione</button>
+                            <?php else: ?>
+                                <button class="btn btn-ghost" type="submit" name="azione" value="pubblica">Pubblica</button>
+                            <?php endif; ?>
+                            <a class="btn btn-ghost" href="<?= V::e(V::url('/ghost-kitchen/' . $idGhostKitchen)) ?>">Pagina pubblica</a>
+                        </div>
+                    </form>
+
+                    <div class="equipment-management">
+                        <h3>Attrezzature</h3>
+                        <?php foreach (($attrezzatureGhostKitchen[$idGhostKitchen] ?? []) as $attrezzatura): ?>
+                            <form class="equipment-row" method="post" action="<?= V::e(V::url('/dashboard/gestore/attrezzatura')) ?>">
+                                <input type="hidden" name="idGhostKitchen" value="<?= V::e($idGhostKitchen) ?>">
+                                <input type="hidden" name="idAttrezzatura" value="<?= V::e((int) $attrezzatura->getIdAttrezzatura()) ?>">
+                                <input type="text" name="nome" value="<?= V::e($attrezzatura->getNome()) ?>" aria-label="Nome attrezzatura" required>
+                                <input type="text" name="categoria" value="<?= V::e($attrezzatura->getCategoria()) ?>" aria-label="Categoria attrezzatura" required>
+                                <input type="text" name="descrizione" value="<?= V::e($attrezzatura->getDescrizione()) ?>" aria-label="Descrizione attrezzatura">
+                                <input type="number" name="quantita" min="0" value="<?= V::e($attrezzatura->getQuantita()) ?>" aria-label="Quantita" required>
+                                <button class="btn btn-ghost" type="submit" name="azione" value="aggiorna">Salva</button>
+                                <button class="btn btn-ghost" type="submit" name="azione" value="rimuovi">Rimuovi</button>
+                            </form>
+                        <?php endforeach; ?>
+                        <form class="equipment-row equipment-create-row" method="post" action="<?= V::e(V::url('/dashboard/gestore/attrezzatura')) ?>">
+                            <input type="hidden" name="azione" value="crea">
+                            <input type="hidden" name="idGhostKitchen" value="<?= V::e($idGhostKitchen) ?>">
+                            <input type="text" name="nome" placeholder="Nuova attrezzatura" required>
+                            <input type="text" name="categoria" placeholder="Categoria" required>
+                            <input type="text" name="descrizione" placeholder="Descrizione">
+                            <input type="number" name="quantita" min="0" value="1" required>
+                            <button class="btn btn-accent" type="submit">Aggiungi</button>
+                        </form>
+                    </div>
                 </article>
             <?php endforeach; ?>
             <?php if ($ghostKitchenGestore === []): ?>
                 <div class="empty-state">Nessuna ghost kitchen collegata al tuo profilo.</div>
             <?php endif; ?>
-        </section>
-    <?php elseif ($tabAttiva === 'statistiche'): ?>
-        <section class="chef-stats-layout">
-            <div class="chef-metric-grid chef-stats-grid">
-                <article class="chef-metric-card">
-                    <span class="metric-icon sage" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 19V5"></path><path d="M4 19h16"></path><path d="M8 16l3-4 3 2 5-7"></path></svg></span>
-                    <strong><?= V::e((string) round((float) ($statisticheGestore['tassoConferma'] ?? 0))) ?>%</strong>
-                    <p>Tasso Conferma</p>
-                </article>
-                <article class="chef-metric-card">
-                    <span class="metric-icon warm" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h18"></path><path d="M5 12v7h14v-7"></path><path d="M7 12V8a5 5 0 0 1 10 0v4"></path></svg></span>
-                    <strong><?= V::e(number_format((float) ($statisticheGestore['orePrenotate'] ?? 0), 0, ',', '.')) ?></strong>
-                    <p>Ore Prenotate</p>
-                </article>
-                <article class="chef-metric-card">
-                    <span class="metric-icon gold" aria-hidden="true">&euro;</span>
-                    <strong>&euro;<?= V::e(V::money((float) ($statisticheGestore['importoMedio'] ?? 0))) ?></strong>
-                    <p>Importo Medio</p>
-                </article>
-                <article class="chef-metric-card">
-                    <span class="metric-icon blue" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle><path d="M12 8v5l3 2"></path></svg></span>
-                    <strong><?= V::e(number_format((float) ($statisticheGestore['durataMedia'] ?? 0), 1, ',', '.')) ?>h</strong>
-                    <p>Durata Media</p>
-                </article>
             </div>
-            <div class="chef-dashboard-panels">
-                <section class="chef-dashboard-panel chart-panel">
-                    <h2>Andamento Ricavi</h2>
-                    <svg class="line-chart revenue-chart" viewBox="0 0 660 300" role="img" aria-label="Andamento ricavi">
-                        <?php for ($tick = 0; $tick <= 4; $tick++): ?>
-                            <?php $value = ($maxFatturato / 4) * $tick; ?>
-                            <?php $y = 238 - (($value / $maxFatturato) * 198); ?>
-                            <line class="chart-grid-line" x1="58" y1="<?= V::e($y) ?>" x2="620" y2="<?= V::e($y) ?>"></line>
-                            <text class="chart-y-label" x="42" y="<?= V::e($y + 5) ?>"><?= V::e((string) (int) $value) ?></text>
-                        <?php endfor; ?>
-                        <line class="chart-axis" x1="58" y1="40" x2="58" y2="238"></line>
-                        <line class="chart-axis" x1="58" y1="238" x2="620" y2="238"></line>
-                        <polyline points="<?= V::e(implode(' ', $linePoints)) ?>"></polyline>
-                        <?php foreach ($lineChartPoints as $point): ?>
-                            <circle cx="<?= V::e($point['x']) ?>" cy="<?= V::e($point['y']) ?>" r="5"></circle>
-                            <text class="chart-x-label" x="<?= V::e($point['x']) ?>" y="270"><?= V::e($point['point']['label']) ?></text>
-                        <?php endforeach; ?>
-                    </svg>
-                </section>
-                <section class="chef-dashboard-panel">
-                    <h2>Stato Prenotazioni</h2>
-                    <div class="status-stat-list">
-                        <?php foreach ($statiStatistiche as $stato => $totale): ?>
-                            <div>
-                                <span><?= V::e($statusLabels[$stato] ?? $stato) ?></span>
-                                <i><b style="width: <?= V::e((string) (((int) $totale / $maxStati) * 100)) ?>%"></b></i>
-                                <strong><?= V::e((string) (int) $totale) ?></strong>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </section>
-            </div>
-        </section>
-    <?php else: ?>
-        <section class="chef-dashboard-panel">
-            <h2><?= V::e($tabs[$tabAttiva] ?? 'Sezione') ?></h2>
-            <p class="muted-text">Questo pannello verra configurato nel prossimo passaggio.</p>
         </section>
     <?php endif; ?>
 </section>

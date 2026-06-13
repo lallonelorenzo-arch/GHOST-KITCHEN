@@ -27,7 +27,7 @@ class CDashboardGestore
         }, 0.0);
 
         $tabAttiva = strtolower(trim((string) ($query['tab'] ?? 'panoramica')));
-        if (!in_array($tabAttiva, ['panoramica', 'prenotazioni', 'richieste', 'calendario', 'statistiche', 'ghost_kitchen'], true)) {
+        if (!in_array($tabAttiva, ['panoramica', 'prenotazioni', 'richieste', 'disponibilita', 'ghost_kitchen'], true)) {
             $tabAttiva = 'panoramica';
         }
         $filtroRichieste = strtolower(trim((string) ($query['filtro'] ?? 'tutte')));
@@ -54,8 +54,27 @@ class CDashboardGestore
             'prossimePrenotazioni' => $this->prossimePrenotazioni($prenotazioni),
             'prenotazioniTabella' => $this->prenotazioniTabella($prenotazioni),
             'richiestePrenotazione' => $this->richiestePrenotazione($prenotazioni),
-            'statisticheGestore' => $this->statisticheGestore($prenotazioni, $accettate),
+            'disponibilitaGhostKitchen' => $this->disponibilitaGhostKitchen($ghostKitchen),
+            'attrezzatureGhostKitchen' => $this->attrezzatureGhostKitchen($ghostKitchen),
         ];
+    }
+
+    private function disponibilitaGhostKitchen(array $ghostKitchen): array
+    {
+        $result = [];
+        foreach ($ghostKitchen as $cucina) {
+            $result[(int) $cucina->getId()] = FPersistentManager::loadDisponibilitaGhostKitchen((int) $cucina->getId());
+        }
+        return $result;
+    }
+
+    private function attrezzatureGhostKitchen(array $ghostKitchen): array
+    {
+        $result = [];
+        foreach ($ghostKitchen as $cucina) {
+            $result[(int) $cucina->getId()] = FPersistentManager::loadAttrezzatureByGhostKitchen((int) $cucina->getId());
+        }
+        return $result;
     }
 
     private function valutazioneMediaGhostKitchen(array $ghostKitchen): float
@@ -184,50 +203,6 @@ class CDashboardGestore
                 'ricevuta' => self::tempoTrascorso($richiesta->getDataCreazione()),
             ];
         }, $prenotazioni);
-    }
-
-    private function statisticheGestore(array $prenotazioni, array $prenotazioniValide): array
-    {
-        $stati = [
-            EPrenotazione::STATO_IN_ATTESA => 0,
-            EPrenotazione::STATO_ACCETTATA => 0,
-            EPrenotazione::STATO_PAGATA => 0,
-            EPrenotazione::STATO_COMPLETATA => 0,
-            EPrenotazione::STATO_RIFIUTATA => 0,
-            EPrenotazione::STATO_CANCELLATA => 0,
-        ];
-        $durataTotale = 0.0;
-        $importoMedio = 0.0;
-
-        foreach ($prenotazioni as $prenotazione) {
-            if (!$prenotazione instanceof EPrenotazioneGhostKitchen) {
-                continue;
-            }
-            $stato = $prenotazione->getStato();
-            if (array_key_exists($stato, $stati)) {
-                $stati[$stato]++;
-            }
-        }
-
-        foreach ($prenotazioniValide as $prenotazione) {
-            if (!$prenotazione instanceof EPrenotazioneGhostKitchen) {
-                continue;
-            }
-            $inizio = strtotime($prenotazione->getOraInizio());
-            $fine = strtotime($prenotazione->getOraFine());
-            $durataTotale += $inizio !== false && $fine !== false ? max(0, ($fine - $inizio) / 3600) : 0;
-            $importoMedio += $prenotazione->getImportoTotale();
-        }
-
-        $numeroValide = count($prenotazioniValide);
-
-        return [
-            'stati' => $stati,
-            'orePrenotate' => $durataTotale,
-            'durataMedia' => $numeroValide > 0 ? $durataTotale / $numeroValide : 0.0,
-            'importoMedio' => $numeroValide > 0 ? $importoMedio / $numeroValide : 0.0,
-            'tassoConferma' => count($prenotazioni) > 0 ? ($numeroValide / count($prenotazioni)) * 100 : 0.0,
-        ];
     }
 
     private static function tempoTrascorso(string $dataCreazione): string

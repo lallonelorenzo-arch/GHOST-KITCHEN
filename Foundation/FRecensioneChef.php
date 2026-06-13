@@ -49,6 +49,20 @@ class FRecensioneChef
     }
     public static function delete(int $id): bool { return FRecensione::delete($id); }
 
+    public static function loadByChef(int $idChef): array
+    {
+        return FBaseJoinPersistence::run('load recensioni chef', static function () use ($idChef): array {
+            $sql = 'SELECT r.*, rc.id_chef, rc.id_prenotazione_chef
+                    FROM recensioni r INNER JOIN recensioni_chef rc ON rc.id_recensione = r.id_recensione
+                    WHERE rc.id_chef = :id_chef
+                    ORDER BY r.data_recensione DESC, r.id_recensione DESC';
+            $statement = FBaseJoinPersistence::connection()->prepare($sql);
+            $statement->execute(['id_chef' => $idChef]);
+
+            return array_map(static fn (array $row): ERecensioneChef => self::hydrate($row), $statement->fetchAll());
+        });
+    }
+
     public static function aggiornaValutazioneChef(int $idChef): array
     {
         return FBaseJoinPersistence::run('aggiorna valutazione chef', static function () use ($idChef): array {

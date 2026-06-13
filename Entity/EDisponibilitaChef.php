@@ -10,6 +10,13 @@ declare(strict_types=1);
  */
 class EDisponibilitaChef
 {
+    public const FASCIA_PRANZO = 'pranzo';
+    public const FASCIA_CENA = 'cena';
+    public const ORA_PRANZO_INIZIO = '12:00';
+    public const ORA_PRANZO_FINE = '15:00';
+    public const ORA_CENA_INIZIO = '19:00';
+    public const ORA_CENA_FINE = '23:00';
+
     public const STATO_LIBERA = 'libera';
     public const STATO_OCCUPATA = 'occupata';
     public const STATO_BLOCCATA = 'bloccata';
@@ -130,6 +137,27 @@ class EDisponibilitaChef
     public function isBloccata(): bool
     {
         return $this->stato === self::STATO_BLOCCATA;
+    }
+
+    public function getFasciaServizio(): string
+    {
+        return self::fasciaDaOra($this->oraInizio);
+    }
+
+    public static function orariPerFascia(string $fascia): array
+    {
+        return match (strtolower(trim($fascia))) {
+            self::FASCIA_PRANZO => [self::ORA_PRANZO_INIZIO, self::ORA_PRANZO_FINE],
+            self::FASCIA_CENA => [self::ORA_CENA_INIZIO, self::ORA_CENA_FINE],
+            default => throw new InvalidArgumentException('Fascia servizio non valida.'),
+        };
+    }
+
+    public static function fasciaDaOra(string $oraInizio): string
+    {
+        return substr(trim($oraInizio), 0, 5) < '16:00'
+            ? self::FASCIA_PRANZO
+            : self::FASCIA_CENA;
     }
 
     public function occupa(): void

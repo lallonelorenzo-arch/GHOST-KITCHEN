@@ -8,6 +8,8 @@ require_once __DIR__ . '/EUtente.php';
  */
 class EChef extends EUtente
 {
+    public const MAX_ANNI_ESPERIENZA = 60;
+
     public const STATO_VERIFICA_NON_VERIFICATO = 'non_verificato';
     public const STATO_VERIFICA_IN_ATTESA = 'in_attesa';
     public const STATO_VERIFICA_VERIFICATO = 'verificato';
@@ -128,8 +130,10 @@ class EChef extends EUtente
 
     public function setAnniEsperienza(int $anniEsperienza): void
     {
-        if ($anniEsperienza < 0) {
-            throw new InvalidArgumentException('Gli anni di esperienza devono essere >= 0.');
+        if ($anniEsperienza < 0 || $anniEsperienza > self::MAX_ANNI_ESPERIENZA) {
+            throw new InvalidArgumentException(
+                'Gli anni di esperienza devono essere compresi tra 0 e ' . self::MAX_ANNI_ESPERIENZA . '.'
+            );
         }
 
         $this->anniEsperienza = $anniEsperienza;

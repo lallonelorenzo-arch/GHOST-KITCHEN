@@ -17,8 +17,6 @@ class CFrontController
             '/profilo' => ['CAutenticazione', 'profilo', 'profilo'],
             '/logout' => ['CAutenticazione', 'logout', null],
             '/prenotazioni' => ['CPrenotazioniUtente', 'visualizzaPrenotazioniWeb', 'prenotazioni'],
-            '/disponibilita' => ['CGestioneDisponibilita', 'mostraDisponibilitaWeb', 'disponibilita'],
-            '/richieste' => ['CGestioneRichieste', 'visualizzaRichiesteWeb', 'richieste'],
             '/dashboard' => ['CDashboardStatistiche', 'visualizzaDashboardWeb', 'dashboard'],
             '/moderazione' => ['CModerazione', 'visualizzaContenutiDaModerareWeb', 'moderazione'],
             '/utenti' => ['CAdminUtenti', 'visualizzaUtentiWeb', 'utenti'],
@@ -32,6 +30,11 @@ class CFrontController
             '/disponibilita/chef' => ['CGestioneDisponibilita', 'aggiungiDisponibilitaChefWeb', 'richiesta_esito'],
             '/disponibilita/ghost-kitchen' => ['CGestioneDisponibilita', 'aggiungiDisponibilitaGhostKitchenWeb', 'richiesta_esito'],
             '/mie-certificazioni' => ['CCertificazioniChef', 'caricaCertificazioneWeb', 'richiesta_esito'],
+            '/dashboard/chef/profilo' => ['CContenutiChef', 'aggiornaProfiloWeb', 'richiesta_esito'],
+            '/dashboard/chef/menu' => ['CContenutiChef', 'gestisciMenuWeb', 'richiesta_esito'],
+            '/dashboard/chef/piatto' => ['CContenutiChef', 'gestisciPiattoWeb', 'richiesta_esito'],
+            '/dashboard/gestore/ghost-kitchen' => ['CGestioneGhostKitchen', 'gestisciGhostKitchenWeb', 'richiesta_esito'],
+            '/dashboard/gestore/attrezzatura' => ['CGestioneGhostKitchen', 'gestisciAttrezzaturaWeb', 'richiesta_esito'],
         ],
     ];
 
@@ -43,6 +46,7 @@ class CFrontController
         $post = $this->normalizeRequest($_POST);
 
         try {
+            $this->synchronizeActiveRole($query);
             $accessContext = $this->accessContext();
             if (!$this->isPathAllowed($path, $method, $accessContext)) {
                 $this->renderError(403, 'Accesso non consentito', 'Non hai permessi per questa sezione.');
@@ -54,13 +58,21 @@ class CFrontController
                 return;
             }
 
+            if ($method === 'GET' && in_array($path, ['/disponibilita', '/richieste'], true)) {
+                $dashboardRedirect = $this->professionalDashboardRedirect($path, $accessContext);
+                if ($dashboardRedirect !== null) {
+                    $this->redirect($dashboardRedirect);
+                    return;
+                }
+            }
+
             if ($method === 'GET' && preg_match('#^/prenotazione/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
-                $this->renderController('CPrenotazioneChef', 'mostraPrenotazioneChefWeb', 'prenotazione_chef', [(int) $matches[1], $this->accessContext()]);
+                $this->redirect('/chef/' . (int) $matches[1]);
                 return;
             }
 
             if ($method === 'POST' && preg_match('#^/prenotazione/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
-                $this->renderController('CPrenotazioneChef', 'confermaPrenotazioneChefWeb', 'prenotazione_chef', [(int) $matches[1], $this->accessContext(), $post]);
+                $this->renderController('CPrenotazioneChef', 'confermaPrenotazioneChefWizardWeb', 'richiesta_esito', [(int) $matches[1], $this->accessContext(), $post]);
                 return;
             }
 
@@ -71,6 +83,12 @@ class CFrontController
 
             if ($method === 'POST' && preg_match('#^/prenotazione/ghost-kitchen/([1-9][0-9]*)$#', $path, $matches) === 1) {
                 $this->renderController('CPrenotazioneGhostKitchen', 'confermaPrenotazioneGhostKitchenWeb', 'prenotazione_ghost_kitchen', [(int) $matches[1], $this->accessContext(), $post]);
+                return;
+            }
+
+            if ($method === 'POST' && preg_match('#^/disponibilita/(chef|ghost-kitchen)/([1-9][0-9]*)/(blocca|libera)$#', $path, $matches) === 1) {
+                $tipoOwner = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
+                $this->renderController('CGestioneDisponibilita', 'aggiornaStatoDisponibilitaWeb', 'richiesta_esito', [$tipoOwner, (int) $matches[2], $matches[3], $this->accessContext()]);
                 return;
             }
 
@@ -174,7 +192,7 @@ class CFrontController
             }
 
             if ($method === 'GET' && preg_match('#^/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
-                $this->renderController('CDettaglioChef', 'visualizzaDettaglioChef', 'dettaglio_chef', [(int) $matches[1]]);
+                $this->renderController('CDettaglioChef', 'visualizzaDettaglioChef', 'dettaglio_chef', [(int) $matches[1], $this->accessContext()]);
                 return;
             }
 
@@ -219,8 +237,6 @@ class CFrontController
                 '/registrazione' => $method === 'POST' ? [$post, $_FILES] : [],
                 '/profilo' => $method === 'POST' ? [$accessContext, $post, $_FILES] : [$accessContext, $query],
                 '/prenotazioni' => [$accessContext],
-                '/disponibilita' => [$accessContext, $query],
-                '/richieste' => [$accessContext, $query],
                 '/dashboard' => [$accessContext, $query],
                 '/moderazione' => [$accessContext],
                 '/utenti' => [$accessContext],
@@ -228,6 +244,11 @@ class CFrontController
                 '/mie-certificazioni' => $method === 'POST' ? [$accessContext, $post, $_FILES] : [$accessContext],
                 '/disponibilita/chef' => [$accessContext, $post],
                 '/disponibilita/ghost-kitchen' => [$accessContext, $post],
+                '/dashboard/chef/profilo' => [$accessContext, $post],
+                '/dashboard/chef/menu' => [$accessContext, $post],
+                '/dashboard/chef/piatto' => [$accessContext, $post],
+                '/dashboard/gestore/ghost-kitchen' => [$accessContext, $post],
+                '/dashboard/gestore/attrezzatura' => [$accessContext, $post],
                 default => [],
             };
 
@@ -239,7 +260,7 @@ class CFrontController
 
             if ($path === '/dashboard' && !in_array('admin', $accessContext['ruoli'] ?? [], true) && !in_array('amministratore', $accessContext['ruoli'] ?? [], true)) {
                 $ruoliDashboard = $accessContext['ruoli'] ?? [];
-                $ruoloDashboard = strtolower(trim((string) ($query['ruolo'] ?? '')));
+                $ruoloDashboard = strtolower(trim((string) ($query['ruolo'] ?? ($accessContext['ruoloAttivo'] ?? ''))));
                 if ($ruoloDashboard === 'gestore' && in_array('gestore', $ruoliDashboard, true)) {
                     $data = $this->callController('CDashboardGestore', 'visualizzaDashboardWeb', [$accessContext, $query]);
                     ViewRenderer::render('dashboard_gestore', is_array($data) ? $data : [], $this->sharedViewData());
@@ -361,6 +382,10 @@ class CFrontController
             return true;
         }
 
+        if (preg_match('#^/disponibilita/(chef|ghost-kitchen)/[1-9][0-9]*/(blocca|libera)$#', $path) === 1) {
+            return true;
+        }
+
         if (preg_match('#^/moderazione/segnalazione/[1-9][0-9]*/(prendi|chiudi)$#', $path) === 1) {
             return true;
         }
@@ -436,6 +461,11 @@ class CFrontController
             'cognome' => FSession::getCognome(),
             'telefono' => $this->currentUtente()?->getTelefono() ?? '',
             'localita' => $this->currentUtente()?->getLocalita() ?? '',
+            'via' => $this->currentUtente()?->getVia() ?? '',
+            'indirizzo' => $this->currentUtente()?->getIndirizzo() ?? '',
+            'citta' => $this->currentUtente()?->getCitta() ?? '',
+            'provincia' => $this->currentUtente()?->getProvincia() ?? '',
+            'numeroCivico' => $this->currentUtente()?->getNumeroCivico() ?? '',
             'biografia' => $this->currentUtente()?->getBiografia() ?? '',
             'fotoProfilo' => $this->currentUtente()?->getFotoProfilo() ?? '',
             'ruoli' => FSession::getRuoli(),
@@ -459,6 +489,7 @@ class CFrontController
             'baseUrl' => $this->baseUrl(),
             'currentPath' => $this->currentPath(),
             'utenteCorrente' => FSession::isLogged() ? [
+                'idUtente' => FSession::getIdUtente(),
                 'nome' => FSession::getNome(),
                 'cognome' => FSession::getCognome(),
                 'email' => FSession::getEmail(),
@@ -496,6 +527,14 @@ class CFrontController
             return $isChef;
         }
 
+        if (str_starts_with($path, '/dashboard/chef/')) {
+            return $isChef;
+        }
+
+        if (str_starts_with($path, '/dashboard/gestore/')) {
+            return $isGestore;
+        }
+
         if ($path === '/prenotazioni') {
             return $isLogged;
         }
@@ -516,6 +555,10 @@ class CFrontController
             return $isGestore;
         }
 
+        if (preg_match('#^/disponibilita/(chef|ghost-kitchen)/[1-9][0-9]*/(blocca|libera)$#', $path, $matches) === 1) {
+            return $matches[1] === 'chef' ? $isChef : $isGestore;
+        }
+
         if (preg_match('#^/moderazione/#', $path) === 1 || preg_match('#^/utenti/#', $path) === 1 || preg_match('#^/certificazioni/[1-9][0-9]*(/(approva|rifiuta|in-attesa))?$#', $path) === 1) {
             return $isAdmin;
         }
@@ -531,6 +574,34 @@ class CFrontController
     {
         $path = $this->normalizePath((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
         return $path === '' ? '/' : $path;
+    }
+
+    private function synchronizeActiveRole(array $query): void
+    {
+        FSession::start();
+        $ruolo = strtolower(trim((string) ($query['ruolo'] ?? '')));
+        if (in_array($ruolo, ['chef', 'gestore'], true)) {
+            FSession::setRuoloAttivo($ruolo);
+        }
+    }
+
+    private function professionalDashboardRedirect(string $path, array $accesso): ?string
+    {
+        $ruoli = $accesso['ruoli'] ?? [];
+        $ruolo = (string) ($accesso['ruoloAttivo'] ?? '');
+        if (!in_array($ruolo, ['chef', 'gestore'], true)) {
+            $ruolo = in_array('chef', $ruoli, true) ? 'chef' : (in_array('gestore', $ruoli, true) ? 'gestore' : '');
+        }
+        if ($ruolo === '' || !in_array($ruolo, $ruoli, true)) {
+            return null;
+        }
+
+        $tab = match ($path) {
+            '/disponibilita' => 'disponibilita',
+            '/richieste' => 'richieste',
+            default => 'panoramica',
+        };
+        return '/dashboard?ruolo=' . $ruolo . '&tab=' . $tab;
     }
 
     private function baseUrl(): string

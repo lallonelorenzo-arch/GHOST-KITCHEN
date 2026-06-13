@@ -83,6 +83,21 @@ class FUtente
             if (in_array('biografia', $optionalColumns, true)) {
                 $values['biografia'] = $utente->getBiografia() !== '' ? $utente->getBiografia() : null;
             }
+            if (in_array('via', $optionalColumns, true)) {
+                $values['via'] = $utente->getVia() !== '' ? $utente->getVia() : null;
+            }
+            if (in_array('citta', $optionalColumns, true)) {
+                $values['citta'] = $utente->getCitta() !== '' ? $utente->getCitta() : null;
+            }
+            if (in_array('numero_civico', $optionalColumns, true)) {
+                $values['numero_civico'] = $utente->getNumeroCivico() !== '' ? $utente->getNumeroCivico() : null;
+            }
+            if (in_array('indirizzo', $optionalColumns, true)) {
+                $values['indirizzo'] = $utente->getIndirizzo() !== '' ? $utente->getIndirizzo() : null;
+            }
+            if (in_array('provincia', $optionalColumns, true)) {
+                $values['provincia'] = $utente->getProvincia() !== '' ? $utente->getProvincia() : null;
+            }
             $statement = self::connection()->prepare($sql);
             $statement->execute($values);
 
@@ -132,6 +147,21 @@ class FUtente
             }
             if (in_array('biografia', $optionalColumns, true)) {
                 $values['biografia'] = $utente->getBiografia() !== '' ? $utente->getBiografia() : null;
+            }
+            if (in_array('via', $optionalColumns, true)) {
+                $values['via'] = $utente->getVia() !== '' ? $utente->getVia() : null;
+            }
+            if (in_array('citta', $optionalColumns, true)) {
+                $values['citta'] = $utente->getCitta() !== '' ? $utente->getCitta() : null;
+            }
+            if (in_array('numero_civico', $optionalColumns, true)) {
+                $values['numero_civico'] = $utente->getNumeroCivico() !== '' ? $utente->getNumeroCivico() : null;
+            }
+            if (in_array('indirizzo', $optionalColumns, true)) {
+                $values['indirizzo'] = $utente->getIndirizzo() !== '' ? $utente->getIndirizzo() : null;
+            }
+            if (in_array('provincia', $optionalColumns, true)) {
+                $values['provincia'] = $utente->getProvincia() !== '' ? $utente->getProvincia() : null;
             }
 
             return $statement->execute($values);
@@ -213,7 +243,12 @@ class FUtente
             (string) $row['stato'],
             (string) ($row['foto_profilo'] ?? ''),
             (string) ($row['localita'] ?? ''),
-            (string) ($row['biografia'] ?? '')
+            (string) ($row['biografia'] ?? ''),
+            (string) ($row['via'] ?? ''),
+            (string) ($row['citta'] ?? ''),
+            (string) ($row['numero_civico'] ?? ''),
+            (string) ($row['indirizzo'] ?? ''),
+            (string) ($row['provincia'] ?? '')
         );
     }
 
@@ -259,13 +294,18 @@ class FUtente
             self::hasColumn('foto_profilo') ? 'foto_profilo' : "'' AS foto_profilo",
             self::hasColumn('localita') ? 'localita' : "'' AS localita",
             self::hasColumn('biografia') ? 'biografia' : "'' AS biografia",
+            self::hasColumn('via') ? 'via' : "'' AS via",
+            self::hasColumn('citta') ? 'citta' : "'' AS citta",
+            self::hasColumn('numero_civico') ? 'numero_civico' : "'' AS numero_civico",
+            self::hasColumn('indirizzo') ? 'indirizzo' : "'' AS indirizzo",
+            self::hasColumn('provincia') ? 'provincia' : "'' AS provincia",
         ];
     }
 
     private static function optionalColumns(): array
     {
         return array_values(array_filter(
-            ['foto_profilo', 'localita', 'biografia'],
+            ['foto_profilo', 'localita', 'biografia', 'via', 'citta', 'numero_civico', 'indirizzo', 'provincia'],
             static fn (string $column): bool => self::hasColumn($column)
         ));
     }

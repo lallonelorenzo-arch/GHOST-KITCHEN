@@ -199,8 +199,8 @@ class CRegistrazione
             return 'Gli anni di esperienza non possono essere negativi.';
         }
 
-        if ((int) $chefData['anniEsperienza'] > 80) {
-            return 'Gli anni di esperienza chef non possono superare 80.';
+        if ((int) $chefData['anniEsperienza'] > EChef::MAX_ANNI_ESPERIENZA) {
+            return 'Gli anni di esperienza chef non possono superare ' . EChef::MAX_ANNI_ESPERIENZA . '.';
         }
 
         return null;

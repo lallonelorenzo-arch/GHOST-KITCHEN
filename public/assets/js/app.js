@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggle = document.querySelector('[data-nav-toggle]');
   const links = document.querySelector('[data-nav-links]');
   const user = document.querySelector('.nav-user');
+  const accountMenuToggle = document.querySelector('[data-account-menu-toggle]');
+  const accountMenuPanel = document.querySelector('[data-account-menu-panel]');
 
   if (toggle && links) {
     toggle.addEventListener('click', () => {
@@ -13,12 +15,33 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  if (accountMenuToggle && accountMenuPanel) {
+    const closeAccountMenu = () => {
+      accountMenuPanel.hidden = true;
+      accountMenuToggle.setAttribute('aria-expanded', 'false');
+    };
+
+    accountMenuToggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const nextOpen = accountMenuPanel.hidden;
+      accountMenuPanel.hidden = !nextOpen;
+      accountMenuToggle.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
+    });
+
+    accountMenuPanel.addEventListener('click', (event) => event.stopPropagation());
+    document.addEventListener('click', closeAccountMenu);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeAccountMenu();
+        accountMenuToggle.focus();
+      }
+    });
+  }
+
   document.querySelectorAll('[data-filter-toggle]').forEach((button) => {
     button.addEventListener('click', () => {
       const form = button.closest('form');
       const panel = form ? form.querySelector('[data-filter-panel]') : null;
-      const chevron = button.querySelector('.filter-chevron');
-
       if (!panel) {
         return;
       }
@@ -26,10 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const nextOpen = panel.hasAttribute('hidden');
       panel.toggleAttribute('hidden', !nextOpen);
       button.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
-
-      if (chevron) {
-        chevron.innerHTML = nextOpen ? '&#8963;' : '&#8964;';
-      }
     });
   });
 
@@ -172,6 +191,387 @@ document.addEventListener('DOMContentLoaded', () => {
 
       form.classList.add('is-slot-selected');
       form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+
+  document.querySelectorAll('[data-chef-booking]').forEach((bookingRoot) => {
+    const form = document.querySelector('[data-chef-booking-form]');
+    const dialog = document.getElementById('chef-booking-dialog');
+    const accessDialog = document.getElementById('chef-booking-access-modal');
+    const availabilityNode = bookingRoot.querySelector('[data-chef-availability]');
+    const menuOptions = Array.from(bookingRoot.querySelectorAll('[data-menu-option]'));
+    const menuPopover = bookingRoot.querySelector('[data-menu-required-popover]');
+    const selectedLabel = bookingRoot.querySelector('[data-selected-menu-label]');
+    const boxSummary = bookingRoot.querySelector('[data-booking-box-summary]');
+    const boxMenu = bookingRoot.querySelector('[data-booking-box-menu]');
+    const startButton = bookingRoot.querySelector('[data-chef-booking-start]');
+
+    if (!form || !dialog || !availabilityNode || !startButton) {
+      return;
+    }
+
+    let availability = [];
+    try {
+      availability = JSON.parse(availabilityNode.textContent || '[]');
+    } catch (error) {
+      availability = [];
+    }
+
+    const slotsByDate = availability.reduce((result, slot) => {
+      if (!slot.date || !slot.period) {
+        return result;
+      }
+      result[slot.date] = result[slot.date] || [];
+      if (!result[slot.date].some((item) => item.period === slot.period)) {
+        result[slot.date].push(slot);
+      }
+      return result;
+    }, {});
+
+    const steps = Array.from(form.querySelectorAll('[data-chef-booking-step]'));
+    const indicators = Array.from(form.querySelectorAll('[data-chef-step-indicator]'));
+    const prevButton = form.querySelector('[data-chef-booking-prev]');
+    const nextButton = form.querySelector('[data-chef-booking-next]');
+    const submitButton = form.querySelector('[data-chef-booking-submit]');
+    const dateInput = form.querySelector('[data-booking-date]');
+    const periodInput = form.querySelector('[data-booking-period]');
+    const menuInput = form.querySelector('[data-booking-menu-id]');
+    const calendarGrid = form.querySelector('[data-calendar-grid]');
+    const calendarTitle = form.querySelector('[data-calendar-title]');
+    const calendarPrev = form.querySelector('[data-calendar-prev]');
+    const calendarNext = form.querySelector('[data-calendar-next]');
+    const periodPicker = form.querySelector('[data-period-picker]');
+    const periodOptions = form.querySelector('[data-period-options]');
+    const useSavedAddress = form.querySelector('[data-use-saved-address]');
+    const guestInput = form.querySelector('[data-booking-guests]');
+    let currentStep = 1;
+    let selectedMenu = null;
+    let selectedDate = '';
+    let selectedPeriod = '';
+    let menuPopoverTimer = null;
+
+    const today = new Date();
+    const firstVisibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastVisibleMonth = new Date(today.getFullYear(), today.getMonth() + 11, 1);
+    let visibleMonth = new Date(firstVisibleMonth);
+
+    const toDateKey = (date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const showDialog = (target) => {
+      if (target && typeof target.showModal === 'function') {
+        target.showModal();
+      }
+    };
+
+    const hideMenuPopover = () => {
+      if (menuPopoverTimer !== null) {
+        window.clearTimeout(menuPopoverTimer);
+        menuPopoverTimer = null;
+      }
+      if (menuPopover) {
+        menuPopover.hidden = true;
+      }
+    };
+
+    const showMenuPopover = () => {
+      if (!menuPopover) {
+        return;
+      }
+      hideMenuPopover();
+      menuPopover.hidden = false;
+      menuPopoverTimer = window.setTimeout(hideMenuPopover, 2600);
+    };
+
+    const formatMoney = (value) => new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(value);
+
+    const formatDate = (dateKey) => {
+      const parts = dateKey.split('-').map(Number);
+      if (parts.length !== 3) {
+        return dateKey;
+      }
+      return new Intl.DateTimeFormat('it-IT', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }).format(new Date(parts[0], parts[1] - 1, parts[2]));
+    };
+
+    const setError = (step, message = '') => {
+      const error = form.querySelector(`[data-step-error="${step}"]`);
+      if (!error) {
+        return;
+      }
+      error.textContent = message;
+      error.hidden = message === '';
+    };
+
+    const showStep = (step) => {
+      currentStep = Math.max(1, Math.min(3, step));
+      steps.forEach((item) => {
+        const active = Number(item.dataset.chefBookingStep || 0) === currentStep;
+        item.classList.toggle('is-active', active);
+        item.toggleAttribute('hidden', !active);
+      });
+      indicators.forEach((item) => {
+        const itemStep = Number(item.dataset.chefStepIndicator || 0);
+        item.classList.toggle('is-active', itemStep === currentStep);
+        item.classList.toggle('is-complete', itemStep < currentStep);
+      });
+      prevButton.hidden = currentStep === 1;
+      nextButton.hidden = currentStep === 3;
+      submitButton.hidden = currentStep !== 3;
+      setError(currentStep);
+      form.scrollTop = 0;
+      form.querySelector(`[data-chef-booking-step="${currentStep}"] h3`)?.focus({ preventScroll: true });
+    };
+
+    const selectPeriod = (slot) => {
+      selectedPeriod = slot.period;
+      periodInput.value = slot.period;
+      periodOptions.querySelectorAll('button').forEach((button) => {
+        const selected = button.dataset.period === selectedPeriod;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      });
+      setError(1);
+    };
+
+    const renderPeriods = () => {
+      const slots = slotsByDate[selectedDate] || [];
+      periodOptions.replaceChildren();
+      slots
+        .sort((a, b) => (a.period === 'pranzo' ? 0 : 1) - (b.period === 'pranzo' ? 0 : 1))
+        .forEach((slot) => {
+          const button = document.createElement('button');
+          const periodName = document.createElement('strong');
+          const periodTime = document.createElement('small');
+          button.type = 'button';
+          button.dataset.period = slot.period;
+          button.setAttribute('aria-pressed', 'false');
+          periodName.textContent = slot.period === 'pranzo' ? 'Pranzo' : 'Cena';
+          periodTime.textContent = `${slot.start} - ${slot.end}`;
+          button.append(periodName, periodTime);
+          button.addEventListener('click', () => selectPeriod(slot));
+          periodOptions.append(button);
+        });
+      periodPicker.hidden = slots.length === 0;
+      if (slots.length === 1) {
+        selectPeriod(slots[0]);
+      }
+    };
+
+    const selectDate = (dateKey) => {
+      selectedDate = dateKey;
+      selectedPeriod = '';
+      dateInput.value = dateKey;
+      periodInput.value = '';
+      calendarGrid.querySelectorAll('[data-calendar-date]').forEach((button) => {
+        const selected = button.dataset.calendarDate === dateKey;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      });
+      renderPeriods();
+      setError(1);
+    };
+
+    const renderCalendar = () => {
+      calendarGrid.replaceChildren();
+      calendarTitle.textContent = new Intl.DateTimeFormat('it-IT', {
+        month: 'long',
+        year: 'numeric',
+      }).format(visibleMonth);
+
+      const year = visibleMonth.getFullYear();
+      const month = visibleMonth.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const offset = (firstDay.getDay() + 6) % 7;
+      const days = new Date(year, month + 1, 0).getDate();
+
+      for (let blank = 0; blank < offset; blank += 1) {
+        const spacer = document.createElement('span');
+        spacer.className = 'is-empty';
+        spacer.setAttribute('aria-hidden', 'true');
+        calendarGrid.append(spacer);
+      }
+
+      for (let day = 1; day <= days; day += 1) {
+        const date = new Date(year, month, day);
+        const dateKey = toDateKey(date);
+        const slots = slotsByDate[dateKey] || [];
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.innerHTML = `<span>${day}</span>${slots.map((slot) => `<i>${slot.period === 'pranzo' ? 'P' : 'C'}</i>`).join('')}`;
+
+        if (slots.length === 0 || date < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+          button.disabled = true;
+          button.className = 'is-unavailable';
+        } else {
+          button.dataset.calendarDate = dateKey;
+          button.setAttribute('aria-label', `${formatDate(dateKey)}, disponibile per ${slots.map((slot) => slot.period).join(' e ')}`);
+          button.setAttribute('aria-pressed', dateKey === selectedDate ? 'true' : 'false');
+          button.classList.toggle('is-selected', dateKey === selectedDate);
+          button.addEventListener('click', () => selectDate(dateKey));
+        }
+        calendarGrid.append(button);
+      }
+
+      calendarPrev.disabled = visibleMonth <= firstVisibleMonth;
+      calendarNext.disabled = visibleMonth >= lastVisibleMonth;
+    };
+
+    const updateReview = () => {
+      const guests = Math.max(1, Number(guestInput?.value || 1));
+      const price = Number(selectedMenu?.price || 0);
+      const address = form.querySelector('[name="indirizzo"]')?.value.trim() || '';
+      const civic = form.querySelector('[name="numeroCivico"]')?.value.trim() || '';
+      const city = form.querySelector('[name="citta"]')?.value.trim() || '';
+      const province = form.querySelector('[name="provincia"]')?.value.trim() || '';
+      const requests = form.querySelector('[data-booking-requests]')?.value.trim() || '';
+      const wine = form.querySelector('[name="abbinamentoVini"]:checked')?.value === '1';
+
+      form.querySelector('[data-review-menu]').textContent = selectedMenu?.name || '';
+      form.querySelector('[data-review-date]').textContent = `${formatDate(selectedDate)} · ${selectedPeriod === 'pranzo' ? 'Pranzo' : 'Cena'}`;
+      form.querySelector('[data-review-address]').textContent = `${address} ${civic}, ${city} (${province})`;
+      form.querySelector('[data-review-guests]').textContent = String(guests);
+      form.querySelector('[data-review-wine]').textContent = wine ? 'Sì' : 'No';
+      form.querySelector('[data-review-total]').textContent = formatMoney(price * guests);
+      form.querySelector('[data-review-requests]').textContent = requests || 'Nessuna richiesta particolare';
+    };
+
+    const validateStep = () => {
+      if (currentStep === 1) {
+        if (!selectedDate || !selectedPeriod) {
+          setError(1, 'Seleziona una data e il servizio pranzo o cena.');
+          return false;
+        }
+        return true;
+      }
+
+      if (currentStep === 2) {
+        const fields = Array.from(form.querySelectorAll('[data-chef-booking-step="2"] input[required], [data-chef-booking-step="2"] textarea[required]'));
+        for (const field of fields) {
+          if (!field.reportValidity()) {
+            setError(2, 'Completa tutti i dati obbligatori.');
+            return false;
+          }
+        }
+        return true;
+      }
+
+      const paymentMethod = form.querySelector('[name="idMetodoPagamento"]');
+      if (!paymentMethod || !paymentMethod.reportValidity()) {
+        setError(3, 'Seleziona un metodo di pagamento.');
+        return false;
+      }
+      return true;
+    };
+
+    menuOptions.forEach((option) => {
+      option.addEventListener('change', () => {
+        selectedMenu = {
+          id: option.value,
+          name: option.dataset.menuName || '',
+          price: option.dataset.menuPrice || '0',
+        };
+        menuInput.value = selectedMenu.id;
+        selectedLabel.textContent = selectedMenu.name;
+        boxMenu.textContent = selectedMenu.name;
+        boxSummary.hidden = false;
+        hideMenuPopover();
+      });
+    });
+
+    startButton.addEventListener('click', () => {
+      if (!selectedMenu) {
+        showMenuPopover();
+        return;
+      }
+      if (form.dataset.canBook !== '1') {
+        showDialog(accessDialog);
+        return;
+      }
+      showStep(1);
+      renderCalendar();
+      showDialog(dialog);
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!startButton.contains(event.target) && !menuPopover?.contains(event.target)) {
+        hideMenuPopover();
+      }
+    });
+
+    calendarPrev.addEventListener('click', () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+      renderCalendar();
+    });
+
+    calendarNext.addEventListener('click', () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+      renderCalendar();
+    });
+
+    if (useSavedAddress) {
+      useSavedAddress.addEventListener('change', () => {
+        form.querySelectorAll('[data-address-field]').forEach((field) => {
+          if (useSavedAddress.checked) {
+            field.value = field.dataset.savedValue || '';
+          }
+          field.readOnly = useSavedAddress.checked;
+        });
+      });
+    }
+
+    nextButton.addEventListener('click', () => {
+      if (!validateStep()) {
+        return;
+      }
+      if (currentStep === 2) {
+        updateReview();
+      }
+      showStep(currentStep + 1);
+    });
+
+    prevButton.addEventListener('click', () => showStep(currentStep - 1));
+
+    form.addEventListener('submit', (event) => {
+      if (!validateStep()) {
+        event.preventDefault();
+        return;
+      }
+      submitButton.disabled = true;
+      submitButton.textContent = 'Pagamento in corso...';
+    });
+
+    renderCalendar();
+  });
+
+  document.querySelectorAll('.service-period-options').forEach((periodGroup) => {
+    const form = periodGroup.closest('form');
+    const checkboxes = Array.from(periodGroup.querySelectorAll('input[type="checkbox"]'));
+    if (!form || checkboxes.length === 0) {
+      return;
+    }
+
+    const clearValidity = () => checkboxes[0].setCustomValidity('');
+    checkboxes.forEach((checkbox) => checkbox.addEventListener('change', clearValidity));
+    form.addEventListener('submit', (event) => {
+      if (checkboxes.some((checkbox) => checkbox.checked)) {
+        clearValidity();
+        return;
+      }
+      event.preventDefault();
+      checkboxes[0].setCustomValidity('Seleziona almeno una fascia tra pranzo e cena.');
+      checkboxes[0].reportValidity();
     });
   });
 
@@ -319,16 +719,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const toggleRequestCard = (requestToggle) => {
     const card = requestToggle.closest('.request-card');
     const detail = card ? card.querySelector('.request-card-detail') : null;
-    const chevron = requestToggle.querySelector('.request-chevron');
-
     if (detail) {
       const nextOpen = detail.hasAttribute('hidden');
       detail.toggleAttribute('hidden', !nextOpen);
       card.classList.toggle('is-open', nextOpen);
       requestToggle.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
-      if (chevron) {
-        chevron.innerHTML = nextOpen ? '&#8963;' : '&#8964;';
-      }
     }
   };
 

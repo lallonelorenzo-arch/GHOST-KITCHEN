@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Foundation/FPersistentManager.php';
+require_once __DIR__ . '/../Foundation/FSession.php';
+require_once __DIR__ . '/CPagamento.php';
 
 class CPrenotazioneChef
 {
@@ -79,6 +81,7 @@ class CPrenotazioneChef
         $numeroPersone = (int) ($datiConferma['numeroPersone'] ?? 0);
         $richiesteSpeciali = trim((string) ($datiConferma['richiesteSpeciali'] ?? ''));
         $note = trim((string) ($datiConferma['note'] ?? ''));
+        $abbinamentoVini = filter_var($datiConferma['abbinamentoVini'] ?? false, FILTER_VALIDATE_BOOL);
 
         if (
             $idCliente <= 0 ||
@@ -107,8 +110,8 @@ class CPrenotazioneChef
         }
 
         $menu = FPersistentManager::loadMenu($idMenu);
-        if ($menu === null) {
-            return ['errore' => 'Menu non trovato'];
+        if ($menu === null || (int) $menu->getIdChef() !== $idChef || !$menu->isAttivo()) {
+            return ['errore' => 'Menu non disponibile per questo chef'];
         }
 
         $importoTotale = $menu->getPrezzoPersona() * $numeroPersone;
@@ -127,7 +130,8 @@ class CPrenotazioneChef
             $idMenu,
             $indirizzo,
             $numeroPersone,
-            $richiesteSpeciali
+            $richiesteSpeciali,
+            $abbinamentoVini
         );
 
         $prenotazione->validaPerConferma();
@@ -145,94 +149,6 @@ class CPrenotazioneChef
         ];
     }
 
-    public function mostraPrenotazioneChefWeb(int $idChef, array $accesso): array
-    {
-        if ($idChef <= 0) {
-            throw new InvalidArgumentException('ID chef non valido.');
-        }
-
-        $chef = FPersistentManager::loadChef($idChef);
-        if ($chef === null) {
-            return ['errore' => 'Chef non trovato.'];
-        }
-
-        $certificazioniInRegola = !$this->chefNonPrenotabilePerCertificazioni($idChef);
-        $data = [
-            'chef' => $chef,
-            'menuDisponibili' => FPersistentManager::loadMenuByChef($idChef),
-            'disponibilitaChef' => FPersistentManager::loadDisponibilitaChef($idChef),
-            'accesso' => $accesso,
-            'form' => [],
-            'prenotazione' => null,
-            'certificazioniInRegola' => $certificazioniInRegola,
-        ];
-
-        if (!$certificazioniInRegola) {
-            $data['accessoRichiesto'] = true;
-            $data['messaggioAccesso'] = 'Questo chef non e prenotabile perche le certificazioni non risultano approvate o valide.';
-            return $data;
-        }
-
-        if (!$this->canPrenotareComeCliente($accesso)) {
-            $data['accessoRichiesto'] = true;
-            $data['messaggioAccesso'] = in_array('chef', $accesso['ruoli'] ?? [], true)
-                ? 'Gli account chef non possono prenotare altri chef.'
-                : 'Accedi come cliente per confermare la prenotazione. Per ora la pagina mostra i dati reali disponibili.';
-            return $data;
-        }
-
-        $cliente = FPersistentManager::loadCliente((int) $accesso['idUtente']);
-        if ($cliente === null) {
-            $data['accessoRichiesto'] = true;
-            $data['messaggioAccesso'] = 'Il tuo utente non risulta collegato al ruolo cliente.';
-            return $data;
-        }
-
-        $data['cliente'] = $cliente;
-        return $data;
-    }
-
-    public function confermaPrenotazioneChefWeb(int $idChef, array $accesso, array $post): array
-    {
-        $data = $this->mostraPrenotazioneChefWeb($idChef, $accesso);
-        $data['form'] = $post;
-
-        if (!$this->canPrenotareComeCliente($accesso)) {
-            return $data;
-        }
-
-        try {
-            $result = $this->confermaPrenotazioneChef([
-                'idCliente' => (int) $accesso['idUtente'],
-                'idChef' => $idChef,
-                'idMenu' => (int) ($post['idMenu'] ?? 0),
-                'dataServizio' => (string) ($post['dataServizio'] ?? ''),
-                'oraInizio' => (string) ($post['oraInizio'] ?? ''),
-                'oraFine' => (string) ($post['oraFine'] ?? ''),
-                'indirizzoServizio' => (string) ($post['indirizzoServizio'] ?? ''),
-                'numeroPersone' => (int) ($post['numeroPersone'] ?? 0),
-                'richiesteSpeciali' => (string) ($post['richiesteSpeciali'] ?? ''),
-                'note' => (string) ($post['note'] ?? ''),
-            ]);
-
-            if (isset($result['errore'])) {
-                $data['erroreForm'] = $result['errore'];
-                return $data;
-            }
-
-            $data['prenotazione'] = $result['prenotazione'] ?? null;
-            $data['messaggioSuccesso'] = 'Richiesta di prenotazione inviata. Stato: in attesa di accettazione.';
-            return $data;
-        } catch (InvalidArgumentException $exception) {
-            $data['erroreForm'] = $exception->getMessage();
-            return $data;
-        } catch (Throwable $exception) {
-            error_log('[CPrenotazioneChef] ' . $exception->getMessage());
-            $data['erroreForm'] = 'Non e stato possibile inviare la prenotazione. Riprova piu tardi.';
-            return $data;
-        }
-    }
-
     private function chefNonPrenotabilePerCertificazioni(int $idChef): bool
     {
         return !FPersistentManager::chefHaCertificazioniInRegola($idChef);
@@ -240,13 +156,180 @@ class CPrenotazioneChef
 
     private function canPrenotareComeCliente(array $accesso): bool
     {
-        if (in_array('chef', $accesso['ruoli'] ?? [], true)) {
+        if (($accesso['isLogged'] ?? false) !== true || (int) ($accesso['idUtente'] ?? 0) <= 0) {
             return false;
         }
 
-        return ($accesso['isLogged'] ?? false) === true
-            && in_array('cliente', $accesso['ruoli'] ?? [], true)
-            && (int) ($accesso['idUtente'] ?? 0) > 0;
+        $ruoli = $accesso['ruoli'] ?? [];
+        $ruoloAttivo = (string) ($accesso['ruoloAttivo'] ?? '');
+        if ($ruoloAttivo === 'gestore' && in_array('gestore', $ruoli, true)) {
+            return true;
+        }
+        if ($ruoloAttivo === 'chef') {
+            return false;
+        }
+
+        return in_array('cliente', $ruoli, true) || (in_array('gestore', $ruoli, true) && !in_array('chef', $ruoli, true));
+    }
+
+    public function confermaPrenotazioneChefWizardWeb(int $idChef, array $accesso, array $post): array
+    {
+        $ritorno = '/chef/' . $idChef;
+        if (!$this->canPrenotareComeCliente($accesso)) {
+            return $this->esitoWizard(
+                'Prenotazione non disponibile',
+                'Accedi come cliente o gestore per prenotare questo chef.',
+                false,
+                $ritorno
+            );
+        }
+
+        try {
+            if (!FSession::verifyCsrfToken('chef_booking', (string) ($post['csrfToken'] ?? ''))) {
+                throw new InvalidArgumentException('Sessione di prenotazione scaduta. Ricarica la pagina e riprova.');
+            }
+
+            $idMenu = filter_var($post['idMenu'] ?? null, FILTER_VALIDATE_INT, [
+                'options' => ['min_range' => 1],
+            ]);
+            if ($idMenu === false) {
+                throw new InvalidArgumentException('Seleziona un menu valido.');
+            }
+
+            $fascia = strtolower(trim((string) ($post['fasciaServizio'] ?? '')));
+            EDisponibilitaChef::orariPerFascia($fascia);
+            $dataServizio = trim((string) ($post['dataServizio'] ?? ''));
+            $slot = null;
+            foreach (FPersistentManager::loadDisponibilitaChef($idChef) as $disponibilita) {
+                if ($disponibilita->getData() === $dataServizio
+                    && $disponibilita->isLibera()
+                    && $disponibilita->getFasciaServizio() === $fascia
+                ) {
+                    $slot = $disponibilita;
+                    break;
+                }
+            }
+            if (!$slot instanceof EDisponibilitaChef) {
+                throw new InvalidArgumentException('La disponibilita selezionata non e piu libera.');
+            }
+            $oraInizio = $slot->getOraInizio();
+            $oraFine = $slot->getOraFine();
+
+            $indirizzo = $this->validateWizardText((string) ($post['indirizzo'] ?? ''), 'Indirizzo', 180);
+            $citta = $this->validateWizardText((string) ($post['citta'] ?? ''), 'Città', 120);
+            $provincia = strtoupper($this->validateWizardText((string) ($post['provincia'] ?? ''), 'Provincia', 2));
+            if (!EUtente::isProvinciaItaliana($provincia)) {
+                throw new InvalidArgumentException('Seleziona una provincia valida.');
+            }
+            $numeroCivico = $this->validateWizardText((string) ($post['numeroCivico'] ?? ''), 'Numero civico', 20);
+            $richiesteSpeciali = $this->validateWizardText(
+                (string) ($post['richiesteSpeciali'] ?? ''),
+                'Richieste speciali',
+                2000,
+                false
+            );
+
+            $numeroPersone = filter_var($post['numeroPersone'] ?? null, FILTER_VALIDATE_INT, [
+                'options' => ['min_range' => 1, 'max_range' => 100],
+            ]);
+            if ($numeroPersone === false) {
+                throw new InvalidArgumentException('Il numero di partecipanti deve essere compreso tra 1 e 100.');
+            }
+
+            $abbinamentoVini = (string) ($post['abbinamentoVini'] ?? '');
+            if (!in_array($abbinamentoVini, ['0', '1'], true)) {
+                throw new InvalidArgumentException('Seleziona una preferenza valida per l abbinamento vini.');
+            }
+
+            $idMetodoPagamento = filter_var($post['idMetodoPagamento'] ?? null, FILTER_VALIDATE_INT, [
+                'options' => ['min_range' => 1],
+            ]);
+            $metodo = $idMetodoPagamento !== false
+                ? FPersistentManager::loadMetodoPagamento($idMetodoPagamento)
+                : null;
+            if ($metodo === null
+                || !$metodo->isAttivo()
+                || (int) $metodo->getIdUtente() !== (int) ($accesso['idUtente'] ?? 0)
+            ) {
+                throw new InvalidArgumentException('Seleziona un metodo di pagamento valido.');
+            }
+
+            $result = $this->confermaPrenotazioneChef([
+                'idCliente' => (int) $accesso['idUtente'],
+                'idChef' => $idChef,
+                'idMenu' => $idMenu,
+                'dataServizio' => $dataServizio,
+                'oraInizio' => $oraInizio,
+                'oraFine' => $oraFine,
+                'indirizzoServizio' => $indirizzo . ' ' . $numeroCivico . ', ' . $citta . ' (' . $provincia . ')',
+                'numeroPersone' => $numeroPersone,
+                'richiesteSpeciali' => $richiesteSpeciali,
+                'note' => 'Fascia servizio: ' . ucfirst($fascia),
+                'abbinamentoVini' => $abbinamentoVini === '1',
+            ]);
+            if (isset($result['errore'])) {
+                return $this->esitoWizard('Prenotazione non completata', (string) $result['errore'], false, $ritorno);
+            }
+
+            $prenotazione = $result['prenotazione'] ?? null;
+            if (!$prenotazione instanceof EPrenotazioneChef || $prenotazione->getIdPrenotazione() === null) {
+                return $this->esitoWizard('Prenotazione non completata', 'La prenotazione non e stata salvata.', false, $ritorno);
+            }
+
+            $pagamento = (new CPagamento())->confermaPagamento([
+                'tipoPrenotazione' => 'chef',
+                'idPrenotazione' => (int) $prenotazione->getIdPrenotazione(),
+                'tipoPagamento' => EPagamento::TIPO_TOTALE,
+                'idMetodoPagamento' => $idMetodoPagamento,
+            ]);
+            if (isset($pagamento['errore'])) {
+                return $this->esitoWizard(
+                    'Prenotazione creata, pagamento non completato',
+                    (string) $pagamento['errore'] . ' Puoi riprovare dalla dashboard.',
+                    false,
+                    '/prenotazioni'
+                );
+            }
+
+            return $this->esitoWizard(
+                'Prenotazione confermata',
+                sprintf(
+                    'Pagamento completato. Servizio %s del %s prenotato per %d partecipanti.',
+                    $fascia,
+                    (string) $post['dataServizio'],
+                    $numeroPersone
+                ),
+                true,
+                '/prenotazioni'
+            );
+        } catch (InvalidArgumentException $exception) {
+            return $this->esitoWizard('Prenotazione non completata', $exception->getMessage(), false, $ritorno);
+        } catch (Throwable $exception) {
+            error_log('[CPrenotazioneChef] ' . $exception->getMessage());
+            return $this->esitoWizard('Prenotazione non completata', 'Errore interno durante la prenotazione.', false, $ritorno);
+        }
+    }
+
+    private function validateWizardText(
+        string $value,
+        string $label,
+        int $maxLength,
+        bool $required = true
+    ): string {
+        $value = trim($value);
+        if ($required && $value === '') {
+            throw new InvalidArgumentException($label . ' e obbligatorio.');
+        }
+
+        $length = function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
+        if ($length > $maxLength) {
+            throw new InvalidArgumentException($label . ' troppo lungo.');
+        }
+        if ($value !== '' && preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', $value) === 1) {
+            throw new InvalidArgumentException($label . ' contiene caratteri non validi.');
+        }
+
+        return $value;
     }
 
     private function occupaSlotChef(int $idChef, string $dataServizio, string $oraInizio, string $oraFine): void
@@ -278,6 +361,16 @@ class CPrenotazioneChef
         }
 
         return null;
+    }
+
+    private function esitoWizard(string $titolo, string $messaggio, bool $successo, string $ritorno): array
+    {
+        return [
+            'titolo' => $titolo,
+            'messaggio' => $messaggio,
+            'successo' => $successo,
+            'ritorno' => $ritorno,
+        ];
     }
 
 }

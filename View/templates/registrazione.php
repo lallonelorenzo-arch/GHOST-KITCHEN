@@ -127,7 +127,7 @@ if ($errore !== null && str_contains($erroreLower, 'ghost kitchen')) {
                     <input name="prezzoBase" type="number" step="0.01" min="0" max="10000" value="<?= $value('prezzoBase') ?>">
                 </label>
                 <label>Anni esperienza
-                    <input name="anniEsperienza" type="number" min="0" max="80" value="<?= $value('anniEsperienza') ?>">
+                    <input name="anniEsperienza" type="number" min="0" max="<?= V::e(EChef::MAX_ANNI_ESPERIENZA) ?>" value="<?= $value('anniEsperienza') ?>">
                 </label>
             </div>
             <div class="ops-form-row">

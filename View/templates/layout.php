@@ -9,18 +9,25 @@ $utenteNome = $utenteCorrente !== null ? trim((string) (($utenteCorrente['nome']
 $utenteNome = $utenteNome !== '' ? $utenteNome : 'Account';
 $utenteRuolo = $utenteCorrente !== null ? (string) ($utenteCorrente['ruolo'] ?? 'utente') : '';
 $utenteRuoli = $utenteCorrente !== null && is_array($utenteCorrente['ruoli'] ?? null) ? $utenteCorrente['ruoli'] : [];
+$utenteId = $utenteCorrente !== null ? (int) ($utenteCorrente['idUtente'] ?? 0) : 0;
 $isAdminUser = in_array('admin', $utenteRuoli, true) || in_array('amministratore', $utenteRuoli, true);
 $isChefUser = in_array('chef', $utenteRuoli, true);
 $isGestoreUser = in_array('gestore', $utenteRuoli, true);
-$dashboardRole = strtolower(trim((string) ($_GET['ruolo'] ?? '')));
-if ($dashboardRole !== 'gestore' || !$isGestoreUser) {
-    $dashboardRole = ($isChefUser && !$isAdminUser) ? 'chef' : ($isGestoreUser ? 'gestore' : $utenteRuolo);
+$dashboardRole = strtolower(trim((string) ($_GET['ruolo'] ?? $utenteRuolo)));
+if (!in_array($dashboardRole, ['chef', 'gestore'], true)
+    || ($dashboardRole === 'chef' && !$isChefUser)
+    || ($dashboardRole === 'gestore' && !$isGestoreUser)
+) {
+    $dashboardRole = $isChefUser && !$isAdminUser ? 'chef' : ($isGestoreUser ? 'gestore' : $utenteRuolo);
 }
 $utenteRuoloVisualizzato = $utenteRuolo;
 if ($currentPath === '/dashboard' && !$isAdminUser) {
     $utenteRuoloVisualizzato = $dashboardRole === 'gestore' ? 'Gestore GK' : ($dashboardRole === 'chef' ? 'Chef' : $utenteRuolo);
 }
-$bodyClass = $currentPath === '/dashboard' && $dashboardRole === 'gestore' && !$isAdminUser ? 'theme-gestore' : 'theme-chef';
+$bodyClass = $dashboardRole === 'gestore' && !$isAdminUser ? 'theme-gestore' : 'theme-chef';
+if ($currentPath === '/') {
+    $bodyClass .= ' page-home';
+}
 $richiesteInAttesa = $utenteCorrente !== null ? (int) ($utenteCorrente['richiesteInAttesa'] ?? 0) : 0;
 $fotoProfilo = $utenteCorrente !== null ? (string) ($utenteCorrente['fotoProfilo'] ?? '') : '';
 $iniziali = '';
@@ -56,32 +63,26 @@ if ($utenteCorrente !== null) {
         </a>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-label="Apri menu">Menu</button>
         <div class="nav-links" data-nav-links>
-            <?php if ($isChefUser && !$isAdminUser): ?>
-                <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
-                <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard', $isGestoreUser && $dashboardRole === 'gestore' ? ['ruolo' => 'gestore'] : ['ruolo' => 'chef'])) ?>">Dashboard</a>
-                <?php if ($isGestoreUser): ?>
-                    <span class="nav-role-toggle" aria-label="Cambia dashboard">
-                        <a class="<?= $dashboardRole === 'chef' ? 'is-active' : '' ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'chef'])) ?>">Chef</a>
-                        <a class="<?= $dashboardRole === 'gestore' ? 'is-active' : '' ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'gestore'])) ?>">Ghost</a>
-                    </span>
+            <?php if ($isChefUser && $isGestoreUser && !$isAdminUser): ?>
+                <?php if ($dashboardRole === 'gestore'): ?>
+                    <a class="<?= V::e(trim($isActive('/ricerca/chef'))) ?>" href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova Chef</a>
+                <?php else: ?>
+                    <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
                 <?php endif; ?>
+                <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard', $dashboardRole === 'gestore' ? ['ruolo' => 'gestore'] : ['ruolo' => 'chef'])) ?>">Dashboard</a>
+            <?php elseif ($isChefUser && !$isAdminUser): ?>
+                <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
+                <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'chef'])) ?>">Dashboard</a>
+            <?php elseif ($isGestoreUser && !$isAdminUser): ?>
+                <a class="<?= V::e(trim($isActive('/ricerca/chef'))) ?>" href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova Chef</a>
+                <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'gestore'])) ?>">Dashboard</a>
             <?php elseif (!$isAdminUser): ?>
                 <a class="<?= V::e(trim($isActive('/ricerca/chef'))) ?>" href="<?= V::e(V::url('/ricerca/chef')) ?>">Trova Chef</a>
                 <a class="<?= V::e(trim($isActive('/ricerca/ghost-kitchen'))) ?>" href="<?= V::e(V::url('/ricerca/ghost-kitchen')) ?>">Ghost Kitchen</a>
-                <?php if ($isGestoreUser): ?>
-                    <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'gestore'])) ?>">Dashboard</a>
-                <?php endif; ?>
             <?php endif; ?>
             <?php if ($utenteCorrente !== null): ?>
-                <?php if (!$isAdminUser && !$isChefUser): ?>
+                <?php if (!$isAdminUser): ?>
                     <a class="<?= V::e(trim($isActive('/prenotazioni'))) ?>" href="<?= V::e(V::url('/prenotazioni')) ?>">Le mie prenotazioni</a>
-                <?php endif; ?>
-                <?php if (($isChefUser || $isGestoreUser) && !$isAdminUser): ?>
-                    <a class="<?= V::e(trim($isActive('/disponibilita'))) ?>" href="<?= V::e(V::url('/disponibilita')) ?>">Disponibilita</a>
-                    <a class="<?= V::e(trim($isActive('/richieste'))) ?>" href="<?= V::e(V::url('/richieste')) ?>">Richieste</a>
-                <?php endif; ?>
-                <?php if ($isChefUser && !$isAdminUser): ?>
-                    <a class="<?= V::e(trim($isActive('/mie-certificazioni'))) ?>" href="<?= V::e(V::url('/mie-certificazioni')) ?>">Le mie certificazioni</a>
                 <?php endif; ?>
                 <?php if ($isAdminUser): ?>
                     <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard')) ?>">Dashboard</a>
@@ -93,20 +94,40 @@ if ($utenteCorrente !== null) {
         </div>
         <div class="nav-user">
             <?php if ($utenteCorrente !== null): ?>
-                <a class="user-menu" href="<?= V::e(V::url('/profilo')) ?>" aria-label="Apri profilo utente">
-                    <span class="user-avatar" aria-hidden="true">
-                        <?php if ($fotoProfilo !== ''): ?>
-                            <img src="<?= V::e(V::url($fotoProfilo)) ?>" alt="">
-                        <?php else: ?>
-                            <?= V::e($iniziali) ?>
+                <?php if ($isChefUser && $isGestoreUser && !$isAdminUser): ?>
+                    <span class="nav-role-toggle" aria-label="Cambia dashboard">
+                        <a class="<?= $dashboardRole === 'chef' ? 'is-active' : '' ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'chef'])) ?>">Chef</a>
+                        <a class="<?= $dashboardRole === 'gestore' ? 'is-active' : '' ?>" href="<?= V::e(V::url('/dashboard', ['ruolo' => 'gestore'])) ?>">Ghost</a>
+                    </span>
+                <?php endif; ?>
+                <div class="account-menu">
+                    <button class="user-menu" type="button" data-account-menu-toggle aria-expanded="false" aria-controls="account-menu-panel">
+                        <span class="user-avatar" aria-hidden="true">
+                            <?php if ($fotoProfilo !== ''): ?>
+                                <img src="<?= V::e(V::url($fotoProfilo)) ?>" alt="">
+                            <?php else: ?>
+                                <?= V::e($iniziali) ?>
+                            <?php endif; ?>
+                        </span>
+                        <span class="user-copy">
+                            <strong><?= V::e($utenteNome) ?></strong>
+                            <span><?= V::e($utenteRuoloVisualizzato !== '' ? $utenteRuoloVisualizzato : 'account') ?></span>
+                        </span>
+                        <svg class="account-menu-chevron" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
+                            <path d="m5.5 7.5 4.5 4.5 4.5-4.5"></path>
+                        </svg>
+                    </button>
+                    <div class="account-menu-panel" id="account-menu-panel" data-account-menu-panel hidden>
+                        <a href="<?= V::e(V::url('/profilo')) ?>">Profilo</a>
+                        <?php if ($isChefUser && !$isAdminUser): ?>
+                            <a href="<?= V::e(V::url('/mie-certificazioni')) ?>">Le mie certificazioni</a>
+                            <?php if ($utenteId > 0): ?>
+                                <a href="<?= V::e(V::url('/chef/' . $utenteId)) ?>">Profilo pubblico</a>
+                            <?php endif; ?>
                         <?php endif; ?>
-                    </span>
-                    <span class="user-copy">
-                        <strong><?= V::e($utenteNome) ?></strong>
-                        <span><?= V::e($utenteRuoloVisualizzato !== '' ? $utenteRuoloVisualizzato : 'account') ?></span>
-                    </span>
-                </a>
-                <a class="btn btn-ghost" href="<?= V::e(V::url('/logout')) ?>">Logout</a>
+                        <a class="account-menu-logout" href="<?= V::e(V::url('/logout')) ?>">Logout</a>
+                    </div>
+                </div>
             <?php else: ?>
                 <a class="btn btn-ghost" href="<?= V::e(V::url('/registrazione')) ?>">Registrati</a>
                 <a class="btn btn-ghost" href="<?= V::e(V::url('/login')) ?>">Accedi</a>

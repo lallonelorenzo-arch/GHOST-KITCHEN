@@ -27,7 +27,7 @@ $valutazioneSelezionata = ((int) ($filtri['valutazioneMin'] ?? 0) > 0) ? (string
             </label>
             <button class="filter-button" type="button" data-filter-toggle aria-expanded="true">
                 Filtri
-                <span class="filter-chevron" aria-hidden="true">&#8963;</span>
+                <span class="filter-chevron" aria-hidden="true"></span>
             </button>
         </div>
 

@@ -83,7 +83,18 @@ class CAutenticazione
             $utente->setCognome($cognome);
             $utente->setEmail($email);
             $utente->setTelefono((string) ($post['telefono'] ?? ''));
-            $utente->setLocalita((string) ($post['localita'] ?? ''));
+            $indirizzo = $this->validateProfileText((string) ($post['indirizzo'] ?? ''), 'Indirizzo', 180);
+            $citta = $this->validateProfileText((string) ($post['citta'] ?? ''), 'Città', 120);
+            $utente->setIndirizzo($indirizzo);
+            $utente->setVia($indirizzo);
+            $utente->setCitta($citta);
+            $utente->setLocalita($citta);
+            $provincia = strtoupper($this->validateProfileText((string) ($post['provincia'] ?? ''), 'Provincia', 2));
+            if ($provincia !== '' && !EUtente::isProvinciaItaliana($provincia)) {
+                throw new InvalidArgumentException('Seleziona una provincia valida.');
+            }
+            $utente->setProvincia($provincia);
+            $utente->setNumeroCivico($this->validateProfileText((string) ($post['numeroCivico'] ?? ''), 'Numero civico', 20));
             $utente->setBiografia((string) ($post['biografia'] ?? ''));
 
             if (FPersistentManager::updateUtente($utente) === false) {
@@ -241,6 +252,20 @@ class CAutenticazione
             error_log('[CAutenticazione] ' . $exception->getMessage());
             return $this->esitoProfilo('Metodo non salvato', 'Errore interno durante il salvataggio.', false, '/profilo?section=pagamenti');
         }
+    }
+
+    private function validateProfileText(string $value, string $label, int $maxLength): string
+    {
+        $value = trim($value);
+        $length = function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
+        if ($length > $maxLength) {
+            throw new InvalidArgumentException($label . ' troppo lungo.');
+        }
+        if ($value !== '' && preg_match('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', $value) === 1) {
+            throw new InvalidArgumentException($label . ' contiene caratteri non validi.');
+        }
+
+        return $value;
     }
 
     private function storicoPagamenti(int $idUtente): array

@@ -93,6 +93,14 @@ class CPagamento
         }
 
         FPersistentManager::updatePagamento($pagamentoSalvato);
+        if ($tipoPagamento === EPagamento::TIPO_TOTALE) {
+            $prenotazione->setStato(EPrenotazione::STATO_PAGATA);
+            if ($tipoPrenotazione === 'chef') {
+                FPersistentManager::updatePrenotazioneChef($prenotazione);
+            } else {
+                FPersistentManager::updatePrenotazioneGhostKitchen($prenotazione);
+            }
+        }
 
         return [
             'esito' => 'pagamento_completato',

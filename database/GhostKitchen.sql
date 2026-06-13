@@ -47,6 +47,11 @@ CREATE TABLE utenti (
   telefono VARCHAR(30) NOT NULL,
   foto_profilo VARCHAR(500) NULL,
   localita VARCHAR(150) NULL,
+  via VARCHAR(180) NULL,
+  citta VARCHAR(120) NULL,
+  numero_civico VARCHAR(20) NULL,
+  indirizzo VARCHAR(180) NULL,
+  provincia VARCHAR(100) NULL,
   biografia TEXT NULL,
   stato VARCHAR(20) NOT NULL DEFAULT 'attivo',
   CONSTRAINT uq_utenti_email UNIQUE (email),
@@ -78,7 +83,7 @@ CREATE TABLE chef (
     ON UPDATE CASCADE,
   CONSTRAINT chk_chef_stato_verifica CHECK (stato_verifica IN ('non_verificato', 'in_attesa', 'verificato', 'rifiutato', 'sospeso')),
   CONSTRAINT chk_chef_prezzo_base CHECK (prezzo_base >= 0),
-  CONSTRAINT chk_chef_anni_esperienza CHECK (anni_esperienza >= 0),
+  CONSTRAINT chk_chef_anni_esperienza CHECK (anni_esperienza BETWEEN 0 AND 60),
   CONSTRAINT chk_chef_valutazione_media CHECK (valutazione_media >= 0 AND valutazione_media <= 5),
   CONSTRAINT chk_chef_numero_recensioni CHECK (numero_recensioni >= 0),
   INDEX idx_chef_tipologia_cucina (tipologia_cucina),
@@ -303,6 +308,7 @@ CREATE TABLE prenotazioni_chef (
   indirizzo_servizio VARCHAR(255) NOT NULL,
   numero_persone INT NOT NULL,
   richieste_speciali TEXT NULL,
+  abbinamento_vini TINYINT(1) NOT NULL DEFAULT 0,
   CONSTRAINT fk_prenotazioni_chef_prenotazioni FOREIGN KEY (id_prenotazione)
     REFERENCES prenotazioni(id_prenotazione)
     ON DELETE CASCADE
