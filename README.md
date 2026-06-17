@@ -101,9 +101,12 @@ mysql -uroot GhostKitchen < database/popolazioneDB.sql
 2026_06_05_add_gestori_stato_verifica.sql
 2026_06_05_add_certificazioni_owner.sql
 2026_06_05_add_certificazioni_scadenza.sql
+2026_06_13_booking_wizard.sql
+2026_06_13_chef_experience_limit.sql
+2026_06_13_repair_segnalazioni.sql
 ```
 
-Nota: lo schema `GhostKitchen.sql` attuale include gia diversi campi delle migrazioni. Se l'import completo dello schema e del seed funziona, le migrazioni possono non essere necessarie.
+Nota: lo schema `GhostKitchen.sql` attuale e la base consigliata per una nuova installazione. Le migrazioni servono soprattutto per aggiornare un database creato con una versione precedente dello schema.
 
 ## Configurazione database
 
@@ -191,8 +194,8 @@ Per la demo e consigliato usare:
 - UC9: cancellazione e rimborso
 - UC10: recensione
 - UC11: segnalazione
-- UC12: moderazione contenuti
-- UC13: validazione certificazioni
+- UC12: validazione certificazioni
+- UC13: moderazione contenuti
 - UC14: dashboard statistiche
 
 ## Scaletta demo consigliata
@@ -240,7 +243,14 @@ mysql -uroot -e "SHOW DATABASES LIKE 'GhostKitchen';"
 
 La cartella `test/` contiene script di verifica per Foundation e Control. Molti test sono script dimostrativi con output tramite `print_r` o `var_dump`, quindi non sostituiscono una suite automatica con asserzioni.
 
-Per la consegna e consigliato affiancare a questi script una checklist manuale dei flussi principali.
+Per una verifica ordinata prima dell'esame usare:
+
+```text
+docs/TESTING.md
+docs/DEMO_CHECKLIST.md
+```
+
+`docs/TESTING.md` distingue tra controllo sintassi, controllo ambiente, smoke test sicuri, script che possono modificare il database e collaudo manuale web.
 
 ## Note di sicurezza
 
@@ -250,12 +260,12 @@ Aspetti gia presenti:
 - password hashate con `password_hash`;
 - login verificato con `password_verify`;
 - output HTML escapato con `htmlspecialchars` tramite `ViewHelpers::e`;
+- token CSRF sui form POST;
 - routing centralizzato con whitelist;
 - controllo dei ruoli nelle route sensibili.
 
 Aspetti migliorabili:
 
-- aggiunta di token CSRF sui form POST;
 - test automatici con asserzioni;
 - configurazione database tramite variabili ambiente;
 - gestione piu completa di alcune policy di business, ad esempio cancellazione/rimborso.
@@ -268,4 +278,4 @@ Il progetto e funzionalmente avanzato e copre i principali flussi richiesti. Pri
 - preparazione della demo;
 - studio del flusso `FrontController -> Control -> Foundation -> View`;
 - eventuali correzioni emerse durante i test POST;
-- pulizia dei TODO non necessari.
+- pulizia delle note tecniche non necessarie.

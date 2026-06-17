@@ -46,6 +46,11 @@ class CFrontController
         $post = $this->normalizeRequest($_POST);
 
         try {
+            if (!$this->isCsrfValid($method, $path, $post)) {
+                $this->renderError(403, 'Sessione non valida', 'Ricarica la pagina e riprova.');
+                return;
+            }
+
             $this->synchronizeActiveRole($query);
             $accessContext = $this->accessContext();
             if (!$this->isPathAllowed($path, $method, $accessContext)) {
@@ -329,6 +334,19 @@ class CFrontController
 
         $controller = new $className();
         return $controller->$actionName(...$params);
+    }
+
+    private function isCsrfValid(string $method, string $path, array $post): bool
+    {
+        if ($method !== 'POST') {
+            return true;
+        }
+
+        $scope = preg_match('#^/prenotazione/chef/[1-9][0-9]*$#', $path) === 1
+            ? 'chef_booking'
+            : 'web_form';
+
+        return FSession::verifyCsrfToken($scope, (string) ($post['csrfToken'] ?? ''));
     }
 
     private function normalizePath(string $path): string

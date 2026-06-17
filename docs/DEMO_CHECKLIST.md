@@ -212,6 +212,7 @@ Questi flussi modificano il database. Prima di provarli conviene fare un backup 
 
 ## Controlli tecnici
 
+- [ ] Consultare `docs/TESTING.md` per distinguere smoke test e script che modificano il database.
 - [ ] Eseguire `php -l` su tutti i file PHP.
 - [ ] Verificare che la home risponda `200`.
 - [ ] Verificare che login cliente risponda e rediriga correttamente.

@@ -3,10 +3,10 @@
 ## Ambiente
 
 - PHP version: `PHP 8.2.12 (cli)`.
-- Server HTTP rilevato: Apache/XAMPP raggiungibile su `http://localhost/GHOST_KITCHEN`.
+- Server HTTP rilevato: Apache/XAMPP raggiungibile su `http://localhost/GHOST-KITCHEN`.
 - Database usato dal codice: MySQL `GhostKitchen`, configurato in `Foundation/FConnectionDB.php`.
-- Cartella progetto: `C:\xampp\htdocs\GHOST_KITCHEN`.
-- Sottocartella web testata: `/GHOST_KITCHEN`.
+- Cartella progetto: `C:\xampp\htdocs\GHOST-KITCHEN`.
+- Sottocartella web testata: `/GHOST-KITCHEN`.
 
 ## Struttura verificata
 
@@ -75,8 +75,8 @@ Esito:
 - Richieste dinamiche inviate a `index.php`: PASS.
 - File/cartelle reali non riscritti: PASS.
 - CSS servito direttamente da `public/assets/css/app.css`: PASS.
-- Nessun `RewriteBase /GHOST_KITCHEN/` hardcoded: PASS.
-- Compatibile con sottocartella XAMPP: PASS, verificato su `/GHOST_KITCHEN/ricerca`.
+- Nessun `RewriteBase /GHOST-KITCHEN/` hardcoded: PASS.
+- Compatibile con sottocartella XAMPP: PASS, verificato su `/GHOST-KITCHEN/ricerca`.
 
 ## index.php
 
@@ -132,19 +132,19 @@ Verifiche:
 ## Comandi runtime eseguiti
 
 ```powershell
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/ricerca
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/public/assets/css/app.css
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/login
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/ricerca/chef
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/ricerca/ghost-kitchen
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/chef/5
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/chef/999999
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/ghost-kitchen/1
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/ghost-kitchen/999999
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/prenotazione/placeholder
-Invoke-WebRequest http://localhost/GHOST_KITCHEN/route-inesistente
-Invoke-WebRequest -Method Post http://localhost/GHOST_KITCHEN/login
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/ricerca
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/public/assets/css/app.css
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/login
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/ricerca/chef
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/ricerca/ghost-kitchen
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/chef/5
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/chef/999999
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/ghost-kitchen/1
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/ghost-kitchen/999999
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/prenotazione/placeholder
+Invoke-WebRequest http://localhost/GHOST-KITCHEN/route-inesistente
+Invoke-WebRequest -Method Post http://localhost/GHOST-KITCHEN/login
 ```
 
 Risultati rilevanti:
@@ -214,8 +214,8 @@ Fallback/hardcoded:
 - `public/assets/css/app.css` esiste: PASS.
 - `public/assets/js/app.js` esiste: PASS.
 - Link asset nel layout generato:
-  - `/GHOST_KITCHEN/public/assets/css/app.css`
-  - `/GHOST_KITCHEN/public/assets/js/app.js`
+  - `/GHOST-KITCHEN/public/assets/css/app.css`
+  - `/GHOST-KITCHEN/public/assets/js/app.js`
 - CSS raggiungibile via HTTP: PASS 200.
 - JS presente, non testato separatamente via HTTP ma path generato coerente.
 - Cartelle `img` e `fonts` presenti ma vuote: OK per ora.

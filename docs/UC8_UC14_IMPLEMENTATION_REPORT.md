@@ -88,7 +88,25 @@ Controlli aggiunti:
 - motivo obbligatorio;
 - gestione fallimento salvataggio.
 
-### UC12 - Moderazione
+### UC12 - Validazione certificazioni
+
+- Control: `CValidazioneCertificazioni`
+- Template:
+  - `View/templates/certificazioni.php`
+  - `View/templates/certificazione_dettaglio.php`
+- Route:
+  - `GET /certificazioni`
+  - `GET /certificazioni/{idCertificazione}`
+  - `POST /certificazioni/{idCertificazione}/approva`
+  - `POST /certificazioni/{idCertificazione}/rifiuta`
+
+Controlli aggiunti:
+
+- accesso solo admin;
+- note admin;
+- gestione fallimento update certificazione.
+
+### UC13 - Moderazione
 
 - Control: `CModerazione`
 - Template: `View/templates/moderazione.php`
@@ -116,24 +134,6 @@ Controlli aggiunti:
 - accesso solo admin;
 - esiti puliti con `richiesta_esito.php`;
 - errori tecnici loggati e messaggio generico in View.
-
-### UC13 - Validazione certificazioni
-
-- Control: `CValidazioneCertificazioni`
-- Template:
-  - `View/templates/certificazioni.php`
-  - `View/templates/certificazione_dettaglio.php`
-- Route:
-  - `GET /certificazioni`
-  - `GET /certificazioni/{idCertificazione}`
-  - `POST /certificazioni/{idCertificazione}/approva`
-  - `POST /certificazioni/{idCertificazione}/rifiuta`
-
-Controlli aggiunti:
-
-- accesso solo admin;
-- note admin;
-- gestione fallimento update certificazione.
 
 ### UC14 - Dashboard statistiche
 

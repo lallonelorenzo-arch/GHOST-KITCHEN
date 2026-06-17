@@ -40,7 +40,7 @@ class FConnectionDB
             return $this->connection;
         }
 
-        // TODO: verificare credenziali database in base all'ambiente locale.
+        // Configurazione predefinita per ambiente XAMPP locale.
         $dsn = sprintf(
             'mysql:host=%s;dbname=%s;charset=%s',
             $this->host,

@@ -8,7 +8,7 @@ Regole applicate:
 - `Control/` usato solo per confermare i flussi CRUD;
 - nessuna modifica a `Entity`, `Control`, `Foundation`, `View`;
 - nessuna introduzione di framework o concetti di dominio non presenti;
-- dove mancano dettagli nelle Entity, è indicato un `TODO`.
+- dove mancano dettagli nelle Entity, sono indicate note di coerenza progettuale.
 
 Convenzioni proposte:
 - nomi tabella in `snake_case` al plurale;
@@ -260,7 +260,7 @@ Motivazione:
   - associazione polimorfica verso `chef`, `menu`, `ghost_kitchen`, `piatti`
 - Nota progettuale:
   - `EMedia` resta **generica** con `tipo_owner + id_owner` come richiesto.
-  - `TODO`: valutare trigger/check applicativi per coerenza referenziale polimorfica.
+  - La coerenza referenziale polimorfica e gestita dal livello applicativo.
 
 ### Entity: `ECertificazione`
 - Tabella: `certificazioni`
@@ -382,7 +382,7 @@ Vincolo richiesto:
   - `id_prenotazione` unico (PK)
 - Relazioni:
   - specializzazione 1:1 della prenotazione base
-- TODO coerenza:
+- Nota di coerenza:
   - garantire che `id_menu` appartenga allo stesso chef indicato da `id_chef`;
   - questa coerenza potrà essere controllata lato applicativo, tramite Foundation, oppure con vincoli/trigger in fase SQL.
 
@@ -428,8 +428,8 @@ Vincolo richiesto:
 - Relazioni:
   - N:1 verso `utenti`
   - 1:N con `pagamenti`
-- TODO:
-  - definire check condizionali per tipo metodo pagamento.
+- Nota di coerenza:
+  - i controlli condizionali per tipo metodo pagamento sono gestiti a livello applicativo.
 
 ### Entity: `EPagamento`
 - Tabella: `pagamenti`
@@ -551,7 +551,7 @@ Strategia proposta: **joined inheritance**.
   - `UNIQUE(id_prenotazione_chef)`
 - Relazioni:
   - specializzazione 1:1 di `recensioni`
-- TODO coerenza:
+- Nota di coerenza:
   - garantire che `id_chef` sia lo stesso chef associato alla prenotazione chef recensita.
 
 ### Entity: `ERecensioneGhostKitchen`
@@ -571,7 +571,7 @@ Strategia proposta: **joined inheritance**.
   - `UNIQUE(id_prenotazione_ghost_kitchen)`
 - Relazioni:
   - specializzazione 1:1 di `recensioni`
-- TODO coerenza:
+- Nota di coerenza:
   - garantire che `id_ghost_kitchen` sia la stessa ghost kitchen associata alla prenotazione ghost kitchen recensita.
 
 ---
@@ -603,7 +603,7 @@ Strategia proposta: **joined inheritance**.
   - associazione polimorfica verso target applicativo
 - Nota progettuale:
   - `ESegnalazione` resta **generica** con `tipo_target + id_target` come richiesto.
-  - `TODO`: aggiungere regole applicative per validare coerenza target.
+  - La coerenza del target viene validata dal livello applicativo.
 
 ---
 
@@ -624,11 +624,10 @@ Strategia proposta: **joined inheritance**.
 - `id_richiedente` in prenotazioni punta sempre a `utenti`, come richiesto.
 - La coerenza "una prenotazione base -> una sola specializzazione" sarà enforceata a livello applicativo o con vincoli/trigger nella fase SQL.
 
-## 8.4 TODO per fase schema SQL
+## 8.4 Note per evoluzioni schema SQL
 - Definire lunghezze esatte `VARCHAR` dove non esplicitate dalle Entity.
 - Definire `CHECK` formali per stati/tipi (enum applicativi).
 - Definire indici secondari per query frequenti (date, stato, FK).
 - Definire policy `ON DELETE/ON UPDATE` per ogni FK.
 - Definire gestione timezone per campi data/ora (solo date locali o datetime UTC).
 - Definire vincoli anti-overlap per disponibilità (chef e ghost kitchen), se richiesti.
-

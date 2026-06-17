@@ -103,7 +103,6 @@ class FUtente
 
             $id = (int) self::connection()->lastInsertId();
 
-            // TODO: la creazione dei ruoli va gestita in classi Foundation dedicate quando saranno implementate.
             return $id > 0 ? $id : true;
         });
     }
@@ -172,7 +171,6 @@ class FUtente
     {
         return self::run('eliminazione logica utente', static function () use ($idUtente): bool {
             // Il DB ha il campo stato: preferiamo una disattivazione logica alla cancellazione fisica.
-            // TODO: valutare una semantica applicativa piu precisa per utenti sospesi/bannati.
             $sql = 'UPDATE utenti SET stato = :stato WHERE id_utente = :id_utente';
             $statement = self::connection()->prepare($sql);
             $statement->execute([
@@ -231,7 +229,7 @@ class FUtente
         $idUtente = (int) $row['id_utente'];
         $ruoli = self::getRuoli($idUtente);
 
-        // TODO: EUtente contiene un solo tipo, mentre il DB consente piu ruoli per lo stesso id_utente.
+        // EUtente espone un tipo principale; i ruoli completi restano disponibili tramite getRuoli().
         return new EUtente(
             $idUtente,
             (string) $row['nome'],

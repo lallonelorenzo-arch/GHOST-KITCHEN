@@ -34,7 +34,7 @@ class FCancellazione extends FAbstractTable
         }
 
         $importoPagato = $pagamento->getImporto();
-        // TODO: sostituire questa policy base con regole di business complete quando saranno definite.
+        // Policy dimostrativa: rimborso dell'80% dell'importo pagato.
         $percentualeRimborso = 0.8;
         $importoRimborsabile = round($importoPagato * $percentualeRimborso, 2);
         $penale = round($importoPagato - $importoRimborsabile, 2);

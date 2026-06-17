@@ -55,11 +55,11 @@ L'export originale non e stato eliminato. La prima integrazione PHP riusa strutt
 - `GET /logout`
 - `GET /prenotazione/placeholder`
 
-Se il progetto viene aperto da XAMPP come sottocartella, gli stessi URL sono sotto `/GHOST_KITCHEN`, ad esempio `/GHOST_KITCHEN/ricerca/chef`.
+Se il progetto viene aperto da XAMPP come sottocartella, gli stessi URL sono sotto `/GHOST-KITCHEN`, ad esempio `/GHOST-KITCHEN/ricerca/chef`.
 
 ## Correzioni post-verifica
 
-- Rimosso `RewriteBase /GHOST_KITCHEN/` da `.htaccess`: la riscrittura ora resta compatibile anche se la cartella XAMPP cambia nome.
+- Rimosso `RewriteBase /GHOST-KITCHEN/` da `.htaccess`: la riscrittura ora resta compatibile anche se la cartella XAMPP cambia nome.
 - Mantenuta la regola che esclude file e cartelle reali dalla riscrittura, quindi CSS, JS e immagini sotto `public/assets` continuano a essere serviti direttamente.
 - Rimosso `CFrontController::dispatch()`: non risultava usato dai test o dal codice applicativo e avrebbe lasciato un ingresso pubblico alternativo al routing whitelist.
 - Il catch generale del FrontController ora scrive il dettaglio tecnico in `error_log()` e mostra all'utente un messaggio generico.
