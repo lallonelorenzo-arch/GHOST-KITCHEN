@@ -8,10 +8,12 @@ use ViewHelpers as V;
 /** @var string|null $messaggioAccesso */
 /** @var string|null $erroreForm */
 /** @var string|null $messaggioSuccesso */
+/** @var bool|null $recensioneBloccata */
 $tipoTarget = $tipoTarget ?? 'chef';
 $prenotazione = $prenotazione ?? null;
 $recensione = $recensione ?? null;
 $targetRecensione = $targetRecensione ?? null;
+$recensioneBloccata = (bool) ($recensioneBloccata ?? false);
 $form = $form ?? [];
 $tipoSlug = $tipoTarget === 'ghost_kitchen' ? 'ghost-kitchen' : 'chef';
 $idPrenotazione = $prenotazione !== null ? (int) $prenotazione->getIdPrenotazione() : (int) ($idPrenotazione ?? ($form['idPrenotazione'] ?? 0));
@@ -52,19 +54,21 @@ $idPrenotazione = $prenotazione !== null ? (int) $prenotazione->getIdPrenotazion
             <?php endif; ?>
         </article>
 
-        <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/recensione/' . $tipoSlug . '/' . $idPrenotazione)) ?>">
-            <h2>Valutazione</h2>
-            <label>Punteggio
-                <select name="punteggio" required>
-                    <?php for ($i = 5; $i >= 1; $i--): ?>
-                        <option value="<?= $i ?>" <?= (int) ($form['punteggio'] ?? 5) === $i ? 'selected' : '' ?>><?= $i ?> stelle</option>
-                    <?php endfor; ?>
-                </select>
-            </label>
-            <label>Commento
-                <textarea name="commento" rows="5" required><?= V::e($form['commento'] ?? '') ?></textarea>
-            </label>
-            <button class="btn btn-accent" type="submit">Pubblica recensione</button>
-        </form>
+        <?php if (!$recensioneBloccata): ?>
+            <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/recensione/' . $tipoSlug . '/' . $idPrenotazione)) ?>">
+                <h2>Valutazione</h2>
+                <label>Punteggio
+                    <select name="punteggio" required>
+                        <?php for ($i = 5; $i >= 1; $i--): ?>
+                            <option value="<?= $i ?>" <?= (int) ($form['punteggio'] ?? 5) === $i ? 'selected' : '' ?>><?= $i ?> stelle</option>
+                        <?php endfor; ?>
+                    </select>
+                </label>
+                <label>Commento
+                    <textarea name="commento" rows="5" required><?= V::e($form['commento'] ?? '') ?></textarea>
+                </label>
+                <button class="btn btn-accent" type="submit">Pubblica recensione</button>
+            </form>
+        <?php endif; ?>
     </div>
 </section>

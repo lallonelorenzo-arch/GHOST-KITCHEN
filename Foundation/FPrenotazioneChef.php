@@ -152,6 +152,13 @@ class FPrenotazioneChef
         if ($prenotazione->getStato() !== EPrenotazione::STATO_COMPLETATA) {
             return ['recensibile' => false, 'motivo' => 'Prenotazione non completata.'];
         }
+        $statement = FBaseJoinPersistence::connection()->prepare(
+            'SELECT 1 FROM recensioni_chef WHERE id_prenotazione_chef = :id_prenotazione LIMIT 1'
+        );
+        $statement->execute(['id_prenotazione' => $idPrenotazione]);
+        if ($statement->fetchColumn() !== false) {
+            return ['recensibile' => false, 'motivo' => 'Hai gia pubblicato una recensione per questa prenotazione.'];
+        }
 
         return ['recensibile' => true, 'motivo' => 'Prenotazione completata e recensibile.'];
     }

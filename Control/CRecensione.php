@@ -11,26 +11,34 @@ class CRecensione
         $this->validaId($idPrenotazione, 'ID prenotazione non valido.');
         $this->validaId($idAutore, 'ID autore non valido.');
 
-        $verifica = FPersistentManager::verificaPrenotazioneRecensibile($tipoTarget, $idPrenotazione, $idAutore);
-        if (($verifica['recensibile'] ?? false) !== true) {
-            return ['errore' => $verifica['motivo'] ?? 'Prenotazione non recensibile.'];
-        }
-
         $prenotazione = $tipoTarget === 'chef'
             ? FPersistentManager::loadPrenotazioneChef($idPrenotazione)
             : FPersistentManager::loadPrenotazioneGhostKitchen($idPrenotazione);
+        $targetRecensione = $this->targetRecensione($tipoTarget, $prenotazione);
+        $campi = [
+            'tipoTarget' => $tipoTarget,
+            'idPrenotazione' => $idPrenotazione,
+            'idAutore' => $idAutore,
+            'punteggio' => 5,
+            'commento' => ''
+        ];
+
+        $verifica = FPersistentManager::verificaPrenotazioneRecensibile($tipoTarget, $idPrenotazione, $idAutore);
+        if (($verifica['recensibile'] ?? false) !== true) {
+            return [
+                'errore' => $verifica['motivo'] ?? 'Prenotazione non recensibile.',
+                'tipoTarget' => $tipoTarget,
+                'prenotazione' => $prenotazione,
+                'targetRecensione' => $targetRecensione,
+                'campi' => $campi,
+            ];
+        }
 
         return [
             'tipoTarget' => $tipoTarget,
             'prenotazione' => $prenotazione,
-            'targetRecensione' => $this->targetRecensione($tipoTarget, $prenotazione),
-            'campi' => [
-                'tipoTarget' => $tipoTarget,
-                'idPrenotazione' => $idPrenotazione,
-                'idAutore' => $idAutore,
-                'punteggio' => 5,
-                'commento' => ''
-            ],
+            'targetRecensione' => $targetRecensione,
+            'campi' => $campi,
             'azioni' => [
                 'pubblicaRecensione' => '/Recensione/pubblicaRecensione'
             ]
@@ -103,6 +111,7 @@ class CRecensione
             $data['erroreForm'] = $data['errore'];
             unset($data['errore']);
             $data['tipoTarget'] = $tipoTarget;
+            $data['recensioneBloccata'] = true;
         }
         $data['accesso'] = $accesso;
         $data['form'] = $data['campi'] ?? ['punteggio' => 5, 'commento' => ''];
