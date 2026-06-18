@@ -92,10 +92,42 @@ class CValidazioneCertificazioni
             return ['errore' => 'Certificazione non aggiornata.'];
         }
 
+        $this->sincronizzaStatoOwner($certificazione, $stato);
+
         return [
             'certificazione' => $certificazione,
             'messaggio' => $messaggio
         ];
+    }
+
+    private function sincronizzaStatoOwner(ECertificazione $certificazione, string $stato): void
+    {
+        if ($certificazione->getTipoOwner() !== ECertificazione::OWNER_CHEF || $certificazione->getIdOwner() === null) {
+            return;
+        }
+
+        $chef = FPersistentManager::loadChef((int) $certificazione->getIdOwner());
+        if ($chef === null) {
+            return;
+        }
+
+        if ($stato === ECertificazione::STATO_APPROVATA) {
+            $chef->approvaVerifica();
+            FPersistentManager::updateChef($chef);
+            return;
+        }
+
+        if (FPersistentManager::chefHaCertificazioniInRegola((int) $certificazione->getIdOwner())) {
+            return;
+        }
+
+        if ($stato === ECertificazione::STATO_RIFIUTATA) {
+            $chef->rifiutaVerifica();
+        } else {
+            $chef->richiediVerifica();
+        }
+
+        FPersistentManager::updateChef($chef);
     }
 
     public function visualizzaCertificazioniInAttesaWeb(array $accesso): array
