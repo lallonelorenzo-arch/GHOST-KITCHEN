@@ -243,6 +243,9 @@ class FPersistentManager
     public static function loadPrenotazioniChefByRichiedente(int $idUtente): array { return FPrenotazioneChef::loadByRichiedente($idUtente); }
     public static function loadPrenotazioniGhostKitchenByRichiedente(int $idUtente): array { return FPrenotazioneGhostKitchen::loadByRichiedente($idUtente); }
     public static function loadRecensione(int $idRecensione): ?ERecensione { return FRecensione::load($idRecensione); }
+    public static function loadRecensioniByAutore(int $idAutore, array $filtri = []): array { return FRecensione::loadByAutore($idAutore, $filtri); }
+    public static function loadCatalogoRecensioni(array $filtri = []): array { return FRecensione::loadCatalogo($filtri); }
+    public static function loadTipologieCucinaRecensite(): array { return FRecensione::loadTipologieCucinaRecensite(); }
     public static function updateRecensione(ERecensione $recensione): ERecensione|false { return self::updateAndReturn($recensione, static fn (ERecensione $entity): bool => FRecensione::update($entity)); }
 
     private static function storeAndReturn(object $entity, callable $storeCallback, string $idSetter): object|false

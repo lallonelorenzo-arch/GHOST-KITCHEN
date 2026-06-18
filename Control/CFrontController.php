@@ -17,7 +17,9 @@ class CFrontController
             '/profilo' => ['CAutenticazione', 'profilo', 'profilo'],
             '/logout' => ['CAutenticazione', 'logout', null],
             '/prenotazioni' => ['CPrenotazioniUtente', 'visualizzaPrenotazioniWeb', 'prenotazioni'],
+            '/mie-recensioni' => ['CRecensioni', 'visualizzaMieRecensioniWeb', 'recensioni'],
             '/dashboard' => ['CDashboardStatistiche', 'visualizzaDashboardWeb', 'dashboard'],
+            '/recensioni' => ['CRecensioni', 'visualizzaTutteRecensioniWeb', 'recensioni'],
             '/moderazione' => ['CModerazione', 'visualizzaContenutiDaModerareWeb', 'moderazione'],
             '/utenti' => ['CAdminUtenti', 'visualizzaUtentiWeb', 'utenti'],
             '/certificazioni' => ['CValidazioneCertificazioni', 'visualizzaCertificazioniInAttesaWeb', 'certificazioni'],
@@ -242,7 +244,9 @@ class CFrontController
                 '/registrazione' => $method === 'POST' ? [$post, $_FILES] : [],
                 '/profilo' => $method === 'POST' ? [$accessContext, $post, $_FILES] : [$accessContext, $query],
                 '/prenotazioni' => [$accessContext],
+                '/mie-recensioni' => [$accessContext, $query],
                 '/dashboard' => [$accessContext, $query],
+                '/recensioni' => [$accessContext, $query],
                 '/moderazione' => [$accessContext],
                 '/utenti' => [$accessContext],
                 '/certificazioni' => [$accessContext],
@@ -537,7 +541,7 @@ class CFrontController
             return $isAdmin || $isChef || $isGestore;
         }
 
-        if (in_array($path, ['/moderazione', '/utenti', '/certificazioni'], true)) {
+        if (in_array($path, ['/moderazione', '/utenti', '/certificazioni', '/recensioni'], true)) {
             return $isAdmin;
         }
 
@@ -554,6 +558,10 @@ class CFrontController
         }
 
         if ($path === '/prenotazioni') {
+            return $isLogged;
+        }
+
+        if ($path === '/mie-recensioni') {
             return $isLogged;
         }
 

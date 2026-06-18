@@ -83,9 +83,11 @@ if ($utenteCorrente !== null) {
             <?php if ($utenteCorrente !== null): ?>
                 <?php if (!$isAdminUser): ?>
                     <a class="<?= V::e(trim($isActive('/prenotazioni'))) ?>" href="<?= V::e(V::url('/prenotazioni')) ?>">Le mie prenotazioni</a>
+                    <a class="<?= V::e(trim($isActive('/mie-recensioni'))) ?>" href="<?= V::e(V::url('/mie-recensioni')) ?>">Le mie recensioni</a>
                 <?php endif; ?>
                 <?php if ($isAdminUser): ?>
                     <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard')) ?>">Dashboard</a>
+                    <a class="<?= V::e(trim($isActive('/recensioni'))) ?>" href="<?= V::e(V::url('/recensioni')) ?>">Recensioni</a>
                     <a class="<?= V::e(trim($isActive('/moderazione'))) ?>" href="<?= V::e(V::url('/moderazione')) ?>">Moderazione</a>
                     <a class="<?= V::e(trim($isActive('/utenti'))) ?>" href="<?= V::e(V::url('/utenti')) ?>">Utenti</a>
                     <a class="<?= V::e(trim($isActive('/certificazioni'))) ?>" href="<?= V::e(V::url('/certificazioni')) ?>">Certificazioni</a>
@@ -119,6 +121,9 @@ if ($utenteCorrente !== null) {
                     </button>
                     <div class="account-menu-panel" id="account-menu-panel" data-account-menu-panel hidden>
                         <a href="<?= V::e(V::url('/profilo')) ?>">Profilo</a>
+                        <?php if (!$isAdminUser): ?>
+                            <a href="<?= V::e(V::url('/mie-recensioni')) ?>">Le mie recensioni</a>
+                        <?php endif; ?>
                         <?php if ($isChefUser && !$isAdminUser): ?>
                             <a href="<?= V::e(V::url('/mie-certificazioni')) ?>">Le mie certificazioni</a>
                             <?php if ($utenteId > 0): ?>
