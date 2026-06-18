@@ -93,20 +93,6 @@ mysql -uroot < database/GhostKitchen.sql
 mysql -uroot GhostKitchen < database/popolazioneDB.sql
 ```
 
-5. Se necessario, applicare le migrazioni presenti in `database/` in ordine cronologico:
-
-```text
-2026_06_04_add_area_personale_fields.sql
-2026_06_04_add_foto_profilo.sql
-2026_06_05_add_gestori_stato_verifica.sql
-2026_06_05_add_certificazioni_owner.sql
-2026_06_05_add_certificazioni_scadenza.sql
-2026_06_13_booking_wizard.sql
-2026_06_13_chef_experience_limit.sql
-2026_06_13_repair_segnalazioni.sql
-```
-
-Nota: lo schema `GhostKitchen.sql` attuale e la base consigliata per una nuova installazione. Le migrazioni servono soprattutto per aggiornare un database creato con una versione precedente dello schema.
 
 ## Configurazione database
 
