@@ -4,12 +4,14 @@ use ViewHelpers as V;
 /** @var EPrenotazione|null $prenotazione */
 /** @var array $form */
 /** @var ERecensione|null $recensione */
+/** @var array|null $targetRecensione */
 /** @var string|null $messaggioAccesso */
 /** @var string|null $erroreForm */
 /** @var string|null $messaggioSuccesso */
 $tipoTarget = $tipoTarget ?? 'chef';
 $prenotazione = $prenotazione ?? null;
 $recensione = $recensione ?? null;
+$targetRecensione = $targetRecensione ?? null;
 $form = $form ?? [];
 $tipoSlug = $tipoTarget === 'ghost_kitchen' ? 'ghost-kitchen' : 'chef';
 $idPrenotazione = $prenotazione !== null ? (int) $prenotazione->getIdPrenotazione() : (int) ($idPrenotazione ?? ($form['idPrenotazione'] ?? 0));
@@ -32,7 +34,14 @@ $idPrenotazione = $prenotazione !== null ? (int) $prenotazione->getIdPrenotazion
             <?php if ($prenotazione !== null): ?>
                 <dl class="ops-meta">
                     <div><dt>ID</dt><dd>#<?= V::e($prenotazione->getIdPrenotazione()) ?></dd></div>
-                    <div><dt>Tipo</dt><dd><?= V::e($tipoTarget) ?></dd></div>
+                    <?php if (is_array($targetRecensione)): ?>
+                        <div><dt><?= V::e((string) ($targetRecensione['label'] ?? 'Target')) ?></dt><dd><?= V::e((string) ($targetRecensione['nome'] ?? 'Non disponibile')) ?></dd></div>
+                        <?php foreach (($targetRecensione['dettagli'] ?? []) as $label => $value): ?>
+                            <div><dt><?= V::e((string) $label) ?></dt><dd><?= V::e((string) $value) ?></dd></div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div><dt>Tipo</dt><dd><?= V::e($tipoTarget) ?></dd></div>
+                    <?php endif; ?>
                     <div><dt>Stato</dt><dd><?= V::e($prenotazione->getStato()) ?></dd></div>
                 </dl>
             <?php else: ?>

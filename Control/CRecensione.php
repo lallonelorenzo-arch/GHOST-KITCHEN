@@ -23,6 +23,7 @@ class CRecensione
         return [
             'tipoTarget' => $tipoTarget,
             'prenotazione' => $prenotazione,
+            'targetRecensione' => $this->targetRecensione($tipoTarget, $prenotazione),
             'campi' => [
                 'tipoTarget' => $tipoTarget,
                 'idPrenotazione' => $idPrenotazione,
@@ -158,6 +159,37 @@ class CRecensione
     {
         $tipoTarget = strtolower(trim($tipoTarget));
         return $tipoTarget === 'ghost-kitchen' ? 'ghost_kitchen' : $tipoTarget;
+    }
+
+    private function targetRecensione(string $tipoTarget, mixed $prenotazione): array
+    {
+        if ($tipoTarget === 'chef') {
+            $chef = $prenotazione !== null && method_exists($prenotazione, 'getIdChef')
+                ? FPersistentManager::loadChef((int) $prenotazione->getIdChef())
+                : null;
+
+            return [
+                'label' => 'Chef',
+                'nome' => $chef !== null ? trim($chef->getNome() . ' ' . $chef->getCognome()) : 'Chef non disponibile',
+                'dettagli' => array_filter([
+                    'Specializzazione' => $chef !== null ? $chef->getSpecializzazione() : '',
+                    'Cucina' => $chef !== null ? $chef->getTipologiaCucina() : '',
+                ], static fn (string $value): bool => trim($value) !== ''),
+            ];
+        }
+
+        $ghostKitchen = $prenotazione !== null && method_exists($prenotazione, 'getIdGhostKitchen')
+            ? FPersistentManager::loadGhostKitchen((int) $prenotazione->getIdGhostKitchen())
+            : null;
+
+        return [
+            'label' => 'Ghost kitchen',
+            'nome' => $ghostKitchen !== null ? $ghostKitchen->getNome() : 'Ghost kitchen non disponibile',
+            'dettagli' => array_filter([
+                'Citta' => $ghostKitchen !== null ? $ghostKitchen->getCitta() : '',
+                'Indirizzo' => $ghostKitchen !== null ? $ghostKitchen->getIndirizzo() : '',
+            ], static fn (string $value): bool => trim($value) !== ''),
+        ];
     }
 
     private function isLogged(array $accesso): bool
