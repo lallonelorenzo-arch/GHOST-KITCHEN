@@ -80,12 +80,14 @@ class FRecensione
                            rc.id_chef AS id_target,
                            rc.id_prenotazione_chef AS id_prenotazione,
                            CONCAT(target.nome, " ", target.cognome) AS target_nome,
-                           c.specializzazione AS target_dettaglio,
+                           m.nome AS target_dettaglio,
                            c.tipologia_cucina,
                            CONCAT(autore.nome, " ", autore.cognome) AS autore_nome,
                            autore.email AS autore_email
                     FROM recensioni r
                     INNER JOIN recensioni_chef rc ON rc.id_recensione = r.id_recensione
+                    INNER JOIN prenotazioni_chef pc ON pc.id_prenotazione = rc.id_prenotazione_chef
+                    INNER JOIN menu m ON m.id_menu = pc.id_menu
                     INNER JOIN chef c ON c.id_utente = rc.id_chef
                     INNER JOIN utenti target ON target.id_utente = rc.id_chef
                     INNER JOIN utenti autore ON autore.id_utente = r.id_autore

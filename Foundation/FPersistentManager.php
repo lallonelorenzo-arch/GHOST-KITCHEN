@@ -19,10 +19,7 @@ require_once __DIR__ . '/FDisponibilitaGhostKitchen.php';
 require_once __DIR__ . '/FPrenotazione.php';
 require_once __DIR__ . '/FPrenotazioneChef.php';
 require_once __DIR__ . '/FPrenotazioneGhostKitchen.php';
-require_once __DIR__ . '/FMetodoPagamento.php';
 require_once __DIR__ . '/FPagamento.php';
-require_once __DIR__ . '/FCancellazione.php';
-require_once __DIR__ . '/FRimborso.php';
 require_once __DIR__ . '/FRecensione.php';
 require_once __DIR__ . '/FRecensioneChef.php';
 require_once __DIR__ . '/FRecensioneGhostKitchen.php';
@@ -147,10 +144,7 @@ class FPersistentManager
     public static function loadCertificazione(int $idCertificazione): ?ECertificazione { return FCertificazione::load($idCertificazione); }
     public static function loadDisponibilitaChefById(int $idDisponibilita): ?EDisponibilitaChef { return FDisponibilitaChef::load($idDisponibilita); }
     public static function loadDisponibilitaGhostKitchenById(int $idDisponibilita): ?EDisponibilitaGhostKitchen { return FDisponibilitaGhostKitchen::load($idDisponibilita); }
-    public static function loadMetodoPagamento(int $idMetodoPagamento): ?EMetodoPagamento { return FMetodoPagamento::load($idMetodoPagamento); }
     public static function loadPagamento(int $idPagamento): ?EPagamento { return FPagamento::load($idPagamento); }
-    public static function loadCancellazione(int $idCancellazione): ?ECancellazione { return FCancellazione::load($idCancellazione); }
-    public static function loadRimborso(int $idRimborso): ?ERimborso { return FRimborso::load($idRimborso); }
     public static function loadSegnalazione(int $idSegnalazione): ?ESegnalazione { return FSegnalazione::load($idSegnalazione); }
     public static function loadPrenotazioneChef(int $idPrenotazione): ?EPrenotazioneChef { return FPrenotazioneChef::load($idPrenotazione); }
     public static function loadPrenotazioneGhostKitchen(int $idPrenotazione): ?EPrenotazioneGhostKitchen { return FPrenotazioneGhostKitchen::load($idPrenotazione); }
@@ -179,7 +173,6 @@ class FPersistentManager
     public static function loadDisponibilitaGhostKitchen(int $idGhostKitchen): array { return FDisponibilitaGhostKitchen::loadByGhostKitchen($idGhostKitchen); }
     public static function loadDisponibilitaChefBySlot(int $idChef, string $data, string $oraInizio, string $oraFine): ?EDisponibilitaChef { return FDisponibilitaChef::loadBySlot($idChef, $data, $oraInizio, $oraFine); }
     public static function loadDisponibilitaGhostKitchenBySlot(int $idGhostKitchen, string $data, string $oraInizio, string $oraFine): ?EDisponibilitaGhostKitchen { return FDisponibilitaGhostKitchen::loadBySlot($idGhostKitchen, $data, $oraInizio, $oraFine); }
-    public static function loadMetodiPagamentoByUtente(int $idUtente): array { return FMetodoPagamento::loadByUtente($idUtente); }
     public static function loadPagamentiByUtente(int $idUtente): array { return FPagamento::loadByUtente($idUtente); }
     public static function loadSegnalazioniDaModerare(): array { return FSegnalazione::loadByStato(ESegnalazione::STATO_APERTA); }
 
@@ -190,10 +183,7 @@ class FPersistentManager
     public static function storeCertificazione(ECertificazione $entity): ECertificazione|false { return self::storeAndReturn($entity, static fn (ECertificazione $item): bool|int => FCertificazione::store($item), 'setIdCertificazione'); }
     public static function storeDisponibilitaChef(EDisponibilitaChef $entity): EDisponibilitaChef|false { return self::storeAndReturn($entity, static fn (EDisponibilitaChef $item): bool|int => FDisponibilitaChef::store($item), 'setIdDisponibilitaChef'); }
     public static function storeDisponibilitaGhostKitchen(EDisponibilitaGhostKitchen $entity): EDisponibilitaGhostKitchen|false { return self::storeAndReturn($entity, static fn (EDisponibilitaGhostKitchen $item): bool|int => FDisponibilitaGhostKitchen::store($item), 'setIdDisponibilitaGhostKitchen'); }
-    public static function storeMetodoPagamento(EMetodoPagamento $entity): EMetodoPagamento|false { return self::storeAndReturn($entity, static fn (EMetodoPagamento $item): bool|int => FMetodoPagamento::store($item), 'setIdMetodoPagamento'); }
     public static function storePagamento(EPagamento $entity): EPagamento|false { return self::storeAndReturn($entity, static fn (EPagamento $item): bool|int => FPagamento::store($item), 'setIdPagamento'); }
-    public static function storeCancellazione(ECancellazione $entity): ECancellazione|false { return self::storeAndReturn($entity, static fn (ECancellazione $item): bool|int => FCancellazione::store($item), 'setIdCancellazione'); }
-    public static function storeRimborso(ERimborso $entity): ERimborso|false { return self::storeAndReturn($entity, static fn (ERimborso $item): bool|int => FRimborso::store($item), 'setIdRimborso'); }
     public static function storeSegnalazione(ESegnalazione $entity): ESegnalazione|false { return self::storeAndReturn($entity, static fn (ESegnalazione $item): bool|int => FSegnalazione::store($item), 'setIdSegnalazione'); }
     public static function storePrenotazioneChef(EPrenotazioneChef $entity): EPrenotazioneChef|false { return self::storeAndReturn($entity, static fn (EPrenotazioneChef $item): bool|int => FPrenotazioneChef::store($item), 'setIdPrenotazione'); }
     public static function storePrenotazioneGhostKitchen(EPrenotazioneGhostKitchen $entity): EPrenotazioneGhostKitchen|false { return self::storeAndReturn($entity, static fn (EPrenotazioneGhostKitchen $item): bool|int => FPrenotazioneGhostKitchen::store($item), 'setIdPrenotazione'); }
@@ -209,10 +199,7 @@ class FPersistentManager
     public static function updateCertificazione(ECertificazione $entity): ECertificazione|false { return self::updateAndReturn($entity, static fn (ECertificazione $item): bool => FCertificazione::update($item)); }
     public static function updateDisponibilitaChef(EDisponibilitaChef $entity): EDisponibilitaChef|false { return self::updateAndReturn($entity, static fn (EDisponibilitaChef $item): bool => FDisponibilitaChef::update($item)); }
     public static function updateDisponibilitaGhostKitchen(EDisponibilitaGhostKitchen $entity): EDisponibilitaGhostKitchen|false { return self::updateAndReturn($entity, static fn (EDisponibilitaGhostKitchen $item): bool => FDisponibilitaGhostKitchen::update($item)); }
-    public static function updateMetodoPagamento(EMetodoPagamento $entity): EMetodoPagamento|false { return self::updateAndReturn($entity, static fn (EMetodoPagamento $item): bool => FMetodoPagamento::update($item)); }
     public static function updatePagamento(EPagamento $entity): EPagamento|false { return self::updateAndReturn($entity, static fn (EPagamento $item): bool => FPagamento::update($item)); }
-    public static function updateCancellazione(ECancellazione $entity): ECancellazione|false { return self::updateAndReturn($entity, static fn (ECancellazione $item): bool => FCancellazione::update($item)); }
-    public static function updateRimborso(ERimborso $entity): ERimborso|false { return self::updateAndReturn($entity, static fn (ERimborso $item): bool => FRimborso::update($item)); }
     public static function updateSegnalazione(ESegnalazione $entity): ESegnalazione|false { return self::updateAndReturn($entity, static fn (ESegnalazione $item): bool => FSegnalazione::update($item)); }
     public static function updatePrenotazioneChef(EPrenotazioneChef $entity): EPrenotazioneChef|false { return self::updateAndReturn($entity, static fn (EPrenotazioneChef $item): bool => FPrenotazioneChef::update($item)); }
     public static function updatePrenotazioneGhostKitchen(EPrenotazioneGhostKitchen $entity): EPrenotazioneGhostKitchen|false { return self::updateAndReturn($entity, static fn (EPrenotazioneGhostKitchen $item): bool => FPrenotazioneGhostKitchen::update($item)); }
@@ -224,8 +211,7 @@ class FPersistentManager
     public static function verificaDisponibilitaChef(int $idChef, string $data, string $oraInizio, string $oraFine): bool { return FDisponibilitaChef::verificaDisponibilita($idChef, $data, $oraInizio, $oraFine); }
     public static function verificaDisponibilitaGhostKitchen(int $idGhostKitchen, string $data, string $oraInizio, string $oraFine): bool { return FDisponibilitaGhostKitchen::verificaDisponibilita($idGhostKitchen, $data, $oraInizio, $oraFine); }
     public static function loadPagamentoByPrenotazione(string $tipoPrenotazione, int $idPrenotazione): ?EPagamento { return FPagamento::loadByPrenotazione($tipoPrenotazione, $idPrenotazione); }
-    public static function calcolaImportoPagamento(string $tipoPrenotazione, int $idPrenotazione, string $tipoPagamento): float { return FPagamento::calcolaImporto($tipoPrenotazione, $idPrenotazione, $tipoPagamento); }
-    public static function calcolaRimborsoStimato(string $tipoPrenotazione, int $idPrenotazione): array { return FCancellazione::calcolaRimborsoStimato($tipoPrenotazione, $idPrenotazione); }
+    public static function calcolaImportoPagamento(string $tipoPrenotazione, int $idPrenotazione): float { return FPagamento::calcolaImporto($tipoPrenotazione, $idPrenotazione); }
     public static function verificaPrenotazioneRecensibile(string $tipoTarget, int $idPrenotazione, int $idAutore): array
     {
         return strtolower(trim($tipoTarget)) === 'chef'

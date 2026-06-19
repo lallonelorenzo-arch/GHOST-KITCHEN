@@ -13,6 +13,4 @@ require_once __DIR__ . '/FMedia.php';
 require_once __DIR__ . '/FCertificazione.php';
 require_once __DIR__ . '/FDisponibilitaChef.php';
 require_once __DIR__ . '/FDisponibilitaGhostKitchen.php';
-require_once __DIR__ . '/FMetodoPagamento.php';
 require_once __DIR__ . '/FSegnalazione.php';
-require_once __DIR__ . '/FRimborso.php';

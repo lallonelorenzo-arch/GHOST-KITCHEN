@@ -4,18 +4,14 @@ use ViewHelpers as V;
 /** @var string|null $descrizionePagina */
 /** @var array $recensioni */
 /** @var array $filtri */
-/** @var array $opzioniTipologiaCucina */
 /** @var bool $vistaAdmin */
 /** @var string|null $messaggioAccesso */
 $recensioni = $recensioni ?? [];
 $filtri = $filtri ?? ['ordinamento' => 'recenti', 'tipo' => 'tutte', 'stato' => 'tutti', 'tipologiaCucina' => ''];
-$opzioniTipologiaCucina = $opzioniTipologiaCucina ?? [];
 $vistaAdmin = (bool) ($vistaAdmin ?? false);
 $actionPath = $vistaAdmin ? '/recensioni' : '/mie-recensioni';
 $titoloPagina = $titoloPagina ?? ($vistaAdmin ? 'Tutte le recensioni' : 'Le mie recensioni');
 $descrizionePagina = $descrizionePagina ?? 'Consulta le recensioni registrate sulla piattaforma.';
-$tipoLabel = static fn (string $tipo): string => $tipo === 'ghost_kitchen' ? 'Ghost kitchen' : 'Chef';
-$statoClass = static fn (string $stato): string => $stato === 'visibile' ? '' : 'neutral';
 ?>
 <section class="page-hero compact-hero ops-hero">
     <h1><?= V::e($titoloPagina) ?></h1>
@@ -31,7 +27,6 @@ $statoClass = static fn (string $stato): string => $stato === 'visibile' ? '' : 
         <div class="toolbar">
             <div>
                 <h2>Filtri</h2>
-                <p>Ordina e restringi l'elenco in base al tipo di contenuto e alla valutazione.</p>
             </div>
             <div class="actions">
                 <a class="btn btn-ghost" href="<?= V::e(V::url($actionPath)) ?>">Reset</a>
@@ -44,7 +39,6 @@ $statoClass = static fn (string $stato): string => $stato === 'visibile' ? '' : 
                     <option value="recenti" <?= ($filtri['ordinamento'] ?? '') === 'recenti' ? 'selected' : '' ?>>Piu recenti</option>
                     <option value="valutazioni_alte" <?= ($filtri['ordinamento'] ?? '') === 'valutazioni_alte' ? 'selected' : '' ?>>Valutazioni piu alte</option>
                     <option value="valutazioni_basse" <?= ($filtri['ordinamento'] ?? '') === 'valutazioni_basse' ? 'selected' : '' ?>>Valutazioni piu basse</option>
-                    <option value="cucina" <?= ($filtri['ordinamento'] ?? '') === 'cucina' ? 'selected' : '' ?>>Per tipologia cucina</option>
                 </select>
             </label>
             <label>Tipo
@@ -54,26 +48,6 @@ $statoClass = static fn (string $stato): string => $stato === 'visibile' ? '' : 
                     <option value="ghost_kitchen" <?= ($filtri['tipo'] ?? '') === 'ghost_kitchen' ? 'selected' : '' ?>>Ghost kitchen</option>
                 </select>
             </label>
-            <label>Tipologia cucina
-                <select name="tipologiaCucina">
-                    <option value="">Tutte</option>
-                    <?php foreach ($opzioniTipologiaCucina as $tipologia): ?>
-                        <option value="<?= V::e($tipologia) ?>" <?= strcasecmp((string) ($filtri['tipologiaCucina'] ?? ''), (string) $tipologia) === 0 ? 'selected' : '' ?>>
-                            <?= V::e($tipologia) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <?php if ($vistaAdmin): ?>
-                <label>Stato
-                    <select name="stato">
-                        <option value="tutti" <?= ($filtri['stato'] ?? '') === 'tutti' ? 'selected' : '' ?>>Tutti</option>
-                        <option value="visibile" <?= ($filtri['stato'] ?? '') === 'visibile' ? 'selected' : '' ?>>Visibili</option>
-                        <option value="nascosta" <?= ($filtri['stato'] ?? '') === 'nascosta' ? 'selected' : '' ?>>Nascoste</option>
-                        <option value="rimossa" <?= ($filtri['stato'] ?? '') === 'rimossa' ? 'selected' : '' ?>>Rimosse</option>
-                    </select>
-                </label>
-            <?php endif; ?>
         </div>
     </form>
 
@@ -87,39 +61,34 @@ $statoClass = static fn (string $stato): string => $stato === 'visibile' ? '' : 
                 $idRecensione = (int) ($item['idRecensione'] ?? 0);
                 $stato = (string) ($item['stato'] ?? '');
                 $targetPath = $tipo === 'ghost_kitchen' ? '/ghost-kitchen/' : '/chef/';
+                $punteggio = (int) ($item['punteggio'] ?? 0);
+                $commento = trim((string) ($item['commento'] ?? ''));
                 ?>
                 <article class="ops-panel review-row">
                     <header class="review-row-header">
                         <div>
-                            <span class="badge neutral"><?= V::e($tipoLabel($tipo)) ?></span>
-                            <h2><?= V::e($item['targetNome'] ?? 'Target non disponibile') ?></h2>
-                            <p><?= V::e($item['targetDettaglio'] ?? '') ?></p>
-                        </div>
-                        <div class="review-score">
-                            <strong><?= V::e($item['punteggio'] ?? 0) ?>/5</strong>
-                            <span class="status-pill <?= V::e($statoClass($stato)) ?>"><?= V::e($stato) ?></span>
+                            <div class="review-score">
+                                <span class="stars" aria-label="Valutazione <?= V::e($punteggio) ?> su 5"><?= V::stars((float) $punteggio) ?></span>
+                                <strong><?= V::e($punteggio) ?>/5</strong>
+                            </div>
+                            <h2>
+                                <a href="<?= V::e(V::url($targetPath . (int) ($item['idTarget'] ?? 0))) ?>">
+                                    <?= V::e($item['targetNome'] ?? 'Target non disponibile') ?>
+                                </a>
+                            </h2>
+                            <?php if (($item['targetDettaglio'] ?? '') !== ''): ?>
+                                <p><?= V::e($item['targetDettaglio']) ?></p>
+                            <?php endif; ?>
+                            <time datetime="<?= V::e((string) ($item['dataRecensione'] ?? '')) ?>"><?= V::e($item['dataRecensione'] ?? '') ?></time>
                         </div>
                     </header>
 
-                    <p class="review-comment"><?= V::e($item['commento'] ?? '') ?></p>
+                    <?php if ($commento !== ''): ?>
+                        <p class="review-comment"><?= V::e($commento) ?></p>
+                    <?php endif; ?>
 
-                    <dl class="ops-meta">
-                        <div><dt>ID recensione</dt><dd>#<?= V::e($idRecensione) ?></dd></div>
-                        <div><dt>Prenotazione</dt><dd>#<?= V::e($item['idPrenotazione'] ?? '') ?></dd></div>
-                        <div><dt>Data</dt><dd><?= V::e($item['dataRecensione'] ?? '') ?></dd></div>
-                        <?php if (($item['tipologiaCucina'] ?? '') !== ''): ?>
-                            <div><dt>Cucina</dt><dd><?= V::e($item['tipologiaCucina']) ?></dd></div>
-                        <?php endif; ?>
-                        <?php if ($vistaAdmin): ?>
-                            <div><dt>Autore</dt><dd><?= V::e(($item['autoreNome'] ?? '') . ' (' . ($item['autoreEmail'] ?? '') . ')') ?></dd></div>
-                        <?php endif; ?>
-                    </dl>
-
-                    <div class="actions review-actions">
-                        <a class="btn btn-ghost" href="<?= V::e(V::url($targetPath . (int) ($item['idTarget'] ?? 0))) ?>">Apri target</a>
-                        <?php if (!$vistaAdmin): ?>
-                            <a class="btn btn-ghost" href="<?= V::e(V::url('/segnalazione/recensione/' . $idRecensione)) ?>">Segnala</a>
-                        <?php else: ?>
+                    <?php if ($vistaAdmin): ?>
+                        <div class="actions review-actions">
                             <?php if ($stato !== 'nascosta'): ?>
                                 <form method="post" action="<?= V::e(V::url('/moderazione/recensione/' . $idRecensione . '/nascondi')) ?>">
                                     <button class="btn btn-ghost" type="submit">Nascondi</button>
@@ -135,8 +104,8 @@ $statoClass = static fn (string $stato): string => $stato === 'visibile' ? '' : 
                                     <button class="btn btn-danger" type="submit">Rimuovi</button>
                                 </form>
                             <?php endif; ?>
-                        <?php endif; ?>
-                    </div>
+                        </div>
+                    <?php endif; ?>
                 </article>
             <?php endforeach; ?>
         </div>

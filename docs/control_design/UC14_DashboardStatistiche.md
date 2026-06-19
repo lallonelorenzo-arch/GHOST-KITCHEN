@@ -30,7 +30,6 @@
 - EPrenotazioneChef
 - EPrenotazioneGhostKitchen
 - EPagamento
-- ERimborso
 - ERecensioneChef
 - ERecensioneGhostKitchen
 - ESegnalazione

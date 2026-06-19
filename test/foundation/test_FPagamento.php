@@ -15,5 +15,5 @@ print_r(FPagamento::load(1));
 echo "\nloadByPrenotazione('chef', 1)\n";
 print_r(FPagamento::loadByPrenotazione(EPagamento::PRENOTAZIONE_CHEF, 1));
 
-echo "\ncalcolaImporto('chef', 1, 'caparra')\n";
-var_dump(FPagamento::calcolaImporto(EPagamento::PRENOTAZIONE_CHEF, 1, EPagamento::TIPO_CAPARRA));
+echo "\ncalcolaImporto('chef', 1)\n";
+var_dump(FPagamento::calcolaImporto(EPagamento::PRENOTAZIONE_CHEF, 1));

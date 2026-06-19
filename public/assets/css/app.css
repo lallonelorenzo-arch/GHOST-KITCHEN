@@ -2761,6 +2761,8 @@ button.calendar-slot.status-libera:focus,
 
 .booking-row h2 {
   margin-top: 12px;
+  font-family: var(--font-body);
+  font-style: normal;
 }
 
 .booking-actions-inline {
@@ -2788,18 +2790,22 @@ button.calendar-slot.status-libera:focus,
   margin: 8px 0 4px;
 }
 
+.review-row-header h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+
 .review-row-header p,
-.review-comment {
+.review-comment,
+.review-row-header time {
   margin: 0;
   color: var(--text-muted);
 }
 
 .review-score {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
-  min-width: 92px;
 }
 
 .review-score strong {
@@ -4306,7 +4312,6 @@ body.theme-gestore .metric-icon.blue { background: #dcefff; color: #0072b1; }
 .status-pagata,
 .status-completata { background: #eef7ee; color: #628060; border: 1px solid rgba(98, 128, 96, .28); }
 .status-rifiutata { background: #fff0f0; color: #d91f1f; border: 1px solid rgba(217, 31, 31, .24); }
-.status-cancellata { background: #efeded; color: #5f5854; border: 1px solid rgba(95, 88, 84, .18); }
 .status-attiva { background: #eef7ee; color: #628060; border: 1px solid rgba(98, 128, 96, .28); }
 .status-sospesa,
 .status-non_disponibile { background: #efeded; color: #5f5854; border: 1px solid rgba(95, 88, 84, .18); }

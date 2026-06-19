@@ -5,14 +5,13 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CPagamento
 {
-    public function avviaPagamento(string $tipoPrenotazione, int $idPrenotazione, string $tipoPagamento): array
+    public function avviaPagamento(string $tipoPrenotazione, int $idPrenotazione): array
     {
         if ($idPrenotazione <= 0) {
             throw new InvalidArgumentException('ID prenotazione non valido.');
         }
 
         $tipoPrenotazione = $this->normalizzaTipoPrenotazione($tipoPrenotazione);
-        $tipoPagamento = $this->normalizzaTipoPagamento($tipoPagamento);
 
         $prenotazione = $tipoPrenotazione === 'chef'
             ? FPersistentManager::loadPrenotazioneChef($idPrenotazione)
@@ -25,40 +24,19 @@ class CPagamento
         return [
             'tipoPrenotazione' => $tipoPrenotazione,
             'idPrenotazione' => $idPrenotazione,
-            'tipoPagamento' => $tipoPagamento,
-            'importo' => FPersistentManager::calcolaImportoPagamento($tipoPrenotazione, $idPrenotazione, $tipoPagamento),
-            'metodiDisponibili' => FPersistentManager::loadMetodiPagamentoByUtente((int) $prenotazione->getIdRichiedente())
+            'importo' => FPersistentManager::calcolaImportoPagamento($tipoPrenotazione, $idPrenotazione),
+            'idRichiedente' => (int) $prenotazione->getIdRichiedente(),
         ];
-    }
-
-    public function selezionaMetodoPagamento(int $idMetodoPagamento): array
-    {
-        if ($idMetodoPagamento <= 0) {
-            throw new InvalidArgumentException('ID metodo pagamento non valido.');
-        }
-
-        $metodo = FPersistentManager::loadMetodoPagamento($idMetodoPagamento);
-        if ($metodo === null) {
-            return ['errore' => 'Metodo pagamento non trovato'];
-        }
-
-        return ['metodoPagamento' => $metodo];
     }
 
     public function confermaPagamento(array $datiPagamento): array
     {
         $tipoPrenotazione = $this->normalizzaTipoPrenotazione((string) ($datiPagamento['tipoPrenotazione'] ?? ''));
         $idPrenotazione = (int) ($datiPagamento['idPrenotazione'] ?? 0);
-        $tipoPagamento = $this->normalizzaTipoPagamento((string) ($datiPagamento['tipoPagamento'] ?? ''));
-        $idMetodoPagamento = (int) ($datiPagamento['idMetodoPagamento'] ?? 0);
+        $idUtente = (int) ($datiPagamento['idUtente'] ?? 0);
 
-        if ($idPrenotazione <= 0 || $idMetodoPagamento <= 0) {
+        if ($idPrenotazione <= 0 || $idUtente <= 0) {
             throw new InvalidArgumentException('Dati pagamento non validi.');
-        }
-
-        $metodo = FPersistentManager::loadMetodoPagamento($idMetodoPagamento);
-        if ($metodo === null) {
-            return ['errore' => 'Metodo pagamento non trovato'];
         }
 
         $prenotazione = $tipoPrenotazione === 'chef'
@@ -67,39 +45,32 @@ class CPagamento
         if ($prenotazione === null) {
             return ['errore' => 'Prenotazione non trovata'];
         }
-        if ((int) $metodo->getIdUtente() !== (int) $prenotazione->getIdRichiedente()) {
-            return ['errore' => 'Metodo pagamento non associato al richiedente della prenotazione'];
+        if ((int) $prenotazione->getIdRichiedente() !== $idUtente) {
+            return ['errore' => 'Prenotazione non associata all utente indicato'];
         }
 
-        $importo = FPersistentManager::calcolaImportoPagamento($tipoPrenotazione, $idPrenotazione, $tipoPagamento);
+        $importo = FPersistentManager::calcolaImportoPagamento($tipoPrenotazione, $idPrenotazione);
 
         $pagamento = new EPagamento(
             null,
             $idPrenotazione,
             $tipoPrenotazione,
-            $idMetodoPagamento,
             $importo,
-            $tipoPagamento,
-            EPagamento::STATO_IN_ATTESA,
+            EPagamento::STATO_COMPLETATO,
             'TX-' . $idPrenotazione . '-' . time(),
             date('Y-m-d')
         );
 
-        $pagamento->autorizza();
-        $pagamento->completa();
         $pagamentoSalvato = FPersistentManager::storePagamento($pagamento);
         if ($pagamentoSalvato === false) {
             return ['errore' => 'Pagamento non salvato. Riprova piu tardi.'];
         }
 
-        FPersistentManager::updatePagamento($pagamentoSalvato);
-        if ($tipoPagamento === EPagamento::TIPO_TOTALE) {
-            $prenotazione->setStato(EPrenotazione::STATO_PAGATA);
-            if ($tipoPrenotazione === 'chef') {
-                FPersistentManager::updatePrenotazioneChef($prenotazione);
-            } else {
-                FPersistentManager::updatePrenotazioneGhostKitchen($prenotazione);
-            }
+        $prenotazione->setStato(EPrenotazione::STATO_PAGATA);
+        if ($tipoPrenotazione === 'chef') {
+            FPersistentManager::updatePrenotazioneChef($prenotazione);
+        } else {
+            FPersistentManager::updatePrenotazioneGhostKitchen($prenotazione);
         }
 
         return [
@@ -121,10 +92,9 @@ class CPagamento
         }
 
         $tipoPrenotazione = $this->normalizzaTipoPrenotazione($tipoPrenotazione);
-        $tipoPagamento = (string) ($query['tipoPagamento'] ?? EPagamento::TIPO_TOTALE);
-        $data = $this->avviaPagamento($tipoPrenotazione, $idPrenotazione, $tipoPagamento);
+        $data = $this->avviaPagamento($tipoPrenotazione, $idPrenotazione);
         $data['accesso'] = $accesso;
-        $data['form'] = ['tipoPagamento' => $data['tipoPagamento'] ?? $tipoPagamento];
+        $data['form'] = [];
         $data['pagamento'] = null;
 
         if (isset($data['errore'])) {
@@ -151,8 +121,7 @@ class CPagamento
             $result = $this->confermaPagamento([
                 'tipoPrenotazione' => $tipoPrenotazione,
                 'idPrenotazione' => $idPrenotazione,
-                'tipoPagamento' => (string) ($post['tipoPagamento'] ?? EPagamento::TIPO_TOTALE),
-                'idMetodoPagamento' => (int) ($post['idMetodoPagamento'] ?? 0),
+                'idUtente' => (int) ($accesso['idUtente'] ?? 0),
             ]);
 
             if (isset($result['errore'])) {
@@ -196,17 +165,6 @@ class CPagamento
         }
 
         return $tipoPrenotazione;
-    }
-
-    private function normalizzaTipoPagamento(string $tipoPagamento): string
-    {
-        $tipoPagamento = strtolower(trim($tipoPagamento));
-        $tipiAmmessi = [EPagamento::TIPO_CAPARRA, EPagamento::TIPO_SALDO, EPagamento::TIPO_TOTALE, EPagamento::TIPO_PENALE];
-        if (!in_array($tipoPagamento, $tipiAmmessi, true)) {
-            throw new InvalidArgumentException('Tipo pagamento non valido.');
-        }
-
-        return $tipoPagamento;
     }
 }
 

@@ -27,26 +27,8 @@ Controlli aggiunti:
 
 - utente loggato;
 - prenotazione collegata al richiedente;
-- metodo pagamento appartenente al richiedente;
+- simulazione positiva su dati di utente, prenotazione e importo;
 - gestione fallimento salvataggio pagamento.
-
-### UC9 - Cancellazione e rimborso
-
-- Control: `CCancellazioneRimborso`
-- Template: `View/templates/cancellazione.php`
-- Route:
-  - `GET /cancellazione/chef/{idPrenotazione}`
-  - `POST /cancellazione/chef/{idPrenotazione}`
-  - `GET /cancellazione/ghost-kitchen/{idPrenotazione}`
-  - `POST /cancellazione/ghost-kitchen/{idPrenotazione}`
-
-Controlli aggiunti:
-
-- utente loggato;
-- prenotazione collegata al richiedente;
-- motivo obbligatorio;
-- riepilogo rimborso stimato;
-- gestione fallimento salvataggio cancellazione/rimborso.
 
 ### UC10 - Recensioni
 
@@ -146,7 +128,6 @@ Dati mostrati:
 
 - prenotazioni totali/chef/ghost kitchen;
 - volume pagamenti;
-- rimborsi;
 - recensioni;
 - segnalazioni aperte;
 - certificazioni in attesa;
@@ -156,7 +137,6 @@ Dati mostrati:
 
 - `Control/CFrontController.php`: aggiunte route whitelist UC8-UC14.
 - `Control/CPagamento.php`: wrapper web e controlli proprieta.
-- `Control/CCancellazioneRimborso.php`: wrapper web e controlli richiedente.
 - `Control/CRecensione.php`: wrapper web e gestione errori non recensibile.
 - `Control/CSegnalazione.php`: wrapper web e controllo target.
 - `Control/CModerazione.php`: wrapper web admin-only.

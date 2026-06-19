@@ -6,54 +6,45 @@
 
 ## Scenario principale di successo
 1. L'attore avvia pagamento della prenotazione.
-2. Il sistema mostra importo, tipo pagamento, metodi disponibili.
-3. L'attore seleziona metodo pagamento.
-4. L'attore conferma.
-5. Il sistema simula autorizzazione/completamento.
-6. Il sistema aggiorna stato pagamento.
-7. Il sistema restituisce esito e riepilogo.
+2. Il sistema mostra prenotazione e importo totale.
+3. L'attore conferma.
+4. Il sistema invia idealmente i dati di utente e prenotazione al sistema interbancario simulato.
+5. Il sistema assume risposta positiva e registra il pagamento come completato.
+6. Il sistema restituisce esito e riepilogo.
 
 ## SSD testuale
-- Attore -> Sistema: avviaPagamento(tipoPrenotazione, idPrenotazione, tipoPagamento)
+- Attore -> Sistema: avviaPagamento(tipoPrenotazione, idPrenotazione)
 - Sistema -> Attore: datiPagamento
-- Attore -> Sistema: selezionaMetodoPagamento(idMetodoPagamento)
-- Sistema -> Attore: metodoPagamentoSelezionato
 - Attore -> Sistema: confermaPagamento(datiPagamento)
 - Sistema -> Attore: esitoPagamento
 
 ## Operazioni di sistema
-- avviaPagamento(tipoPrenotazione, idPrenotazione, tipoPagamento)
-- selezionaMetodoPagamento(idMetodoPagamento)
+- avviaPagamento(tipoPrenotazione, idPrenotazione)
 - confermaPagamento(datiPagamento)
 
 ## Classe Control
 - CPagamento
 
 ## Metodi Control
-- public static function avviaPagamento(string $tipoPrenotazione, int $idPrenotazione, string $tipoPagamento): array
-- public static function selezionaMetodoPagamento(int $idMetodoPagamento): array
+- public function avviaPagamento(string $tipoPrenotazione, int $idPrenotazione): array
 - public static function confermaPagamento(array $datiPagamento): array
 
 ## URL associate
 - /Pagamento/avviaPagamento
-- /Pagamento/selezionaMetodoPagamento
 - /Pagamento/confermaPagamento
 
 ## Entity coinvolte
 - EPagamento
-- EMetodoPagamento
 - EPrenotazioneChef
 - EPrenotazioneGhostKitchen
 
 ## Servizi richiesti a FPersistentManager fittizio
 - loadPrenotazioneChef(idPrenotazione)
 - loadPrenotazioneGhostKitchen(idPrenotazione)
-- calcolaImportoPagamento(tipoPrenotazione, idPrenotazione, tipoPagamento)
-- loadMetodiPagamentoByUtente(idUtente)
-- loadMetodoPagamento(idMetodoPagamento)
+- calcolaImportoPagamento(tipoPrenotazione, idPrenotazione)
 - storePagamento(EPagamento $pagamento)
-- updatePagamento(EPagamento $pagamento)
 
 ## Note progettuali
-- Pagamento simulato, nessun gateway esterno.
-- Gestiti tipi pagamento: caparra, saldo, totale, penale.
+- Pagamento simulato: l'ipotetico sistema interbancario restituisce sempre esito positivo.
+- Il pagamento viene salvato direttamente come `completato`.
+- Non vengono raccolti o salvati dati di carta; la simulazione usa utente, prenotazione e importo.

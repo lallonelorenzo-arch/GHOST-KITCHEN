@@ -9,7 +9,6 @@ use ViewHelpers as V;
 /** @var bool $canBookChef */
 /** @var bool $chefPrenotabile */
 /** @var array $indirizzoSalvato */
-/** @var array $metodiPagamento */
 /** @var string $bookingCsrfToken */
 $image = V::mediaUrl($fotoProfilo ?? null, 'https://images.unsplash.com/photo-1750943082012-efe6d2fd9e45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200');
 $rating = $chef->getValutazioneMedia();
@@ -18,7 +17,6 @@ $canBookChef = $canBookChef ?? false;
 $chefPrenotabile = $chefPrenotabile ?? false;
 $indirizzoSalvato = $indirizzoSalvato ?? ['indirizzo' => '', 'citta' => '', 'provincia' => '', 'numeroCivico' => ''];
 $bookingCsrfToken = $bookingCsrfToken ?? '';
-$metodiPagamento = $metodiPagamento ?? [];
 $savedAddressComplete = trim((string) ($indirizzoSalvato['indirizzo'] ?? '')) !== ''
     && trim((string) ($indirizzoSalvato['citta'] ?? '')) !== ''
     && EUtente::isProvinciaItaliana((string) ($indirizzoSalvato['provincia'] ?? ''))
@@ -273,31 +271,13 @@ $availabilityPayload = array_map(
                 <div class="is-wide"><dt>Richieste</dt><dd data-review-requests></dd></div>
             </dl>
 
-            <label>Metodo di pagamento
-                <select name="idMetodoPagamento" required <?= $metodiPagamento === [] ? 'disabled' : '' ?>>
-                    <option value="">Seleziona un metodo</option>
-                    <?php foreach ($metodiPagamento as $metodo): ?>
-                        <option value="<?= V::e((int) $metodo->getIdMetodoPagamento()) ?>">
-                            <?= V::e(ucfirst($metodo->getTipo())) ?>
-                            <?= $metodo->getCircuito() !== '' ? ' - ' . V::e($metodo->getCircuito()) : '' ?>
-                            <?= $metodo->getUltimeQuattroCifre() !== '' ? ' **** ' . V::e($metodo->getUltimeQuattroCifre()) : '' ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <?php if ($metodiPagamento === []): ?>
-                <div class="wizard-payment-warning">
-                    <p>Non hai ancora un metodo di pagamento attivo.</p>
-                    <a href="<?= V::e(V::url('/profilo', ['section' => 'pagamenti'])) ?>">Aggiungilo dal profilo</a>
-                </div>
-            <?php endif; ?>
             <p class="wizard-inline-error" data-step-error="3" hidden></p>
         </section>
 
         <footer class="chef-booking-actions">
             <button class="btn btn-ghost" type="button" data-chef-booking-prev hidden>Indietro</button>
             <button class="btn btn-accent" type="button" data-chef-booking-next>Continua</button>
-            <button class="btn btn-accent" type="submit" data-chef-booking-submit hidden <?= $metodiPagamento === [] ? 'disabled' : '' ?>>Conferma e paga</button>
+            <button class="btn btn-accent" type="submit" data-chef-booking-submit hidden>Conferma e paga</button>
         </footer>
     </form>
 </dialog>

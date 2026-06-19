@@ -2,25 +2,24 @@
 use ViewHelpers as V;
 /** @var string|null $tipoPrenotazione */
 /** @var int|null $idPrenotazione */
-/** @var string|null $tipoPagamento */
 /** @var float|null $importo */
-/** @var array $metodiDisponibili */
 /** @var array $form */
 /** @var EPagamento|null $pagamento */
 /** @var string|null $messaggioAccesso */
 /** @var string|null $erroreForm */
 /** @var string|null $messaggioSuccesso */
+// Dati preparati da CPagamento: il template invia solo la conferma della simulazione.
 $tipoPrenotazione = $tipoPrenotazione ?? 'chef';
 $tipoSlug = $tipoPrenotazione === 'ghost_kitchen' ? 'ghost-kitchen' : 'chef';
 $form = $form ?? [];
-$metodiDisponibili = $metodiDisponibili ?? [];
 ?>
 <section class="page-hero compact-hero ops-hero">
     <h1>Pagamento</h1>
-    <p>Controlla riepilogo, importo e metodo prima di confermare la transazione.</p>
+    <p>Controlla riepilogo e importo prima di confermare la transazione.</p>
 </section>
 
 <section class="section ops-flow">
+    <!-- Messaggi generati dal controller: accesso richiesto, errore di validazione o pagamento completato. -->
     <?php if (!empty($messaggioAccesso)): ?>
         <div class="alert"><?= V::e($messaggioAccesso) ?> <a href="<?= V::e(V::url('/login')) ?>">Accedi</a></div>
     <?php endif; ?>
@@ -28,6 +27,7 @@ $metodiDisponibili = $metodiDisponibili ?? [];
     <?php if (!empty($messaggioSuccesso)): ?><div class="notice"><?= V::e($messaggioSuccesso) ?></div><?php endif; ?>
 
     <div class="ops-grid">
+        <!-- Riepilogo della prenotazione e dell'importo calcolato lato controller/foundation. -->
         <article class="ops-panel">
             <h2>Riepilogo</h2>
             <dl class="ops-meta">
@@ -40,28 +40,10 @@ $metodiDisponibili = $metodiDisponibili ?? [];
             <?php endif; ?>
         </article>
 
+        <!-- Il sistema interbancario simulato risponde sempre positivamente. -->
         <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/pagamento/' . $tipoSlug . '/' . (int) $idPrenotazione)) ?>">
             <h2>Dati pagamento</h2>
-            <label>Tipo pagamento
-                <select name="tipoPagamento" required>
-                    <?php foreach (['totale' => 'Totale', 'caparra' => 'Caparra', 'saldo' => 'Saldo', 'penale' => 'Penale'] as $value => $label): ?>
-                        <option value="<?= V::e($value) ?>" <?= ($form['tipoPagamento'] ?? $tipoPagamento ?? 'totale') === $value ? 'selected' : '' ?>><?= V::e($label) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label>Metodo pagamento
-                <select name="idMetodoPagamento" required>
-                    <option value="">Seleziona metodo</option>
-                    <?php foreach ($metodiDisponibili as $metodo): ?>
-                        <option value="<?= V::e($metodo->getIdMetodoPagamento()) ?>" <?= (string) ($form['idMetodoPagamento'] ?? '') === (string) $metodo->getIdMetodoPagamento() ? 'selected' : '' ?>>
-                            <?= V::e($metodo->getTipo()) ?> <?= $metodo->getCircuito() !== '' ? '- ' . V::e($metodo->getCircuito()) : '' ?> <?= $metodo->getUltimeQuattroCifre() !== '' ? '**** ' . V::e($metodo->getUltimeQuattroCifre()) : '' ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <?php if ($metodiDisponibili === []): ?>
-                <p class="muted-text">Nessun metodo di pagamento attivo disponibile per questa prenotazione.</p>
-            <?php endif; ?>
+            <p class="muted-text">La conferma invia al sistema di pagamento simulato i dati della prenotazione e dell utente collegato.</p>
             <button class="btn btn-accent" type="submit">Conferma pagamento</button>
         </form>
     </div>

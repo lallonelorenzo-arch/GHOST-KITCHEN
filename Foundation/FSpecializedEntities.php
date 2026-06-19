@@ -16,7 +16,6 @@ require_once __DIR__ . '/FPrenotazione.php';
 require_once __DIR__ . '/FPrenotazioneChef.php';
 require_once __DIR__ . '/FPrenotazioneGhostKitchen.php';
 require_once __DIR__ . '/FPagamento.php';
-require_once __DIR__ . '/FCancellazione.php';
 require_once __DIR__ . '/FRecensione.php';
 require_once __DIR__ . '/FRecensioneChef.php';
 require_once __DIR__ . '/FRecensioneGhostKitchen.php';

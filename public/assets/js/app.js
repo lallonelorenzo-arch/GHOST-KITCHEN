@@ -467,11 +467,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
       }
 
-      const paymentMethod = form.querySelector('[name="idMetodoPagamento"]');
-      if (!paymentMethod || !paymentMethod.reportValidity()) {
-        setError(3, 'Seleziona un metodo di pagamento.');
-        return false;
-      }
       return true;
     };
 
@@ -800,7 +795,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const nextOpen = target.hasAttribute('hidden');
         target.toggleAttribute('hidden', !nextOpen);
         toggleButton.setAttribute('aria-expanded', nextOpen ? 'true' : 'false');
-        toggleButton.textContent = nextOpen ? 'Nascondi form metodo di pagamento' : '+ Aggiungi Metodo di Pagamento';
         if (nextOpen) {
           target.querySelector('input, select, textarea')?.focus();
         }

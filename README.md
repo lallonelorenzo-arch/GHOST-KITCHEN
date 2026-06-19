@@ -177,7 +177,6 @@ Per la demo e consigliato usare:
 - UC6: gestione disponibilita/calendario
 - UC7: gestione richieste
 - UC8: pagamento
-- UC9: cancellazione e rimborso
 - UC10: recensione
 - UC11: segnalazione
 - UC12: validazione certificazioni
@@ -254,7 +253,6 @@ Aspetti migliorabili:
 
 - test automatici con asserzioni;
 - configurazione database tramite variabili ambiente;
-- gestione piu completa di alcune policy di business, ad esempio cancellazione/rimborso.
 
 ## Stato progetto
 

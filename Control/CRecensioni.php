@@ -12,7 +12,6 @@ class CRecensioni
                 'messaggioAccesso' => 'Accedi per consultare le tue recensioni.',
                 'recensioni' => [],
                 'filtri' => $this->normalizzaFiltri($query),
-                'opzioniTipologiaCucina' => [],
                 'vistaAdmin' => false,
             ];
         }
@@ -24,7 +23,6 @@ class CRecensioni
             'descrizionePagina' => 'Rivedi le valutazioni che hai pubblicato dopo servizi completati.',
             'recensioni' => FPersistentManager::loadRecensioniByAutore((int) $accesso['idUtente'], $filtri),
             'filtri' => $filtri,
-            'opzioniTipologiaCucina' => FPersistentManager::loadTipologieCucinaRecensite(),
             'vistaAdmin' => false,
         ];
     }
@@ -36,7 +34,6 @@ class CRecensioni
                 'messaggioAccesso' => 'Non hai permessi per consultare tutte le recensioni.',
                 'recensioni' => [],
                 'filtri' => $this->normalizzaFiltri($query),
-                'opzioniTipologiaCucina' => [],
                 'vistaAdmin' => true,
             ];
         }
@@ -48,7 +45,6 @@ class CRecensioni
             'descrizionePagina' => 'Consulta e filtra le recensioni pubblicate su chef e ghost kitchen.',
             'recensioni' => FPersistentManager::loadCatalogoRecensioni($filtri),
             'filtri' => $filtri,
-            'opzioniTipologiaCucina' => FPersistentManager::loadTipologieCucinaRecensite(),
             'vistaAdmin' => true,
         ];
     }
@@ -56,7 +52,7 @@ class CRecensioni
     private function normalizzaFiltri(array $query): array
     {
         $ordinamento = strtolower(trim((string) ($query['ordinamento'] ?? 'recenti')));
-        if (!in_array($ordinamento, ['recenti', 'valutazioni_alte', 'valutazioni_basse', 'cucina'], true)) {
+        if (!in_array($ordinamento, ['recenti', 'valutazioni_alte', 'valutazioni_basse'], true)) {
             $ordinamento = 'recenti';
         }
 
@@ -66,16 +62,11 @@ class CRecensioni
             $tipo = 'tutte';
         }
 
-        $stato = strtolower(trim((string) ($query['stato'] ?? 'tutti')));
-        if (!in_array($stato, ['tutti', ERecensione::STATO_VISIBILE, ERecensione::STATO_NASCOSTA, ERecensione::STATO_RIMOSSA], true)) {
-            $stato = 'tutti';
-        }
-
         return [
             'ordinamento' => $ordinamento,
             'tipo' => $tipo,
-            'stato' => $stato,
-            'tipologiaCucina' => trim((string) ($query['tipologiaCucina'] ?? '')),
+            'stato' => 'tutti',
+            'tipologiaCucina' => '',
         ];
     }
 

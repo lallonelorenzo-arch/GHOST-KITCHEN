@@ -10,7 +10,7 @@ class FConnectionDB
     private string $dbname = 'GhostKitchen';
     private string $user = 'root';
     private string $password = '';
-    private string $charset = 'utf8mb4';
+    private string $charset = 'utf8mb4'; //x salvare anche caratteri speciali come emoji
 
     private function __construct()
     {

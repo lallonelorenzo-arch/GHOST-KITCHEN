@@ -38,7 +38,6 @@ class CAutenticazione
             'accesso' => $accesso,
             'section' => $section,
             'isEditing' => $section === 'profilo' && (string) ($query['edit'] ?? '') === '1',
-            'metodiPagamento' => FPersistentManager::loadMetodiPagamentoByUtente((int) $accesso['idUtente']),
             'storicoPagamenti' => $this->storicoPagamenti((int) $accesso['idUtente']),
         ];
     }
@@ -60,10 +59,6 @@ class CAutenticazione
 
         if ((string) ($post['azione'] ?? '') === 'password') {
             return $this->aggiornaPassword($accesso, $post);
-        }
-
-        if ((string) ($post['azione'] ?? '') === 'metodo_pagamento') {
-            return $this->aggiungiMetodoPagamento($accesso, $post);
         }
 
         try {
@@ -217,40 +212,6 @@ class CAutenticazione
         } catch (Throwable $exception) {
             error_log('[CAutenticazione] ' . $exception->getMessage());
             return $this->esitoProfilo('Password non aggiornata', 'Errore interno durante il salvataggio.', false, '/profilo?section=sicurezza');
-        }
-    }
-
-    private function aggiungiMetodoPagamento(array $accesso, array $post): array
-    {
-        try {
-            $tipo = strtolower(trim((string) ($post['tipo'] ?? EMetodoPagamento::TIPO_CARTA)));
-            $intestatario = trim((string) ($post['intestatario'] ?? ''));
-            if ($intestatario === '') {
-                return $this->esitoProfilo('Metodo non salvato', 'Inserisci l intestatario.', false, '/profilo?section=pagamenti');
-            }
-
-            $metodo = new EMetodoPagamento(
-                null,
-                (int) $accesso['idUtente'],
-                $tipo,
-                $intestatario,
-                (string) ($post['circuito'] ?? ''),
-                (string) ($post['ultimeQuattroCifre'] ?? ''),
-                (int) ($post['scadenzaMese'] ?? 0),
-                (int) ($post['scadenzaAnno'] ?? 0),
-                true
-            );
-
-            if (FPersistentManager::storeMetodoPagamento($metodo) === false) {
-                return $this->esitoProfilo('Metodo non salvato', 'Non e stato possibile collegare il metodo di pagamento.', false, '/profilo?section=pagamenti');
-            }
-
-            return $this->esitoProfilo('Metodo collegato', 'Il metodo di pagamento e stato salvato.', true, '/profilo?section=pagamenti');
-        } catch (InvalidArgumentException $exception) {
-            return $this->esitoProfilo('Metodo non salvato', $exception->getMessage(), false, '/profilo?section=pagamenti');
-        } catch (Throwable $exception) {
-            error_log('[CAutenticazione] ' . $exception->getMessage());
-            return $this->esitoProfilo('Metodo non salvato', 'Errore interno durante il salvataggio.', false, '/profilo?section=pagamenti');
         }
     }
 

@@ -80,7 +80,6 @@ $statusLabels = [
     'pagata' => 'Confermata',
     'completata' => 'Confermata',
     'rifiutata' => 'Rifiutata',
-    'cancellata' => 'Cancellata',
 ];
 ?>
 <section class="chef-dashboard-hero">

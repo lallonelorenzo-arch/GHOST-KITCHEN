@@ -2,12 +2,10 @@
 use ViewHelpers as V;
 /** @var array $accesso */
 /** @var string|null $messaggioAccesso */
-/** @var array $metodiPagamento */
 /** @var array $storicoPagamenti */
 /** @var string $section */
 /** @var bool $isEditing */
 $accesso = $accesso ?? [];
-$metodiPagamento = $metodiPagamento ?? [];
 $storicoPagamenti = $storicoPagamenti ?? [];
 $nome = trim((string) (($accesso['nome'] ?? '') . ' ' . ($accesso['cognome'] ?? '')));
 $nome = $nome !== '' ? $nome : 'Profilo utente';
@@ -210,73 +208,11 @@ $profileNav = [
                         <div class="account-panel-head">
                             <div>
                                 <span class="eyebrow profile-eyebrow">Pagamenti</span>
-                                <h2>Metodi di pagamento</h2>
+                                <h2>Storico transazioni</h2>
                             </div>
                         </div>
 
-                        <?php if ($metodiPagamento === []): ?>
-                            <div class="payment-empty">Nessun metodo di pagamento collegato.</div>
-                        <?php else: ?>
-                            <div class="payment-method-list">
-                                <?php foreach ($metodiPagamento as $index => $metodo): ?>
-                                    <div class="payment-method-card">
-                                        <span class="payment-card-icon" aria-hidden="true">
-                                            <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg>
-                                        </span>
-                                        <span class="payment-card-copy">
-                                            <strong><?= $metodo->getUltimeQuattroCifre() !== '' ? '&bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; &bull;&bull;&bull;&bull; ' . V::e($metodo->getUltimeQuattroCifre()) : V::e(ucfirst($metodo->getTipo())) ?></strong>
-                                            <small>
-                                                <?php if ($metodo->getScadenzaMese() > 0 && $metodo->getScadenzaAnno() > 0): ?>
-                                                    Scadenza: <?= V::e(str_pad((string) $metodo->getScadenzaMese(), 2, '0', STR_PAD_LEFT)) ?>/<?= V::e(substr((string) $metodo->getScadenzaAnno(), -2)) ?>
-                                                <?php else: ?>
-                                                    <?= V::e($metodo->getCircuito() !== '' ? $metodo->getCircuito() : $metodo->getIntestatario()) ?>
-                                                <?php endif; ?>
-                                            </small>
-                                        </span>
-                                        <?php if ($index === 0): ?>
-                                            <span class="payment-default-pill">Predefinita</span>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-
-                        <button class="payment-add-toggle" type="button" data-toggle-target="payment-method-form" aria-expanded="false">
-                            + Aggiungi Metodo di Pagamento
-                        </button>
-
-                        <form id="payment-method-form" class="profile-edit-form payment-method-form" method="post" action="<?= V::e(V::url('/profilo')) ?>" hidden>
-                            <h3 class="payment-form-title">Collega metodo</h3>
-                            <input type="hidden" name="azione" value="metodo_pagamento">
-                            <label>Tipo
-                                <select name="tipo" required>
-                                    <option value="carta">Carta</option>
-                                    <option value="paypal">PayPal</option>
-                                    <option value="bonifico">Bonifico</option>
-                                </select>
-                            </label>
-                            <label>Intestatario
-                                <input name="intestatario" required>
-                            </label>
-                            <label>Circuito
-                                <input name="circuito" placeholder="Visa, Mastercard...">
-                            </label>
-                            <label>Ultime 4 cifre
-                                <input name="ultimeQuattroCifre" maxlength="4" pattern="[0-9]{4}">
-                            </label>
-                            <label>Mese scadenza
-                                <input type="number" name="scadenzaMese" min="1" max="12">
-                            </label>
-                            <label>Anno scadenza
-                                <input type="number" name="scadenzaAnno" min="<?= V::e((string) date('Y')) ?>" max="2100">
-                            </label>
-                            <div class="form-actions is-wide">
-                                <button class="btn btn-accent" type="submit">Collega metodo</button>
-                            </div>
-                        </form>
-
                         <section class="payment-history">
-                            <h3>Storico transazioni</h3>
                             <?php if ($storicoPagamenti === []): ?>
                                 <p>Nessuna transazione registrata.</p>
                             <?php else: ?>

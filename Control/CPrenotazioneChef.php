@@ -241,19 +241,6 @@ class CPrenotazioneChef
                 throw new InvalidArgumentException('Seleziona una preferenza valida per l abbinamento vini.');
             }
 
-            $idMetodoPagamento = filter_var($post['idMetodoPagamento'] ?? null, FILTER_VALIDATE_INT, [
-                'options' => ['min_range' => 1],
-            ]);
-            $metodo = $idMetodoPagamento !== false
-                ? FPersistentManager::loadMetodoPagamento($idMetodoPagamento)
-                : null;
-            if ($metodo === null
-                || !$metodo->isAttivo()
-                || (int) $metodo->getIdUtente() !== (int) ($accesso['idUtente'] ?? 0)
-            ) {
-                throw new InvalidArgumentException('Seleziona un metodo di pagamento valido.');
-            }
-
             $result = $this->confermaPrenotazioneChef([
                 'idCliente' => (int) $accesso['idUtente'],
                 'idChef' => $idChef,
@@ -279,8 +266,7 @@ class CPrenotazioneChef
             $pagamento = (new CPagamento())->confermaPagamento([
                 'tipoPrenotazione' => 'chef',
                 'idPrenotazione' => (int) $prenotazione->getIdPrenotazione(),
-                'tipoPagamento' => EPagamento::TIPO_TOTALE,
-                'idMetodoPagamento' => $idMetodoPagamento,
+                'idUtente' => (int) ($accesso['idUtente'] ?? 0),
             ]);
             if (isset($pagamento['errore'])) {
                 return $this->esitoWizard(

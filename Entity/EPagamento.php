@@ -1,4 +1,4 @@
-<?php
+<?php // Apertura del file PHP.
 declare(strict_types=1);
 
 class EPagamento
@@ -6,195 +6,105 @@ class EPagamento
     public const PRENOTAZIONE_CHEF = 'chef';
     public const PRENOTAZIONE_GHOST_KITCHEN = 'ghost_kitchen';
 
-    public const TIPO_CAPARRA = 'caparra';
-    public const TIPO_SALDO = 'saldo';
-    public const TIPO_TOTALE = 'totale';
-    public const TIPO_PENALE = 'penale';
-
-    public const STATO_IN_ATTESA = 'in_attesa';
-    public const STATO_AUTORIZZATO = 'autorizzato';
     public const STATO_COMPLETATO = 'completato';
-    public const STATO_FALLITO = 'fallito';
-    public const STATO_RIMBORSATO = 'rimborsato';
-    public const STATO_PARZIALMENTE_RIMBORSATO = 'parzialmente_rimborsato';
 
-    private ?int $idPagamento;
+    private ?int $idPagamento; //  null prima del salvataggio nel db
     private ?int $idPrenotazione;
-    private string $tipoPrenotazione;
-    private ?int $idMetodoPagamento;
+    private string $tipoPrenotazione; // chef o gk
     private float $importo;
-    private string $tipoPagamento;
-    private string $stato;
-    private string $codiceTransazione;
+    private string $stato; // Stato del pagamento; in questa versione puo essere solo completato.
+    private string $codiceTransazione; //ricevuta
     private string $dataPagamento;
 
-    public function __construct(
-        ?int $idPagamento = null,
-        ?int $idPrenotazione = null,
-        string $tipoPrenotazione = self::PRENOTAZIONE_CHEF,
-        ?int $idMetodoPagamento = null,
-        float $importo = 0.0,
-        string $tipoPagamento = self::TIPO_TOTALE,
-        string $stato = self::STATO_IN_ATTESA,
+    public function __construct( 
+        ?int $idPagamento = null, 
+        ?int $idPrenotazione = null, 
+        string $tipoPrenotazione = self::PRENOTAZIONE_CHEF, // self:: riferimento alla costante definita nella classe 
+        float $importo = 0.0, 
+        string $stato = self::STATO_COMPLETATO, 
         string $codiceTransazione = '',
         string $dataPagamento = ''
     ) {
         $this->setIdPagamento($idPagamento);
         $this->setIdPrenotazione($idPrenotazione);
         $this->setTipoPrenotazione($tipoPrenotazione);
-        $this->setIdMetodoPagamento($idMetodoPagamento);
         $this->setImporto($importo);
-        $this->setTipoPagamento($tipoPagamento);
         $this->setStato($stato);
-        $this->setCodiceTransazione($codiceTransazione);
-        $this->setDataPagamento($dataPagamento);
-    }
+        $this->setCodiceTransazione($codiceTransazione); // Normalizza e assegna il codice transazione.
+        $this->setDataPagamento($dataPagamento); // Normalizza e assegna la data pagamento.
+    } // Fine del costruttore.
 
-    public function getIdPagamento(): ?int { return $this->idPagamento; }
-    public function setIdPagamento(?int $idPagamento): void
-    {
-        if ($idPagamento !== null && $idPagamento <= 0) {
-            throw new InvalidArgumentException('ID pagamento non valido.');
-        }
-        $this->idPagamento = $idPagamento;
-    }
+    public function getIdPagamento(): ?int { return $this->idPagamento; } // Restituisce l'id del pagamento.
+    public function setIdPagamento(?int $idPagamento): void // Imposta l'id del pagamento.
+    { // Inizio del metodo setIdPagamento.
+        if ($idPagamento !== null && $idPagamento <= 0) { // Controlla che l'id, se presente, sia positivo.
+            throw new InvalidArgumentException('ID pagamento non valido.'); // Blocca valori non validi.
+        } // Fine del controllo sull'id pagamento.
+        $this->idPagamento = $idPagamento; // Assegna l'id pagamento alla proprieta.
+    } // Fine del metodo setIdPagamento.
 
-    public function getIdPrenotazione(): ?int { return $this->idPrenotazione; }
-    public function setIdPrenotazione(?int $idPrenotazione): void
-    {
-        if ($idPrenotazione !== null && $idPrenotazione <= 0) {
-            throw new InvalidArgumentException('ID prenotazione non valido.');
-        }
-        $this->idPrenotazione = $idPrenotazione;
-    }
+    public function getIdPrenotazione(): ?int { return $this->idPrenotazione; } // Restituisce l'id della prenotazione pagata.
+    public function setIdPrenotazione(?int $idPrenotazione): void // Imposta l'id della prenotazione pagata.
+    { // Inizio del metodo setIdPrenotazione.
+        if ($idPrenotazione !== null && $idPrenotazione <= 0) { // Controlla che l'id, se presente, sia positivo.
+            throw new InvalidArgumentException('ID prenotazione non valido.'); // Blocca valori non validi.
+        } // Fine del controllo sull'id prenotazione.
+        $this->idPrenotazione = $idPrenotazione; // Assegna l'id prenotazione alla proprieta.
+    } // Fine del metodo setIdPrenotazione.
 
-    public function getTipoPrenotazione(): string { return $this->tipoPrenotazione; }
-    public function setTipoPrenotazione(string $tipoPrenotazione): void
-    {
-        $tipoPrenotazione = strtolower(trim($tipoPrenotazione));
-        $ammessi = [self::PRENOTAZIONE_CHEF, self::PRENOTAZIONE_GHOST_KITCHEN];
-        if (!in_array($tipoPrenotazione, $ammessi, true)) {
-            throw new InvalidArgumentException('Tipo prenotazione pagamento non valido.');
-        }
-        $this->tipoPrenotazione = $tipoPrenotazione;
-    }
+    public function getTipoPrenotazione(): string { return $this->tipoPrenotazione; } // Restituisce il tipo di prenotazione pagata.
+    public function setTipoPrenotazione(string $tipoPrenotazione): void // Imposta il tipo di prenotazione.
+    { // Inizio del metodo setTipoPrenotazione.
+        $tipoPrenotazione = strtolower(trim($tipoPrenotazione)); // Normalizza il valore ricevuto.
+        $ammessi = [self::PRENOTAZIONE_CHEF, self::PRENOTAZIONE_GHOST_KITCHEN]; // Elenco dei tipi di prenotazione validi.
+        if (!in_array($tipoPrenotazione, $ammessi, true)) { // Verifica che il tipo sia tra quelli ammessi.
+            throw new InvalidArgumentException('Tipo prenotazione pagamento non valido.'); // Blocca tipi non validi.
+        } // Fine del controllo sul tipo prenotazione.
+        $this->tipoPrenotazione = $tipoPrenotazione; // Assegna il tipo prenotazione alla proprieta.
+    } // Fine del metodo setTipoPrenotazione.
 
-    public function getIdMetodoPagamento(): ?int { return $this->idMetodoPagamento; }
-    public function setIdMetodoPagamento(?int $idMetodoPagamento): void
-    {
-        if ($idMetodoPagamento !== null && $idMetodoPagamento <= 0) {
-            throw new InvalidArgumentException('ID metodo pagamento non valido.');
-        }
-        $this->idMetodoPagamento = $idMetodoPagamento;
-    }
+    public function getImporto(): float { return $this->importo; } // Restituisce l'importo pagato.
+    public function setImporto(float $importo): void // Imposta l'importo pagato.
+    { // Inizio del metodo setImporto.
+        if ($importo < 0) { // Controlla che l'importo non sia negativo.
+            throw new InvalidArgumentException('Importo pagamento non valido.'); // Blocca importi non validi.
+        } // Fine del controllo sull'importo.
+        $this->importo = round($importo, 2); // Arrotonda a due decimali e assegna l'importo.
+    } // Fine del metodo setImporto.
 
-    public function getImporto(): float { return $this->importo; }
-    public function setImporto(float $importo): void
-    {
-        if ($importo < 0) {
-            throw new InvalidArgumentException('Importo pagamento non valido.');
-        }
-        $this->importo = round($importo, 2);
-    }
+    public function getStato(): string { return $this->stato; } // Restituisce lo stato del pagamento.
+    public function setStato(string $stato): void // Imposta lo stato del pagamento.
+    { // Inizio del metodo setStato.
+        $stato = strtolower(trim($stato)); // Normalizza lo stato ricevuto.
+        if ($stato !== self::STATO_COMPLETATO) { // Accetta solo lo stato completato.
+            throw new InvalidArgumentException('Stato pagamento non valido.'); // Blocca stati diversi da completato.
+        } // Fine del controllo sullo stato.
+        $this->stato = $stato; // Assegna lo stato alla proprieta.
+    } // Fine del metodo setStato.
 
-    public function getTipoPagamento(): string { return $this->tipoPagamento; }
-    public function setTipoPagamento(string $tipoPagamento): void
-    {
-        $tipoPagamento = strtolower(trim($tipoPagamento));
-        $ammessi = [self::TIPO_CAPARRA, self::TIPO_SALDO, self::TIPO_TOTALE, self::TIPO_PENALE];
-        if (!in_array($tipoPagamento, $ammessi, true)) {
-            throw new InvalidArgumentException('Tipo pagamento non valido.');
-        }
-        $this->tipoPagamento = $tipoPagamento;
-    }
+    public function getCodiceTransazione(): string { return $this->codiceTransazione; } // Restituisce il codice transazione.
+    public function setCodiceTransazione(string $codiceTransazione): void { $this->codiceTransazione = trim($codiceTransazione); } // Normalizza e assegna il codice transazione.
 
-    public function getStato(): string { return $this->stato; }
-    public function setStato(string $stato): void
-    {
-        $stato = strtolower(trim($stato));
-        $ammessi = [
-            self::STATO_IN_ATTESA,
-            self::STATO_AUTORIZZATO,
-            self::STATO_COMPLETATO,
-            self::STATO_FALLITO,
-            self::STATO_RIMBORSATO,
-            self::STATO_PARZIALMENTE_RIMBORSATO
-        ];
-        if (!in_array($stato, $ammessi, true)) {
-            throw new InvalidArgumentException('Stato pagamento non valido.');
-        }
-        $this->stato = $stato;
-    }
+    public function getDataPagamento(): string { return $this->dataPagamento; } // Restituisce la data del pagamento.
+    public function setDataPagamento(string $dataPagamento): void { $this->dataPagamento = trim($dataPagamento); } // Normalizza e assegna la data pagamento.
 
-    public function getCodiceTransazione(): string { return $this->codiceTransazione; }
-    public function setCodiceTransazione(string $codiceTransazione): void { $this->codiceTransazione = trim($codiceTransazione); }
+    public function isCompletato(): bool { return $this->stato === self::STATO_COMPLETATO; } // Indica se il pagamento risulta completato.
 
-    public function getDataPagamento(): string { return $this->dataPagamento; }
-    public function setDataPagamento(string $dataPagamento): void { $this->dataPagamento = trim($dataPagamento); }
+    public function toArray(): array // Converte l'oggetto in array associativo.
+    { // Inizio del metodo toArray.
+        return [ // Inizio dell'array restituito.
+            'idPagamento' => $this->idPagamento, // Inserisce l'id pagamento.
+            'idPrenotazione' => $this->idPrenotazione, // Inserisce l'id prenotazione.
+            'tipoPrenotazione' => $this->tipoPrenotazione, // Inserisce il tipo prenotazione.
+            'importo' => $this->importo, // Inserisce l'importo.
+            'stato' => $this->stato, // Inserisce lo stato.
+            'codiceTransazione' => $this->codiceTransazione, // Inserisce il codice transazione.
+            'dataPagamento' => $this->dataPagamento // Inserisce la data pagamento.
+        ]; // Fine dell'array restituito.
+    } // Fine del metodo toArray.
 
-    public function autorizza(): void
-    {
-        if ($this->stato !== self::STATO_IN_ATTESA) {
-            throw new InvalidArgumentException('Autorizzazione consentita solo da in_attesa.');
-        }
-        $this->stato = self::STATO_AUTORIZZATO;
-    }
-
-    public function completa(): void
-    {
-        if (!in_array($this->stato, [self::STATO_AUTORIZZATO, self::STATO_IN_ATTESA], true)) {
-            throw new InvalidArgumentException('Completamento consentito solo da autorizzato o in_attesa.');
-        }
-        $this->stato = self::STATO_COMPLETATO;
-    }
-
-    public function fallisci(): void
-    {
-        if (in_array($this->stato, [self::STATO_COMPLETATO, self::STATO_RIMBORSATO], true)) {
-            throw new InvalidArgumentException('Impossibile fallire un pagamento completato o rimborsato.');
-        }
-        $this->stato = self::STATO_FALLITO;
-    }
-
-    public function segnaRimborsato(): void
-    {
-        if (!in_array($this->stato, [self::STATO_COMPLETATO, self::STATO_PARZIALMENTE_RIMBORSATO], true)) {
-            throw new InvalidArgumentException('Rimborso totale consentito solo da completato o parzialmente_rimborsato.');
-        }
-        $this->stato = self::STATO_RIMBORSATO;
-    }
-
-    public function segnaParzialmenteRimborsato(): void
-    {
-        if ($this->stato !== self::STATO_COMPLETATO) {
-            throw new InvalidArgumentException('Rimborso parziale consentito solo da completato.');
-        }
-        $this->stato = self::STATO_PARZIALMENTE_RIMBORSATO;
-    }
-
-    public function isCompletato(): bool { return $this->stato === self::STATO_COMPLETATO; }
-    public function isRimborsato(): bool
-    {
-        return in_array($this->stato, [self::STATO_RIMBORSATO, self::STATO_PARZIALMENTE_RIMBORSATO], true);
-    }
-
-    public function toArray(): array
-    {
-        return [
-            'idPagamento' => $this->idPagamento,
-            'idPrenotazione' => $this->idPrenotazione,
-            'tipoPrenotazione' => $this->tipoPrenotazione,
-            'idMetodoPagamento' => $this->idMetodoPagamento,
-            'importo' => $this->importo,
-            'tipoPagamento' => $this->tipoPagamento,
-            'stato' => $this->stato,
-            'codiceTransazione' => $this->codiceTransazione,
-            'dataPagamento' => $this->dataPagamento
-        ];
-    }
-
-    public function __toString(): string
-    {
-        return 'Pagamento #' . ($this->idPagamento ?? 'nuovo') . ' [' . $this->stato . ']';
-    }
-}
+    public function __toString(): string // Definisce la rappresentazione testuale dell'oggetto.
+    { // Inizio del metodo __toString.
+        return 'Pagamento #' . ($this->idPagamento ?? 'nuovo') . ' [' . $this->stato . ']'; // Restituisce una stringa sintetica con id e stato.
+    } // Fine del metodo __toString.
+} // Fine della classe EPagamento.

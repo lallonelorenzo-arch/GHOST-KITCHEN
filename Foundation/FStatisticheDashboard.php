@@ -82,8 +82,8 @@ class FStatisticheDashboard
     private static function getStatistichePagamenti(array $filtri): array
     {
         [$where, $params] = self::prenotazioniWhere($filtri, 'p');
-        $whereParts = ['pay.stato IN (:stato_completato, :stato_rimborsato, :stato_parziale)'];
-        $params += ['stato_completato' => 'completato', 'stato_rimborsato' => 'rimborsato', 'stato_parziale' => 'parzialmente_rimborsato'];
+        $whereParts = ['pay.stato = :stato_completato'];
+        $params += ['stato_completato' => 'completato'];
         if ($where !== '') {
             $whereParts[] = $where;
         }
@@ -96,32 +96,7 @@ class FStatisticheDashboard
             $params
         );
 
-        [$whereRimborsi, $paramsRimborsi] = self::prenotazioniWhere($filtri, 'p');
-        $whereRimborsiParts = ['r.stato IN (:approvato, :eseguito)'];
-        $paramsRimborsi += ['approvato' => 'approvato', 'eseguito' => 'eseguito'];
-        if ($whereRimborsi !== '') {
-            $whereRimborsiParts[] = $whereRimborsi;
-        }
-
-        return [
-            'volumePagamenti' => $volumePagamenti,
-            'numeroRimborsi' => (int) self::scalar(
-                'SELECT COUNT(*)
-                 FROM rimborsi r
-                 INNER JOIN pagamenti pay ON pay.id_pagamento = r.id_pagamento
-                 INNER JOIN prenotazioni p ON p.id_prenotazione = pay.id_prenotazione
-                 WHERE ' . implode(' AND ', $whereRimborsiParts),
-                $paramsRimborsi
-            ),
-            'volumeRimborsi' => (float) self::scalar(
-                'SELECT COALESCE(SUM(r.importo), 0)
-                 FROM rimborsi r
-                 INNER JOIN pagamenti pay ON pay.id_pagamento = r.id_pagamento
-                 INNER JOIN prenotazioni p ON p.id_prenotazione = pay.id_prenotazione
-                 WHERE ' . implode(' AND ', $whereRimborsiParts),
-                $paramsRimborsi
-            ),
-        ];
+        return ['volumePagamenti' => $volumePagamenti];
     }
 
     private static function getStatisticheRecensioni(array $filtri): array

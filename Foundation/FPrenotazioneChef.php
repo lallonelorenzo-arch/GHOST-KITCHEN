@@ -123,7 +123,7 @@ class FPrenotazioneChef
             $statement = FBaseJoinPersistence::connection()->prepare(
                 self::selectSql() . '
                  WHERE pc.id_chef = :id_chef
-                 ORDER BY FIELD(p.stato, :in_attesa, :accettata, :rifiutata, :pagata, :completata, :cancellata),
+                 ORDER BY FIELD(p.stato, :in_attesa, :accettata, :rifiutata, :pagata, :completata),
                           p.data_servizio ASC, p.ora_inizio ASC'
             );
             $statement->execute([
@@ -133,7 +133,6 @@ class FPrenotazioneChef
                 'rifiutata' => EPrenotazione::STATO_RIFIUTATA,
                 'pagata' => EPrenotazione::STATO_PAGATA,
                 'completata' => EPrenotazione::STATO_COMPLETATA,
-                'cancellata' => EPrenotazione::STATO_CANCELLATA,
             ]);
 
             return array_map([self::class, 'hydrate'], $statement->fetchAll());

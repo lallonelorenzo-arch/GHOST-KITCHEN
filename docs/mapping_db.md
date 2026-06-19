@@ -49,7 +49,6 @@ Motivazione:
 - UNIQUE:
   - `email` UNIQUE
 - Relazioni:
-  - 1:N con `metodi_pagamento`
   - 1:N con `prenotazioni` tramite `id_richiedente`
   - 1:N con `recensioni` tramite `id_autore`
   - 1:N con `segnalazioni` tramite `id_segnalante`
@@ -346,7 +345,7 @@ Vincolo richiesto:
   - `data_servizio DATE`
   - `ora_inizio TIME`
   - `ora_fine TIME`
-  - `stato VARCHAR(30)` (`in_attesa|accettata|rifiutata|pagata|completata|cancellata`)
+  - `stato VARCHAR(30)` (`in_attesa|accettata|rifiutata|pagata|completata`)
   - `importo_totale DECIMAL(10,2)`
   - `note TEXT`
 - NULL/NOT NULL:
@@ -356,8 +355,7 @@ Vincolo richiesto:
   - `id_richiedente -> utenti.id_utente`
 - Relazioni:
   - 1:1 con `prenotazioni_chef` oppure 1:1 con `prenotazioni_ghost_kitchen`
-  - 1:N con `pagamenti` (operativamente spesso 1:N per caparra/saldo)
-  - 1:N logica con `cancellazioni` (valutare cardinalità reale)
+  - 1:N con `pagamenti`
 - Nota:
   - la coerenza "una prenotazione base deve avere esattamente una specializzazione" sarà controllata a livello applicativo o tramite vincoli/trigger in fase SQL.
 
@@ -405,31 +403,7 @@ Vincolo richiesto:
 
 ---
 
-## 5) Pagamenti, cancellazioni, rimborsi
-
-### Entity: `EMetodoPagamento`
-- Tabella: `metodi_pagamento`
-- PK: `id_metodo_pagamento`
-- Colonne:
-  - `id_metodo_pagamento INT`
-  - `id_utente INT`
-  - `tipo VARCHAR(20)` (`carta|paypal|bonifico|contanti`)
-  - `intestatario VARCHAR(150)`
-  - `circuito VARCHAR(80)`
-  - `ultime_quattro_cifre CHAR(4)`
-  - `scadenza_mese INT`
-  - `scadenza_anno INT`
-  - `attivo BOOLEAN`
-- NULL/NOT NULL:
-  - `id_utente`, `tipo`, `intestatario`, `attivo` NOT NULL
-  - gli altri campi **dipendono dal tipo** (es. carta vs bonifico) -> `NULL` ammesso
-- FK:
-  - `id_utente -> utenti.id_utente`
-- Relazioni:
-  - N:1 verso `utenti`
-  - 1:N con `pagamenti`
-- Nota di coerenza:
-  - i controlli condizionali per tipo metodo pagamento sono gestiti a livello applicativo.
+## 5) Pagamenti
 
 ### Entity: `EPagamento`
 - Tabella: `pagamenti`
@@ -437,76 +411,24 @@ Vincolo richiesto:
 - Colonne:
   - `id_pagamento INT`
   - `id_prenotazione INT`
-  - `id_metodo_pagamento INT`
   - `importo DECIMAL(10,2)`
-  - `tipo_pagamento VARCHAR(20)` (`caparra|saldo|totale|penale`)
-  - `stato VARCHAR(30)` (`in_attesa|autorizzato|completato|fallito|rimborsato|parzialmente_rimborsato`)
+  - `stato VARCHAR(30)` (`completato`)
   - `codice_transazione VARCHAR(120)`
   - `data_pagamento DATETIME`
 - NULL/NOT NULL:
-  - `id_prenotazione`, `importo`, `tipo_pagamento`, `stato` NOT NULL
-  - `id_metodo_pagamento`, `codice_transazione`, `data_pagamento` possono essere NULL in stati iniziali
+  - `id_prenotazione`, `importo`, `stato` NOT NULL
+  - `codice_transazione`, `data_pagamento` possono essere NULL se il dato non e disponibile
 - FK:
   - `id_prenotazione -> prenotazioni.id_prenotazione`
-  - `id_metodo_pagamento -> metodi_pagamento.id_metodo_pagamento`
 - UNIQUE utili:
   - `codice_transazione` UNIQUE (se valorizzato)
 - Relazioni:
   - N:1 verso `prenotazioni`
-  - N:1 verso `metodi_pagamento`
-  - 1:N con `rimborsi`
 - Nota:
+  - il pagamento e simulato e viene salvato direttamente come `completato`.
+  - non vengono raccolti o salvati dati di carta; la simulazione usa utente, prenotazione e importo.
   - il tipo concreto della prenotazione si ricava da `prenotazioni_chef` o `prenotazioni_ghost_kitchen`.
 
-### Entity: `ECancellazione`
-- Tabella: `cancellazioni`
-- PK: `id_cancellazione`
-- Colonne:
-  - `id_cancellazione INT`
-  - `id_prenotazione INT`
-  - `id_richiedente INT`
-  - `motivo TEXT`
-  - `data_richiesta DATETIME`
-  - `penale_applicata DECIMAL(10,2)`
-  - `importo_rimborsato DECIMAL(10,2)`
-  - `stato VARCHAR(20)` (`richiesta|accettata|rifiutata|completata`)
-- NULL/NOT NULL:
-  - `id_prenotazione`, `id_richiedente`, `data_richiesta`, `penale_applicata`, `importo_rimborsato`, `stato` NOT NULL
-  - `motivo` NULL ammesso
-- FK:
-  - `id_prenotazione -> prenotazioni.id_prenotazione`
-  - `id_richiedente -> utenti.id_utente`
-- Relazioni:
-  - N:1 verso `prenotazioni`
-  - N:1 verso `utenti`
-  - 1:N con `rimborsi`
-- Nota:
-  - resta separata da `rimborsi` come richiesto.
-  - il tipo concreto della prenotazione si ricava da `prenotazioni_chef` o `prenotazioni_ghost_kitchen`.
-
-### Entity: `ERimborso`
-- Tabella: `rimborsi`
-- PK: `id_rimborso`
-- Colonne:
-  - `id_rimborso INT`
-  - `id_pagamento INT`
-  - `id_cancellazione INT`
-  - `importo DECIMAL(10,2)`
-  - `motivo TEXT`
-  - `stato VARCHAR(20)` (`richiesto|approvato|rifiutato|eseguito|fallito`)
-  - `data_richiesta DATETIME`
-  - `data_esecuzione DATETIME`
-- NULL/NOT NULL:
-  - `id_pagamento`, `id_cancellazione`, `importo`, `stato`, `data_richiesta` NOT NULL
-  - `motivo`, `data_esecuzione` NULL ammessi
-- FK:
-  - `id_pagamento -> pagamenti.id_pagamento`
-  - `id_cancellazione -> cancellazioni.id_cancellazione`
-- Relazioni:
-  - N:1 verso `pagamenti`
-  - N:1 verso `cancellazioni`
-- Nota:
-  - resta separata da `cancellazioni` come richiesto.
 
 ---
 

@@ -170,7 +170,7 @@ class FUtente
     public static function delete(int $idUtente): bool
     {
         return self::run('eliminazione logica utente', static function () use ($idUtente): bool {
-            // Il DB ha il campo stato: preferiamo una disattivazione logica alla cancellazione fisica.
+            // Il DB ha il campo stato: preferiamo una disattivazione logica alla rimozione fisica.
             $sql = 'UPDATE utenti SET stato = :stato WHERE id_utente = :id_utente';
             $statement = self::connection()->prepare($sql);
             $statement->execute([

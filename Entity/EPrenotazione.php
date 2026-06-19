@@ -11,7 +11,6 @@ abstract class EPrenotazione
     public const STATO_RIFIUTATA = 'rifiutata';
     public const STATO_PAGATA = 'pagata';
     public const STATO_COMPLETATA = 'completata';
-    public const STATO_CANCELLATA = 'cancellata';
 
     private ?int $idPrenotazione;
     private ?int $idRichiedente;
@@ -126,8 +125,7 @@ abstract class EPrenotazione
             self::STATO_ACCETTATA,
             self::STATO_RIFIUTATA,
             self::STATO_PAGATA,
-            self::STATO_COMPLETATA,
-            self::STATO_CANCELLATA
+            self::STATO_COMPLETATA
         ];
 
         if (!in_array($stato, $statiAmmessi, true)) {
@@ -195,24 +193,6 @@ abstract class EPrenotazione
         }
 
         $this->stato = self::STATO_COMPLETATA;
-    }
-
-    public function cancella(): void
-    {
-        if ($this->stato === self::STATO_COMPLETATA) {
-            throw new InvalidArgumentException('Transizione non valida: non si puo cancellare una prenotazione completata.');
-        }
-
-        if ($this->stato === self::STATO_RIFIUTATA) {
-            throw new InvalidArgumentException('Transizione non valida: non si puo cancellare una prenotazione rifiutata.');
-        }
-
-        $this->stato = self::STATO_CANCELLATA;
-    }
-
-    public function isCancellata(): bool
-    {
-        return $this->stato === self::STATO_CANCELLATA;
     }
 
     public function isPagata(): bool

@@ -11,12 +11,10 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS rimborsi;
 DROP TABLE IF EXISTS recensioni_ghost_kitchen;
 DROP TABLE IF EXISTS recensioni_chef;
 DROP TABLE IF EXISTS segnalazioni;
 DROP TABLE IF EXISTS recensioni;
-DROP TABLE IF EXISTS cancellazioni;
 DROP TABLE IF EXISTS pagamenti;
 DROP TABLE IF EXISTS metodi_pagamento;
 DROP TABLE IF EXISTS prenotazioni_ghost_kitchen;
@@ -58,7 +56,6 @@ CREATE TABLE utenti (
   CONSTRAINT chk_utenti_stato CHECK (stato IN ('attivo', 'sospeso', 'bannato')),
   INDEX idx_utenti_stato (stato)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE clienti (
   id_utente INT PRIMARY KEY,
   CONSTRAINT fk_clienti_utenti FOREIGN KEY (id_utente)
@@ -223,7 +220,7 @@ CREATE TABLE certificazioni (
   tipo VARCHAR(120) NOT NULL,
   nome_file VARCHAR(255) NOT NULL,
   path_file VARCHAR(500) NOT NULL,
-  stato VARCHAR(30) NOT NULL DEFAULT 'in_attesa',
+  stato VARCHAR(30) NOT NULL DEFAULT 'completato',
   data_caricamento DATETIME NOT NULL,
   data_validazione DATETIME NULL,
   data_scadenza DATE NULL,
@@ -293,7 +290,7 @@ CREATE TABLE prenotazioni (
     REFERENCES utenti(id_utente)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  CONSTRAINT chk_prenotazioni_stato CHECK (stato IN ('in_attesa', 'accettata', 'rifiutata', 'pagata', 'completata', 'cancellata')),
+  CONSTRAINT chk_prenotazioni_stato CHECK (stato IN ('in_attesa', 'accettata', 'rifiutata', 'pagata', 'completata')),
   CONSTRAINT chk_prenotazioni_importo_totale CHECK (importo_totale >= 0),
   CONSTRAINT chk_prenotazioni_ore CHECK (ora_fine > ora_inizio),
   INDEX idx_prenotazioni_id_richiedente (id_richiedente),
@@ -342,76 +339,22 @@ CREATE TABLE prenotazioni_ghost_kitchen (
   INDEX idx_prenotazioni_gk_id_ghost_kitchen (id_ghost_kitchen)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE metodi_pagamento (
-  id_metodo_pagamento INT AUTO_INCREMENT PRIMARY KEY,
-  id_utente INT NOT NULL,
-  tipo VARCHAR(20) NOT NULL,
-  intestatario VARCHAR(150) NOT NULL,
-  circuito VARCHAR(80) NULL,
-  ultime_quattro_cifre CHAR(4) NULL,
-  scadenza_mese INT NULL,
-  scadenza_anno INT NULL,
-  attivo BOOLEAN NOT NULL,
-  CONSTRAINT fk_metodi_pagamento_utenti FOREIGN KEY (id_utente)
-    REFERENCES utenti(id_utente)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE,
-  CONSTRAINT chk_metodi_pagamento_tipo CHECK (tipo IN ('carta', 'paypal', 'bonifico', 'contanti')),
-  CONSTRAINT chk_metodi_pagamento_scadenza_mese CHECK (scadenza_mese IS NULL OR (scadenza_mese BETWEEN 1 AND 12)),
-  CONSTRAINT chk_metodi_pagamento_scadenza_anno CHECK (scadenza_anno IS NULL OR scadenza_anno >= 2000),
-  INDEX idx_metodi_pagamento_id_utente (id_utente)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE pagamenti (
   id_pagamento INT AUTO_INCREMENT PRIMARY KEY,
   id_prenotazione INT NOT NULL,
-  id_metodo_pagamento INT NULL,
   importo DECIMAL(10,2) NOT NULL,
-  tipo_pagamento VARCHAR(20) NOT NULL,
-  stato VARCHAR(30) NOT NULL DEFAULT 'in_attesa',
+  stato VARCHAR(30) NOT NULL DEFAULT 'completato',
   codice_transazione VARCHAR(120) NULL,
   data_pagamento DATETIME NULL,
   CONSTRAINT fk_pagamenti_prenotazioni FOREIGN KEY (id_prenotazione)
     REFERENCES prenotazioni(id_prenotazione)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  CONSTRAINT fk_pagamenti_metodi_pagamento FOREIGN KEY (id_metodo_pagamento)
-    REFERENCES metodi_pagamento(id_metodo_pagamento)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
   CONSTRAINT uq_pagamenti_codice_transazione UNIQUE (codice_transazione),
-  CONSTRAINT chk_pagamenti_tipo CHECK (tipo_pagamento IN ('caparra', 'saldo', 'totale', 'penale')),
-  CONSTRAINT chk_pagamenti_stato CHECK (stato IN ('in_attesa', 'autorizzato', 'completato', 'fallito', 'rimborsato', 'parzialmente_rimborsato')),
+  CONSTRAINT chk_pagamenti_stato CHECK (stato IN ('completato')),
   CONSTRAINT chk_pagamenti_importo CHECK (importo >= 0),
   INDEX idx_pagamenti_id_prenotazione (id_prenotazione),
-  INDEX idx_pagamenti_id_metodo_pagamento (id_metodo_pagamento),
   INDEX idx_pagamenti_stato (stato)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE cancellazioni (
-  id_cancellazione INT AUTO_INCREMENT PRIMARY KEY,
-  id_prenotazione INT NOT NULL,
-  id_richiedente INT NOT NULL,
-  motivo TEXT NULL,
-  data_richiesta DATETIME NOT NULL,
-  penale_applicata DECIMAL(10,2) NOT NULL,
-  importo_rimborsato DECIMAL(10,2) NOT NULL,
-  stato VARCHAR(20) NOT NULL DEFAULT 'richiesta',
-  CONSTRAINT fk_cancellazioni_prenotazioni FOREIGN KEY (id_prenotazione)
-    REFERENCES prenotazioni(id_prenotazione)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  CONSTRAINT fk_cancellazioni_utenti FOREIGN KEY (id_richiedente)
-    REFERENCES utenti(id_utente)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  CONSTRAINT uq_cancellazioni_id_prenotazione UNIQUE (id_prenotazione),
-  CONSTRAINT chk_cancellazioni_stato CHECK (stato IN ('richiesta', 'accettata', 'rifiutata', 'completata')),
-  CONSTRAINT chk_cancellazioni_penale CHECK (penale_applicata >= 0),
-  CONSTRAINT chk_cancellazioni_importo_rimborsato CHECK (importo_rimborsato >= 0),
-  INDEX idx_cancellazioni_id_prenotazione (id_prenotazione),
-  INDEX idx_cancellazioni_id_richiedente (id_richiedente),
-  INDEX idx_cancellazioni_stato (stato)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE recensioni (
@@ -491,28 +434,4 @@ CREATE TABLE segnalazioni (
   INDEX idx_segnalazioni_id_segnalante (id_segnalante),
   INDEX idx_segnalazioni_stato (stato),
   INDEX idx_segnalazioni_target (tipo_target, id_target)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE rimborsi (
-  id_rimborso INT AUTO_INCREMENT PRIMARY KEY,
-  id_pagamento INT NOT NULL,
-  id_cancellazione INT NOT NULL,
-  importo DECIMAL(10,2) NOT NULL,
-  motivo TEXT NULL,
-  stato VARCHAR(20) NOT NULL DEFAULT 'richiesto',
-  data_richiesta DATETIME NOT NULL,
-  data_esecuzione DATETIME NULL,
-  CONSTRAINT fk_rimborsi_pagamenti FOREIGN KEY (id_pagamento)
-    REFERENCES pagamenti(id_pagamento)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  CONSTRAINT fk_rimborsi_cancellazioni FOREIGN KEY (id_cancellazione)
-    REFERENCES cancellazioni(id_cancellazione)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  CONSTRAINT chk_rimborsi_stato CHECK (stato IN ('richiesto', 'approvato', 'rifiutato', 'eseguito', 'fallito')),
-  CONSTRAINT chk_rimborsi_importo CHECK (importo >= 0),
-  INDEX idx_rimborsi_id_pagamento (id_pagamento),
-  INDEX idx_rimborsi_id_cancellazione (id_cancellazione),
-  INDEX idx_rimborsi_stato (stato)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -83,7 +83,6 @@ if ($utenteCorrente !== null) {
             <?php if ($utenteCorrente !== null): ?>
                 <?php if (!$isAdminUser): ?>
                     <a class="<?= V::e(trim($isActive('/prenotazioni'))) ?>" href="<?= V::e(V::url('/prenotazioni')) ?>">Le mie prenotazioni</a>
-                    <a class="<?= V::e(trim($isActive('/mie-recensioni'))) ?>" href="<?= V::e(V::url('/mie-recensioni')) ?>">Le mie recensioni</a>
                 <?php endif; ?>
                 <?php if ($isAdminUser): ?>
                     <a class="<?= V::e(trim($isActive('/dashboard'))) ?>" href="<?= V::e(V::url('/dashboard')) ?>">Dashboard</a>

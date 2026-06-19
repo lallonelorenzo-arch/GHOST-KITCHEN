@@ -2,14 +2,11 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- Pulizia tabelle in ordine sicuro per FK
-DELETE FROM rimborsi;
 DELETE FROM recensioni_ghost_kitchen;
 DELETE FROM recensioni_chef;
 DELETE FROM segnalazioni;
 DELETE FROM recensioni;
-DELETE FROM cancellazioni;
 DELETE FROM pagamenti;
-DELETE FROM metodi_pagamento;
 DELETE FROM prenotazioni_ghost_kitchen;
 DELETE FROM prenotazioni_chef;
 DELETE FROM prenotazioni;
@@ -216,7 +213,7 @@ INSERT INTO prenotazioni (id_prenotazione, id_richiedente, data_creazione, data_
 (2, 2, '2026-05-30 12:10:00', '2026-06-10', '19:00:00', '23:00:00', 'pagata', 522.00, 'Cena aziendale 9 persone.'),
 (3, 3, '2026-04-28 15:00:00', '2026-05-18', '20:00:00', '23:30:00', 'completata', 648.00, 'Compleanno privato 8 persone.'),
 (4, 4, '2026-05-14 09:40:00', '2026-06-15', '20:00:00', '23:30:00', 'accettata', 474.00, 'Cena in terrazza 6 persone.'),
-(5, 11, '2026-05-22 11:50:00', '2026-06-05', '19:30:00', '23:00:00', 'cancellata', 392.00, 'Cena famiglia allargata.'),
+(5, 11, '2026-05-22 11:50:00', '2026-06-05', '19:30:00', '23:00:00', 'rifiutata', 392.00, 'Cena famiglia allargata.'),
 (6, 5, '2026-04-30 08:30:00', '2026-05-06', '09:00:00', '13:00:00', 'completata', 152.00, 'Uso cucina per prep menu evento.'),
 (7, 1, '2026-05-12 16:20:00', '2026-06-08', '14:00:00', '19:00:00', 'pagata', 190.00, 'Batch cooking settimanale.'),
 (8, 6, '2026-05-01 13:10:00', '2026-05-07', '10:00:00', '15:00:00', 'completata', 170.00, 'Produzione sushi catering.'),
@@ -248,45 +245,18 @@ INSERT INTO prenotazioni_ghost_kitchen (id_prenotazione, id_ghost_kitchen, tipo_
 (10, 3, 'chef');
 
 -- =========================================================
--- METODI PAGAMENTO
--- =========================================================
-INSERT INTO metodi_pagamento (id_metodo_pagamento, id_utente, tipo, intestatario, circuito, ultime_quattro_cifre, scadenza_mese, scadenza_anno, attivo) VALUES
-(1, 1, 'carta', 'Marco Rinaldi', 'Visa', '4242', 12, 2028, TRUE),
-(2, 2, 'paypal', 'Giulia Conti', NULL, NULL, NULL, NULL, TRUE),
-(3, 3, 'carta', 'Luca Ferri', 'Mastercard', '5511', 7, 2027, TRUE),
-(4, 4, 'bonifico', 'Sara Neri', NULL, NULL, NULL, NULL, TRUE),
-(5, 5, 'contanti', 'Alessandro Bassi', NULL, NULL, NULL, NULL, TRUE),
-(6, 6, 'carta', 'Federica Greco', 'Amex', '3005', 3, 2029, TRUE),
-(7, 11, 'carta', 'Stefano Costa', 'Visa', '9876', 9, 2027, TRUE);
-
--- =========================================================
 -- PAGAMENTI
 -- =========================================================
-INSERT INTO pagamenti (id_pagamento, id_prenotazione, id_metodo_pagamento, importo, tipo_pagamento, stato, codice_transazione, data_pagamento) VALUES
-(1, 1, 1, 200.00, 'caparra', 'completato', 'TXN-2026-0001', '2026-04-20 10:15:00'),
-(2, 1, 1, 496.00, 'saldo', 'completato', 'TXN-2026-0002', '2026-05-05 23:10:00'),
-(3, 2, 2, 522.00, 'totale', 'autorizzato', 'TXN-2026-0003', '2026-05-30 12:20:00'),
-(4, 3, 3, 648.00, 'totale', 'completato', 'TXN-2026-0004', '2026-04-28 15:10:00'),
-(5, 4, 4, 150.00, 'caparra', 'completato', 'TXN-2026-0005', '2026-05-14 09:50:00'),
-(6, 5, 7, 392.00, 'totale', 'parzialmente_rimborsato', 'TXN-2026-0006', '2026-05-22 12:00:00'),
-(7, 6, 6, 152.00, 'totale', 'completato', 'TXN-2026-0007', '2026-04-30 08:40:00'),
-(8, 7, 1, 190.00, 'totale', 'in_attesa', 'TXN-2026-0008', NULL),
-(9, 8, 6, 170.00, 'totale', 'completato', 'TXN-2026-0009', '2026-05-01 13:20:00'),
-(10, 9, 2, 116.00, 'totale', 'fallito', 'TXN-2026-0010', '2026-05-18 18:10:00'),
-(11, 5, 7, 20.00, 'penale', 'completato', 'TXN-2026-0011', '2026-05-24 10:00:00');
-
--- =========================================================
--- CANCELLAZIONI
--- =========================================================
-INSERT INTO cancellazioni (id_cancellazione, id_prenotazione, id_richiedente, motivo, data_richiesta, penale_applicata, importo_rimborsato, stato) VALUES
-(1, 5, 11, 'Imprevisto familiare, impossibile confermare la presenza.', '2026-05-24 09:30:00', 20.00, 372.00, 'completata'),
-(2, 10, 7, 'Cambio programma evento, non piu necessario lo spazio.', '2026-05-20 14:10:00', 0.00, 0.00, 'rifiutata');
-
--- =========================================================
--- RIMBORSI
--- =========================================================
-INSERT INTO rimborsi (id_rimborso, id_pagamento, id_cancellazione, importo, motivo, stato, data_richiesta, data_esecuzione) VALUES
-(1, 6, 1, 372.00, 'Rimborso totale meno penale su prenotazione cancellata.', 'eseguito', '2026-05-24 10:15:00', '2026-05-25 11:30:00');
+INSERT INTO pagamenti (id_pagamento, id_prenotazione, importo, stato, codice_transazione, data_pagamento) VALUES
+(1, 1, 696.00, 'completato', 'TXN-2026-0001', '2026-04-20 10:15:00'),
+(2, 2, 522.00, 'completato', 'TXN-2026-0002', '2026-05-30 12:20:00'),
+(3, 3, 648.00, 'completato', 'TXN-2026-0003', '2026-04-28 15:10:00'),
+(4, 4, 474.00, 'completato', 'TXN-2026-0004', '2026-05-14 09:50:00'),
+(5, 5, 392.00, 'completato', 'TXN-2026-0005', '2026-05-22 12:00:00'),
+(6, 6, 152.00, 'completato', 'TXN-2026-0006', '2026-04-30 08:40:00'),
+(7, 7, 190.00, 'completato', 'TXN-2026-0007', '2026-05-16 10:00:00'),
+(8, 8, 170.00, 'completato', 'TXN-2026-0008', '2026-05-01 13:20:00'),
+(9, 9, 116.00, 'completato', 'TXN-2026-0009', '2026-05-18 18:10:00');
 
 -- =========================================================
 -- RECENSIONI (solo prenotazioni completate)

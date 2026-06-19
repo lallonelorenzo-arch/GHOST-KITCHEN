@@ -23,7 +23,6 @@ $prenotazioni = $prenotazioni ?? [];
                 $tipoUrl = $tipo === 'ghost_kitchen' ? 'ghost-kitchen' : 'chef';
                 $stato = $prenotazione->getStato();
                 $canPay = in_array($stato, ['in_attesa', 'accettata'], true);
-                $canCancel = !in_array($stato, ['completata', 'cancellata', 'rifiutata'], true);
                 $canReview = $stato === 'completata';
                 ?>
                 <article class="ops-panel booking-row">
@@ -40,9 +39,6 @@ $prenotazioni = $prenotazioni ?? [];
                     <div class="actions booking-actions-inline">
                         <?php if ($canPay): ?>
                             <a class="btn btn-accent" href="<?= V::e(V::url('/pagamento/' . $tipoUrl . '/' . $prenotazione->getIdPrenotazione())) ?>">Paga</a>
-                        <?php endif; ?>
-                        <?php if ($canCancel): ?>
-                            <a class="btn btn-ghost" href="<?= V::e(V::url('/cancellazione/' . $tipoUrl . '/' . $prenotazione->getIdPrenotazione())) ?>">Cancella</a>
                         <?php endif; ?>
                         <?php if ($canReview): ?>
                             <a class="btn btn-ghost" href="<?= V::e(V::url('/recensione/' . $tipoUrl . '/' . $prenotazione->getIdPrenotazione())) ?>">Recensisci</a>

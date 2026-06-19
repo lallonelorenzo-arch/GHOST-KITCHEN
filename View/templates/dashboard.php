@@ -84,8 +84,7 @@ $periodiRapidi = [
             <h2>Pagamenti</h2>
             <dl class="ops-meta">
                 <div><dt>Volume</dt><dd>&euro; <?= V::e(V::money((float) ($pagamenti['volumePagamenti'] ?? 0))) ?></dd></div>
-                <div><dt>Rimborsi</dt><dd><?= V::e($pagamenti['numeroRimborsi'] ?? 0) ?></dd></div>
-                <div><dt>Volume rimborsi</dt><dd>&euro; <?= V::e(V::money((float) ($pagamenti['volumeRimborsi'] ?? 0))) ?></dd></div>
+                <div><dt>Stato</dt><dd>completati</dd></div>
             </dl>
         </article>
 

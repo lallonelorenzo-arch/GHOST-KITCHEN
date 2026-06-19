@@ -117,18 +117,6 @@ class CFrontController
                 return;
             }
 
-            if ($method === 'GET' && preg_match('#^/cancellazione/(chef|ghost-kitchen)/([1-9][0-9]*)$#', $path, $matches) === 1) {
-                $tipoPrenotazione = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
-                $this->renderController('CCancellazioneRimborso', 'mostraCancellazioneWeb', 'cancellazione', [$tipoPrenotazione, (int) $matches[2], $this->accessContext()]);
-                return;
-            }
-
-            if ($method === 'POST' && preg_match('#^/cancellazione/(chef|ghost-kitchen)/([1-9][0-9]*)$#', $path, $matches) === 1) {
-                $tipoPrenotazione = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
-                $this->renderController('CCancellazioneRimborso', 'confermaCancellazioneWeb', 'cancellazione', [$tipoPrenotazione, (int) $matches[2], $this->accessContext(), $post]);
-                return;
-            }
-
             if ($method === 'GET' && preg_match('#^/recensione/(chef|ghost-kitchen)/([1-9][0-9]*)$#', $path, $matches) === 1) {
                 $tipoTarget = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
                 $this->renderController('CRecensione', 'mostraRecensioneWeb', 'recensione', [$tipoTarget, (int) $matches[2], $this->accessContext()]);
@@ -392,7 +380,7 @@ class CFrontController
             return true;
         }
 
-        if (preg_match('#^/(pagamento|cancellazione|recensione)/(chef|ghost-kitchen)/[1-9][0-9]*$#', $path) === 1) {
+        if (preg_match('#^/(pagamento|recensione)/(chef|ghost-kitchen)/[1-9][0-9]*$#', $path) === 1) {
             return true;
         }
 

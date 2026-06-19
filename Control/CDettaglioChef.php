@@ -75,9 +75,6 @@ class CDettaglioChef
             'bookingCsrfToken' => $utente !== null
                 ? FSession::csrfToken('chef_booking')
                 : '',
-            'metodiPagamento' => $utente !== null
-                ? FPersistentManager::loadMetodiPagamentoByUtente((int) $utente->getIdUtente())
-                : [],
             'azioni' => [
                 'prenotaChef' => '/PrenotazioneChef/avviaPrenotazioneChef'
             ]

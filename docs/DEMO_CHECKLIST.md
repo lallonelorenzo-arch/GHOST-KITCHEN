@@ -66,7 +66,7 @@ URL consigliati:
 - [ ] Effettuare login con `marco.rinaldi@gk.it`.
 - [ ] Verificare redirect dopo login.
 - [ ] Aprire profilo.
-- [ ] Verificare dati personali e metodi di pagamento.
+- [ ] Verificare dati personali e storico transazioni.
 - [ ] Aprire `Le mie prenotazioni`.
 - [ ] Verificare elenco prenotazioni chef e ghost kitchen.
 - [ ] Aprire prenotazione chef da dettaglio chef.
@@ -192,7 +192,7 @@ Questi flussi modificano il database. Prima di provarli conviene fare un backup 
 - [ ] Registrazione nuovo chef.
 - [ ] Registrazione nuovo gestore con ghost kitchen.
 - [ ] Aggiornamento profilo.
-- [ ] Aggiunta metodo di pagamento.
+- [ ] Storico transazioni profilo.
 - [ ] Aggiunta disponibilita chef.
 - [ ] Aggiunta disponibilita ghost kitchen.
 - [ ] Creazione prenotazione chef.
@@ -201,8 +201,7 @@ Questi flussi modificano il database. Prima di provarli conviene fare un backup 
 - [ ] Rifiuto richiesta chef.
 - [ ] Accettazione richiesta ghost kitchen.
 - [ ] Rifiuto richiesta ghost kitchen.
-- [ ] Pagamento caparra o totale.
-- [ ] Cancellazione prenotazione.
+- [ ] Pagamento totale simulato.
 - [ ] Creazione recensione.
 - [ ] Invio segnalazione.
 - [ ] Moderazione recensione.
@@ -258,7 +257,7 @@ Pagine principali da controllare:
 - [ ] Come viene gestita la sessione in `FSession`.
 - [ ] Come viene gestito il login.
 - [ ] Come vengono salvate e caricate le prenotazioni.
-- [ ] Come vengono gestiti pagamenti, cancellazioni e rimborsi.
+- [ ] Come viene gestito il pagamento simulato.
 - [ ] Come funzionano certificazioni e moderazione.
 - [ ] Come vengono evitati accessi diretti SQL nelle View.
 - [ ] Come vengono escapati i dati in output.

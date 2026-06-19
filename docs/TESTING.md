@@ -67,7 +67,6 @@ test/control/test_CPrenotazioneGhostKitchen.php
 test/control/test_CGestioneDisponibilita.php
 test/control/test_CGestioneRichieste.php
 test/control/test_CPagamento.php
-test/control/test_CCancellazioneRimborso.php
 test/control/test_CRecensione.php
 test/control/test_CSegnalazione.php
 test/control/test_CModerazione.php
