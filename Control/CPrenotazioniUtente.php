@@ -19,11 +19,23 @@ class CPrenotazioniUtente
         $prenotazioni = [];
 
         foreach (FPersistentManager::loadPrenotazioniChefByRichiedente($idUtente) as $prenotazione) {
-            $prenotazioni[] = ['tipo' => 'chef', 'prenotazione' => $prenotazione];
+            $chef = FPersistentManager::loadChef((int) $prenotazione->getIdChef());
+            $prenotazioni[] = [
+                'tipo' => 'chef',
+                'prenotazione' => $prenotazione,
+                'nomeTarget' => $chef !== null ? trim($chef->getNome() . ' ' . $chef->getCognome()) : 'Chef non disponibile',
+                'canReview' => (FPersistentManager::verificaPrenotazioneRecensibile('chef', (int) $prenotazione->getIdPrenotazione(), $idUtente)['recensibile'] ?? false) === true,
+            ];
         }
 
         foreach (FPersistentManager::loadPrenotazioniGhostKitchenByRichiedente($idUtente) as $prenotazione) {
-            $prenotazioni[] = ['tipo' => 'ghost_kitchen', 'prenotazione' => $prenotazione];
+            $ghostKitchen = FPersistentManager::loadGhostKitchen((int) $prenotazione->getIdGhostKitchen());
+            $prenotazioni[] = [
+                'tipo' => 'ghost_kitchen',
+                'prenotazione' => $prenotazione,
+                'nomeTarget' => $ghostKitchen !== null ? $ghostKitchen->getNome() : 'Ghost kitchen non disponibile',
+                'canReview' => (FPersistentManager::verificaPrenotazioneRecensibile('ghost_kitchen', (int) $prenotazione->getIdPrenotazione(), $idUtente)['recensibile'] ?? false) === true,
+            ];
         }
 
         usort($prenotazioni, static function (array $a, array $b): int {

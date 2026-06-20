@@ -1202,6 +1202,13 @@ p {
   color: var(--warm);
 }
 
+.star.partial {
+  background: linear-gradient(90deg, var(--warm) var(--star-fill), rgba(216, 107, 69, .32) var(--star-fill));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .meta,
 .tag-row,
 .slots div {

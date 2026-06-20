@@ -63,6 +63,7 @@ class CDettaglioChef
             'menu' => $menuDettagliati,
             'certificazioni' => FPersistentManager::loadCertificazioniApprovateByChef($idChef),
             'disponibilitaChef' => $disponibilita,
+            'recensioni' => FPersistentManager::loadRecensioniByChef($idChef),
             'accesso' => $accesso,
             'canBookChef' => $canBook,
             'chefPrenotabile' => FPersistentManager::chefHaCertificazioniInRegola($idChef),

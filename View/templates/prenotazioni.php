@@ -20,21 +20,22 @@ $prenotazioni = $prenotazioni ?? [];
                 <?php
                 $tipo = (string) ($item['tipo'] ?? '');
                 $prenotazione = $item['prenotazione'];
+                $nomeTarget = (string) ($item['nomeTarget'] ?? '');
                 $tipoUrl = $tipo === 'ghost_kitchen' ? 'ghost-kitchen' : 'chef';
                 $stato = $prenotazione->getStato();
                 $canPay = in_array($stato, ['in_attesa', 'accettata'], true);
-                $canReview = $stato === 'completata';
+                $canReview = (bool) ($item['canReview'] ?? false);
                 ?>
                 <article class="ops-panel booking-row">
                     <div>
                         <span class="badge neutral"><?= V::e($tipo === 'ghost_kitchen' ? 'Ghost kitchen' : 'Chef') ?></span>
-                        <h2>#<?= V::e($prenotazione->getIdPrenotazione()) ?> - <?= V::e($prenotazione->getDataServizio()) ?></h2>
+                        <?php if ($nomeTarget !== ''): ?><p><?= V::e($nomeTarget) ?></p><?php endif; ?>
+                        <h2>Prenotazione del <?= V::e($prenotazione->getDataServizio()) ?></h2>
                         <p><?= V::e($prenotazione->getOraInizio()) ?> - <?= V::e($prenotazione->getOraFine()) ?></p>
                     </div>
                     <dl class="ops-meta">
                         <div><dt>Stato</dt><dd><?= V::e($stato) ?></dd></div>
                         <div><dt>Importo</dt><dd>&euro; <?= V::e(V::money((float) $prenotazione->getImportoTotale())) ?></dd></div>
-                        <div><dt>Tipo</dt><dd><?= V::e($tipo === 'ghost_kitchen' ? 'Ghost kitchen' : 'Chef') ?></dd></div>
                     </dl>
                     <div class="actions booking-actions-inline">
                         <?php if ($canPay): ?>

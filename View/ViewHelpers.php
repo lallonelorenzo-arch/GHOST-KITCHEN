@@ -69,13 +69,18 @@ class ViewHelpers
 
     public static function stars(float $rating): string
     {
-        $fullStars = max(0, min(5, (int) round($rating)));
+        $rating = max(0.0, min(5.0, $rating));
         $stars = '';
 
         for ($i = 1; $i <= 5; $i++) {
-            $stars .= $i <= $fullStars
-                ? '<span class="star filled">&#9733;</span>'
-                : '<span class="star">&#9734;</span>';
+            $fill = max(0.0, min(1.0, $rating - ($i - 1)));
+            if ($fill >= 1.0) {
+                $stars .= '<span class="star filled">&#9733;</span>';
+            } elseif ($fill > 0.0) {
+                $stars .= '<span class="star partial" style="--star-fill:' . self::e((string) round($fill * 100)) . '%">&#9733;</span>';
+            } else {
+                $stars .= '<span class="star">&#9734;</span>';
+            }
         }
 
         return $stars;

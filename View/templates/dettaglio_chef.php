@@ -5,13 +5,18 @@ use ViewHelpers as V;
 /** @var array $menu */
 /** @var array $certificazioni */
 /** @var array $disponibilitaChef */
+/** @var array $recensioni */
 /** @var array $accesso */
 /** @var bool $canBookChef */
 /** @var bool $chefPrenotabile */
 /** @var array $indirizzoSalvato */
 /** @var string $bookingCsrfToken */
 $image = V::mediaUrl($fotoProfilo ?? null, 'https://images.unsplash.com/photo-1750943082012-efe6d2fd9e45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200');
-$rating = $chef->getValutazioneMedia();
+$recensioni = array_values(array_filter($recensioni ?? [], static fn (ERecensioneChef $recensione): bool => $recensione->isVisibile()));
+$numeroRecensioni = count($recensioni);
+$rating = $numeroRecensioni > 0
+    ? round(array_sum(array_map(static fn (ERecensioneChef $recensione): int => $recensione->getPunteggio(), $recensioni)) / $numeroRecensioni, 2)
+    : 0.0;
 $accesso = $accesso ?? [];
 $canBookChef = $canBookChef ?? false;
 $chefPrenotabile = $chefPrenotabile ?? false;
@@ -34,7 +39,7 @@ $availabilityPayload = array_map(
 <section class="detail-hero" style="background-image: linear-gradient(0deg, rgba(44,24,16,.9), rgba(44,24,16,.25)), url('<?= V::e($image) ?>')">
     <a class="back-link" href="<?= V::e(V::url('/ricerca/chef')) ?>">Torna alla ricerca</a>
     <div>
-        <span class="badge rating-badge"><span class="stars"><?= V::stars($rating) ?></span> <?= V::e($rating) ?> / 5</span>
+        <a class="badge rating-badge" href="#recensioni-chef"><span class="stars"><?= V::stars($rating) ?></span> <?= V::e($rating) ?> / 5</a>
         <h1><?= V::e($chef->getNome() . ' ' . $chef->getCognome()) ?></h1>
         <p><?= V::e($chef->getSpecializzazione() ?: $chef->getTipologiaCucina()) ?></p>
     </div>
@@ -46,8 +51,8 @@ $availabilityPayload = array_map(
         <p class="lead"><?= V::e($chef->getBiografia() ?: 'Lo chef non ha ancora pubblicato una biografia estesa.') ?></p>
         <div class="detail-chips">
             <span><?= V::e($chef->getTipologiaCucina() ?: 'Cucina non specificata') ?></span>
-            <span><?= V::e($chef->getNumeroRecensioni()) ?> recensioni</span>
-            <span><?= V::e($chef->getValutazioneMedia()) ?>/5</span>
+            <span><?= V::e($numeroRecensioni) ?> recensioni</span>
+            <span><?= V::e($rating) ?>/5</span>
         </div>
 
         <div class="menu-section-heading">
@@ -123,6 +128,39 @@ $availabilityPayload = array_map(
     </aside>
 
     <script type="application/json" data-chef-availability><?= json_encode($availabilityPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?></script>
+</section>
+
+<section class="section ops-flow reviews-page" id="recensioni-chef">
+    <div class="toolbar">
+        <div>
+            <h2>Recensioni</h2>
+            <p><?= V::e($numeroRecensioni) ?> recensioni pubblicate</p>
+        </div>
+    </div>
+
+    <?php if ($recensioni === []): ?>
+        <div class="empty-state">Nessuna recensione pubblicata per questo chef.</div>
+    <?php else: ?>
+        <div class="ops-list reviews-list">
+            <?php foreach ($recensioni as $recensione): ?>
+                <article class="ops-panel review-row">
+                    <header class="review-row-header">
+                        <div>
+                            <div class="review-score">
+                                <span class="stars" aria-label="Valutazione <?= V::e($recensione->getPunteggio()) ?> su 5"><?= V::stars((float) $recensione->getPunteggio()) ?></span>
+                                <strong><?= V::e($recensione->getPunteggio()) ?>/5</strong>
+                            </div>
+                            <time datetime="<?= V::e($recensione->getDataRecensione()) ?>"><?= V::e($recensione->getDataRecensione()) ?></time>
+                        </div>
+                    </header>
+
+                    <?php if ($recensione->getCommento() !== ''): ?>
+                        <p class="review-comment"><?= V::e($recensione->getCommento()) ?></p>
+                    <?php endif; ?>
+                </article>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 </section>
 
 <dialog class="booking-detail-modal booking-alert-modal" id="chef-booking-access-modal" aria-labelledby="chef-booking-access-title">
