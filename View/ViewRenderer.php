@@ -18,6 +18,7 @@ class ViewRenderer
         extract($viewData, EXTR_SKIP);
 
         $contentTemplate = $templateFile;
+        // Il layout include il template specifico e produce una pagina HTML completa.
         ob_start();
         require __DIR__ . '/templates/layout.php';
         $html = (string) ob_get_clean();
@@ -25,6 +26,7 @@ class ViewRenderer
         echo self::injectCsrfInputs($html);
     }
 
+    // Protezione centralizzata: ogni form POST renderizzato riceve un token CSRF.
     private static function injectCsrfInputs(string $html): string
     {
         return (string) preg_replace_callback(

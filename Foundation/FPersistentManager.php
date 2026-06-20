@@ -46,6 +46,7 @@ class FPersistentManager
         return FConnectionDB::getInstance()->getConnection();
     }
 
+    // Utenti, autenticazione e ruoli.
     public static function existUtente(int $idUtente): bool
     {
         return FUtente::exist($idUtente);
@@ -117,6 +118,8 @@ class FPersistentManager
 
     public static function loadCliente(int $idCliente): ?ECliente { return FCliente::load($idCliente); }
     public static function loadClientiRegistrati(): array { return FCliente::loadAll(); }
+
+    // Profili professionali e amministrativi.
     public static function loadChef(int $idChef): ?EChef { return FChef::load($idChef); }
     public static function loadChefRegistrati(): array { return FChef::loadAll(); }
     public static function loadGestore(int $idGestore): ?EGestore { return FGestore::load($idGestore); }
@@ -130,6 +133,7 @@ class FPersistentManager
     public static function updateGestore(EGestore $gestore): EGestore|false { return self::updateAndReturn($gestore, static fn (EGestore $entity): bool => FGestore::update($entity)); }
     public static function storeAmministratore(EAmministratore $amministratore): EAmministratore|false { return self::storeAndReturn($amministratore, static fn (EAmministratore $entity): bool|int => FAmministratore::store($entity), 'setIdAmministratore'); }
 
+    // Catalogo operativo: ghost kitchen, attrezzature, menu, piatti, media e certificazioni.
     public static function loadGhostKitchen(int $idGhostKitchen): ?EGhostKitchen { return FGhostKitchen::load($idGhostKitchen); }
     public static function loadGhostKitchenRegistrate(): array { return FGhostKitchen::loadAll(); }
     public static function loadGhostKitchenByGestore(int $idGestore): array { return FGhostKitchen::loadByGestore($idGestore); }
@@ -176,6 +180,7 @@ class FPersistentManager
     public static function loadPagamentiByUtente(int $idUtente): array { return FPagamento::loadByUtente($idUtente); }
     public static function loadSegnalazioniDaModerare(): array { return FSegnalazione::loadByStato(ESegnalazione::STATO_APERTA); }
 
+    // Creazione entita: i metodi restituiscono l'oggetto aggiornato con id generato.
     public static function storeAttrezzatura(EAttrezzatura $entity): EAttrezzatura|false { return self::storeAndReturn($entity, static fn (EAttrezzatura $item): bool|int => FAttrezzatura::store($item), 'setIdAttrezzatura'); }
     public static function storeMenu(EMenu $entity): EMenu|false { return self::storeAndReturn($entity, static fn (EMenu $item): bool|int => FMenu::store($item), 'setIdMenu'); }
     public static function storePiatto(EPiatto $entity): EPiatto|false { return self::storeAndReturn($entity, static fn (EPiatto $item): bool|int => FPiatto::store($item), 'setIdPiatto'); }
@@ -190,6 +195,7 @@ class FPersistentManager
     public static function storeRecensioneChef(ERecensioneChef $entity): ERecensioneChef|false { return self::storeAndReturn($entity, static fn (ERecensioneChef $item): bool|int => FRecensioneChef::store($item), 'setIdRecensione'); }
     public static function storeRecensioneGhostKitchen(ERecensioneGhostKitchen $entity): ERecensioneGhostKitchen|false { return self::storeAndReturn($entity, static fn (ERecensioneGhostKitchen $item): bool|int => FRecensioneGhostKitchen::store($item), 'setIdRecensione'); }
 
+    // Aggiornamento ed eliminazione logica/fisica delle entita operative.
     public static function updateAttrezzatura(EAttrezzatura $entity): EAttrezzatura|false { return self::updateAndReturn($entity, static fn (EAttrezzatura $item): bool => FAttrezzatura::update($item)); }
     public static function deleteAttrezzatura(int $idAttrezzatura): bool { return FAttrezzatura::delete($idAttrezzatura); }
     public static function updateMenu(EMenu $entity): EMenu|false { return self::updateAndReturn($entity, static fn (EMenu $item): bool => FMenu::update($item)); }
@@ -206,6 +212,7 @@ class FPersistentManager
     public static function updateRecensioneChef(ERecensioneChef $entity): ERecensioneChef|false { return self::updateAndReturn($entity, static fn (ERecensioneChef $item): bool => FRecensioneChef::update($item)); }
     public static function updateRecensioneGhostKitchen(ERecensioneGhostKitchen $entity): ERecensioneGhostKitchen|false { return self::updateAndReturn($entity, static fn (ERecensioneGhostKitchen $item): bool => FRecensioneGhostKitchen::update($item)); }
 
+    // Query applicative usate dai Control: ricerca, disponibilita, prenotazioni, recensioni e dashboard.
     public static function cercaChef(string $localita, string $tipologiaCucina, float $budgetMax, int $valutazioneMin): array { return FChef::search($localita, $tipologiaCucina, $budgetMax, $valutazioneMin); }
     public static function cercaGhostKitchen(string $localita, float $budgetMax, int $valutazioneMin): array { return FGhostKitchen::search($localita, $budgetMax, $valutazioneMin); }
     public static function verificaDisponibilitaChef(int $idChef, string $data, string $oraInizio, string $oraFine): bool { return FDisponibilitaChef::verificaDisponibilita($idChef, $data, $oraInizio, $oraFine); }
@@ -234,6 +241,7 @@ class FPersistentManager
     public static function loadTipologieCucinaRecensite(): array { return FRecensione::loadTipologieCucinaRecensite(); }
     public static function updateRecensione(ERecensione $recensione): ERecensione|false { return self::updateAndReturn($recensione, static fn (ERecensione $entity): bool => FRecensione::update($entity)); }
 
+    // Helper interni della facciata: uniformano il ritorno store/update verso i Control.
     private static function storeAndReturn(object $entity, callable $storeCallback, string $idSetter): object|false
     {
         $result = $storeCallback($entity);

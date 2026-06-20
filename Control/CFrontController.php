@@ -7,6 +7,8 @@ require_once __DIR__ . '/../View/ViewRenderer.php';
 
 class CFrontController
 {
+    // Route statiche: URL esatti associati a controller, metodo e template.
+    // Le route con parametri numerici sono gestite piu sotto con regex dedicate.
     private const ALLOWED_ROUTES = [
         'GET' => [
             '/' => ['CHome', 'home', 'home'],
@@ -42,12 +44,14 @@ class CFrontController
 
     public function handle(): void
     {
+        // 1. Normalizzazione richiesta: metodo, path, query string e body POST.
         $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
         $path = $this->normalizePath((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
         $query = $this->normalizeRequest($_GET);
         $post = $this->normalizeRequest($_POST);
 
         try {
+            // 2. Sicurezza trasversale: CSRF e controllo permessi prima del dispatch.
             if (!$this->isCsrfValid($method, $path, $post)) {
                 $this->renderError(403, 'Sessione non valida', 'Ricarica la pagina e riprova.');
                 return;
@@ -60,6 +64,7 @@ class CFrontController
                 return;
             }
 
+            // 3. Redirect di comodo: URL brevi che puntano alla sezione corretta.
             if ($method === 'GET' && $path === '/ricerca') {
                 $this->redirect('/ricerca/chef');
                 return;
@@ -73,6 +78,7 @@ class CFrontController
                 }
             }
 
+            // 4. Route dinamiche: URL con id o azione, validati tramite regex.
             if ($method === 'GET' && preg_match('#^/prenotazione/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
                 $this->redirect('/chef/' . (int) $matches[1]);
                 return;
@@ -201,6 +207,7 @@ class CFrontController
                 return;
             }
 
+            // 5. Route statiche: risoluzione dalla whitelist ALLOWED_ROUTES.
             if (!$this->routeExistsForAnyMethod($path)) {
                 $this->renderError(404, 'Pagina non trovata', 'La pagina richiesta non esiste.');
                 return;
@@ -249,6 +256,7 @@ class CFrontController
                 default => [],
             };
 
+            // 6. Casi speciali: logout e dashboard differenziata per ruolo.
             if ($path === '/logout') {
                 $this->callController($controller, $action, []);
                 $this->redirect('/');
@@ -275,6 +283,7 @@ class CFrontController
                 }
             }
 
+            // 7. Dispatch finale: controller -> dati -> template.
             $data = $this->callController($controller, $action, $params);
             if ($path === '/login' && $method === 'POST' && is_array($data) && ($data['successo'] ?? false) === true) {
                 $this->redirect($this->postLoginRedirectPath());
@@ -301,6 +310,7 @@ class CFrontController
         }
     }
 
+    // Esegue un controller dinamico e renderizza subito il template indicato.
     private function renderController(string $controller, string $action, string $template, array $params): void
     {
         $data = $this->callController($controller, $action, $params);
@@ -312,6 +322,7 @@ class CFrontController
         ViewRenderer::render($template, is_array($data) ? $data : [], $this->sharedViewData());
     }
 
+    // Caricamento controllato: solo classi presenti in Control/ e metodi previsti dal routing.
     private function callController(string $className, string $actionName, array $params): mixed
     {
         $controllerFile = __DIR__ . '/' . $className . '.php';
@@ -328,6 +339,7 @@ class CFrontController
         return $controller->$actionName(...$params);
     }
 
+    // Tutti i POST devono avere token valido; la prenotazione chef usa uno scope dedicato.
     private function isCsrfValid(string $method, string $path, array $post): bool
     {
         if ($method !== 'POST') {
@@ -341,6 +353,7 @@ class CFrontController
         return FSession::verifyCsrfToken($scope, (string) ($post['csrfToken'] ?? ''));
     }
 
+    // Rimuove la sottocartella XAMPP dal path, cosi /GHOST-KITCHEN/login diventa /login.
     private function normalizePath(string $path): string
     {
         $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
@@ -356,6 +369,7 @@ class CFrontController
         return $path === '/' ? '/' : rtrim($path, '/');
     }
 
+    // Uniforma GET/POST in stringhe trim, lasciando ai controller la validazione di dominio.
     private function normalizeRequest(array $input): array
     {
         $normalized = [];
@@ -374,6 +388,7 @@ class CFrontController
         return $normalized;
     }
 
+    // Serve a distinguere 404 da 405 anche per route dinamiche non presenti in ALLOWED_ROUTES.
     private function routeExistsForAnyMethod(string $path): bool
     {
         if (preg_match('#^/prenotazione/(chef|ghost-kitchen)/[1-9][0-9]*$#', $path) === 1) {
@@ -441,6 +456,7 @@ class CFrontController
         return false;
     }
 
+    // Dopo il login porta ogni ruolo nella sezione piu utile per la demo.
     private function postLoginRedirectPath(): string
     {
         $ruoli = FSession::getRuoli();
@@ -459,6 +475,7 @@ class CFrontController
         return '/';
     }
 
+    // Dati dell'utente corrente usati dai controller per autorizzazioni e precompilazioni.
     private function accessContext(): array
     {
         FSession::start();
@@ -483,6 +500,7 @@ class CFrontController
         ];
     }
 
+    // Dati comuni a tutte le View: base URL, path corrente, utente e badge richieste.
     private function sharedViewData(): array
     {
         FSession::start();
@@ -511,12 +529,14 @@ class CFrontController
         ];
     }
 
+    // Carica sempre i dati aggiornati dal DB invece di fidarsi solo della sessione.
     private function currentUtente(): ?EUtente
     {
         $idUtente = FSession::getIdUtente();
         return $idUtente !== null ? FPersistentManager::loadUtente($idUtente) : null;
     }
 
+    // Controllo accessi centralizzato per aree admin, chef, gestore e utente loggato.
     private function isPathAllowed(string $path, string $method, array $accesso): bool
     {
         $ruoli = $accesso['ruoli'] ?? [];
@@ -584,12 +604,14 @@ class CFrontController
         return true;
     }
 
+    // Path normalizzato della richiesta corrente, usato per navbar e stati attivi.
     private function currentPath(): string
     {
         $path = $this->normalizePath((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
         return $path === '' ? '/' : $path;
     }
 
+    // Per utenti multi-ruolo mantiene in sessione il ruolo professionale selezionato.
     private function synchronizeActiveRole(array $query): void
     {
         FSession::start();
@@ -599,6 +621,7 @@ class CFrontController
         }
     }
 
+    // /disponibilita e /richieste sono alias verso la dashboard con tab corretta.
     private function professionalDashboardRedirect(string $path, array $accesso): ?string
     {
         $ruoli = $accesso['ruoli'] ?? [];
@@ -618,18 +641,21 @@ class CFrontController
         return '/dashboard?ruolo=' . $ruolo . '&tab=' . $tab;
     }
 
+    // Base URL compatibile con progetto in sottocartella XAMPP o document root.
     private function baseUrl(): string
     {
         $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
         return $scriptDir === '/' || $scriptDir === '.' ? '' : rtrim($scriptDir, '/');
     }
 
+    // Redirect interni sempre relativi alla base URL calcolata.
     private function redirect(string $path): void
     {
         header('Location: ' . $this->baseUrl() . $path);
         exit;
     }
 
+    // Errori utente controllati: codice HTTP corretto e template dedicato.
     private function renderError(int $status, string $title, string $message): void
     {
         http_response_code($status);
