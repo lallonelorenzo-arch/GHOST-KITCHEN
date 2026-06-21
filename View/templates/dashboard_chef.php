@@ -332,6 +332,47 @@ $statusLabels = [
                     <button class="btn btn-accent" type="submit">Salva profilo</button>
                 </form>
             <?php endif; ?>
+            <?php if ($profiloChef !== null): ?>
+                <section class="profile-public-section" id="profilo-gallery">
+                    <div class="management-heading">
+                        <div>
+                            <h2>Galleria</h2>
+                            <p>Gestisci le foto mostrate nella sezione Chi Sono del profilo pubblico.</p>
+                        </div>
+                        <form class="gallery-upload-form" method="post" action="<?= V::e(V::url('/dashboard/chef/media')) ?>" enctype="multipart/form-data">
+                            <input type="hidden" name="azione" value="carica">
+                            <input type="hidden" name="returnTo" value="/dashboard?ruolo=chef&tab=profilo#profilo-gallery">
+                            <label class="gallery-add-button" title="Aggiungi foto">
+                                <span aria-hidden="true">+</span>
+                                <input type="file" name="media" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required onchange="this.form.requestSubmit()">
+                            </label>
+                        </form>
+                    </div>
+                    <div class="detail-gallery dashboard-gallery">
+                        <?php foreach (array_values(array_filter($mediaChef ?? [], static fn (EMedia $item): bool => $item->getStato() === EMedia::STATO_ATTIVO)) as $mediaItem): ?>
+                            <?php $mediaUrl = V::mediaUrl($mediaItem, ''); ?>
+                            <?php if ($mediaUrl !== ''): ?>
+                                <figure class="gallery-item">
+                                    <button type="button" data-gallery-open data-gallery-src="<?= V::e($mediaUrl) ?>" data-gallery-alt="<?= V::e($mediaItem->getDescrizione() ?: 'Foto galleria chef') ?>">
+                                        <img src="<?= V::e($mediaUrl) ?>" alt="<?= V::e($mediaItem->getDescrizione() ?: 'Foto galleria chef') ?>" loading="lazy">
+                                    </button>
+                                    <form method="post" action="<?= V::e(V::url('/dashboard/chef/media')) ?>" class="gallery-delete-form">
+                                        <input type="hidden" name="azione" value="rimuovi">
+                                        <input type="hidden" name="idMedia" value="<?= V::e((int) $mediaItem->getIdMedia()) ?>">
+                                        <input type="hidden" name="returnTo" value="/dashboard?ruolo=chef&tab=profilo#profilo-gallery">
+                                        <button type="submit" aria-label="Elimina foto">
+                                            <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
+                                        </button>
+                                    </form>
+                                </figure>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                        <?php if (array_values(array_filter($mediaChef ?? [], static fn (EMedia $item): bool => $item->getStato() === EMedia::STATO_ATTIVO)) === []): ?>
+                            <div class="empty-state">Nessuna foto caricata.</div>
+                        <?php endif; ?>
+                    </div>
+                </section>
+            <?php endif; ?>
             <section class="profile-public-section" id="profilo-menu">
                 <div class="management-heading">
                     <div>

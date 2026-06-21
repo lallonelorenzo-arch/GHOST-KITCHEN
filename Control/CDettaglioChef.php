@@ -48,6 +48,13 @@ class CDettaglioChef
             static fn (EDisponibilitaChef $slot): bool =>
                 $slot->isLibera() && $slot->getData() >= date('Y-m-d')
         ));
+        $recensioni = FPersistentManager::loadRecensioniByChef($idChef);
+        $autoriRecensioni = [];
+        foreach ($recensioni as $recensione) {
+            if ($recensione instanceof ERecensioneChef && $recensione->getIdAutore() !== null) {
+                $autoriRecensioni[(int) $recensione->getIdAutore()] = FPersistentManager::loadUtente((int) $recensione->getIdAutore());
+            }
+        }
         $utente = ($accesso['isLogged'] ?? false) === true
             ? FPersistentManager::loadUtente((int) ($accesso['idUtente'] ?? 0))
             : null;
@@ -60,10 +67,15 @@ class CDettaglioChef
         return [
             'chef' => $chef,
             'fotoProfilo' => $fotoProfilo,
+            'media' => FPersistentManager::getMediaByOwner('chef', $idChef),
+            'canManageGallery' => ($accesso['isLogged'] ?? false) === true
+                && in_array('chef', $accesso['ruoli'] ?? [], true)
+                && (int) ($accesso['idUtente'] ?? 0) === $idChef,
             'menu' => $menuDettagliati,
             'certificazioni' => FPersistentManager::loadCertificazioniApprovateByChef($idChef),
             'disponibilitaChef' => $disponibilita,
-            'recensioni' => FPersistentManager::loadRecensioniByChef($idChef),
+            'recensioni' => $recensioni,
+            'autoriRecensioni' => $autoriRecensioni,
             'accesso' => $accesso,
             'canBookChef' => $canBook,
             'chefPrenotabile' => FPersistentManager::chefHaCertificazioniInRegola($idChef),

@@ -9,7 +9,9 @@ use ViewHelpers as V;
 /** @var string|null $messaggioSuccesso */
 /** @var EPrenotazioneGhostKitchen|null $prenotazione */
 /** @var bool|null $ghostKitchenPrenotabile */
+/** @var array $availabilityPayload */
 $ghostKitchenPrenotabile = $ghostKitchenPrenotabile ?? true;
+$availabilityPayload = $availabilityPayload ?? [];
 ?>
 <section class="page-hero compact-hero ops-hero">
     <h1>Prenotazione ghost kitchen</h1>
@@ -38,18 +40,87 @@ $ghostKitchenPrenotabile = $ghostKitchenPrenotabile ?? true;
             </article>
 
             <?php if ($ghostKitchenPrenotabile && empty($accessoRichiesto)): ?>
-            <form class="ops-panel ops-form" method="post" action="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>" data-booking-form>
-                <h2>Dati richiesta</h2>
-                <p class="muted-text">Tipo richiedente: <?= V::e($tipoRichiedente ?? 'non disponibile') ?></p>
-                <div class="ops-form-row">
-                    <label>Data <input type="date" name="dataServizio" value="<?= V::e($form['dataServizio'] ?? '') ?>" required></label>
-                    <label>Ora inizio <input type="time" name="oraInizio" value="<?= V::e($form['oraInizio'] ?? '') ?>" required></label>
+            <form
+                class="ops-panel chef-booking-wizard gk-booking-wizard"
+                method="post"
+                action="<?= V::e(V::url('/prenotazione/ghost-kitchen/' . $ghostKitchen->getId())) ?>"
+                data-gk-booking
+                data-hour-price="<?= V::e(number_format($ghostKitchen->getPrezzoOrario(), 2, '.', '')) ?>"
+                data-gk-name="<?= V::e($ghostKitchen->getNome()) ?>"
+            >
+                <header class="chef-booking-header">
+                    <div>
+                        <span>Prenotazione cucina</span>
+                        <h2><?= V::e($ghostKitchen->getNome()) ?></h2>
+                    </div>
+                </header>
+
+                <div class="chef-booking-progress" aria-label="Avanzamento prenotazione">
+                    <span class="is-active" data-gk-step-indicator="1"><b>1</b> Data e orario</span>
+                    <span data-gk-step-indicator="2"><b>2</b> Conferma</span>
                 </div>
-                <label>Ora fine <input type="time" name="oraFine" value="<?= V::e($form['oraFine'] ?? '') ?>" required></label>
-                <label>Note
-                    <textarea name="note" rows="4"><?= V::e($form['note'] ?? '') ?></textarea>
-                </label>
-                <button class="btn btn-accent" type="submit">Invia richiesta</button>
+
+                <input type="hidden" name="dataServizio" data-gk-date value="<?= V::e($form['dataServizio'] ?? '') ?>">
+                <input type="hidden" name="oraInizio" data-gk-start value="<?= V::e($form['oraInizio'] ?? '') ?>">
+                <input type="hidden" name="oraFine" data-gk-end value="<?= V::e($form['oraFine'] ?? '') ?>">
+
+                <section class="chef-booking-step is-active" data-gk-booking-step="1">
+                    <div class="chef-step-heading">
+                        <span>Step 1 di 2</span>
+                        <h3>Quando vuoi prenotare la cucina?</h3>
+                        <p>Seleziona un giorno disponibile e orari a ore piene compresi nello slot pubblicato.</p>
+                    </div>
+                    <div class="wizard-calendar" data-gk-calendar>
+                        <div class="wizard-calendar-head">
+                            <button type="button" data-gk-calendar-prev aria-label="Mese precedente">&larr;</button>
+                            <strong data-gk-calendar-title></strong>
+                            <button type="button" data-gk-calendar-next aria-label="Mese successivo">&rarr;</button>
+                        </div>
+                        <div class="wizard-calendar-weekdays" aria-hidden="true">
+                            <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>
+                        </div>
+                        <div class="wizard-calendar-grid" data-gk-calendar-grid></div>
+                    </div>
+                    <div class="service-period-picker" data-gk-time-picker hidden>
+                        <span>Scegli orario</span>
+                        <div class="booking-address-grid">
+                            <label>Inizio
+                                <select data-gk-start-select></select>
+                            </label>
+                            <label>Fine
+                                <select data-gk-end-select></select>
+                            </label>
+                        </div>
+                    </div>
+                    <p class="wizard-inline-error" data-gk-step-error="1" hidden></p>
+                </section>
+
+                <section class="chef-booking-step" data-gk-booking-step="2" hidden>
+                    <div class="chef-step-heading">
+                        <span>Step 2 di 2</span>
+                        <h3>Conferma richiesta</h3>
+                        <p>Controlla il riepilogo prima di inviare la richiesta al gestore.</p>
+                    </div>
+                    <dl class="chef-booking-review">
+                        <div><dt>Ghost kitchen</dt><dd data-gk-review-name></dd></div>
+                        <div><dt>Data e orario</dt><dd data-gk-review-date></dd></div>
+                        <div><dt>Durata</dt><dd data-gk-review-hours></dd></div>
+                        <div class="is-total"><dt>Totale stimato</dt><dd data-gk-review-total></dd></div>
+                        <div class="is-wide"><dt>Note</dt><dd data-gk-review-notes></dd></div>
+                    </dl>
+                    <label>Note operative
+                        <textarea name="note" rows="4" data-gk-notes><?= V::e($form['note'] ?? '') ?></textarea>
+                    </label>
+                    <p class="wizard-inline-error" data-gk-step-error="2" hidden></p>
+                </section>
+
+                <footer class="chef-booking-actions">
+                    <button class="btn btn-ghost" type="button" data-gk-prev hidden>Indietro</button>
+                    <button class="btn btn-accent" type="button" data-gk-next>Continua</button>
+                    <button class="btn btn-accent" type="submit" data-gk-submit hidden>Invia richiesta</button>
+                </footer>
+
+                <script type="application/json" data-gk-availability><?= json_encode($availabilityPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?></script>
             </form>
             <?php elseif (!$ghostKitchenPrenotabile): ?>
                 <article class="ops-panel">

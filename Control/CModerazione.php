@@ -164,13 +164,18 @@ class CModerazione
         return $this->esitoDaOperazione(fn (): array => $this->prendiInCaricoSegnalazione($idSegnalazione));
     }
 
-    public function moderaRecensioneWeb(int $idRecensione, string $azione, array $accesso): array
+    public function moderaRecensioneWeb(int $idRecensione, string $azione, array $accesso, array $post = []): array
     {
-        if (!$this->isAdmin($accesso)) {
-            return $this->esito('Accesso non consentito', 'Non hai permessi per questa sezione.', false);
+        $ritorno = (string) ($post['ritorno'] ?? '/moderazione');
+        if (!in_array($ritorno, ['/moderazione', '/recensioni'], true)) {
+            $ritorno = '/moderazione';
         }
 
-        return $this->esitoDaOperazione(fn (): array => $this->moderaRecensione($idRecensione, $azione));
+        if (!$this->isAdmin($accesso)) {
+            return $this->esito('Accesso non consentito', 'Non hai permessi per questa sezione.', false, $ritorno);
+        }
+
+        return $this->esitoDaOperazione(fn (): array => $this->moderaRecensione($idRecensione, $azione), $ritorno);
     }
 
     public function moderaProfiloWeb(int $idUtente, string $azione, array $accesso): array
@@ -195,30 +200,30 @@ class CModerazione
         ));
     }
 
-    private function esitoDaOperazione(callable $callback): array
+    private function esitoDaOperazione(callable $callback, string $ritorno = '/moderazione'): array
     {
         try {
             $result = $callback();
             if (isset($result['errore'])) {
-                return $this->esito('Operazione non completata', (string) $result['errore'], false);
+                return $this->esito('Operazione non completata', (string) $result['errore'], false, $ritorno);
             }
 
-            return $this->esito('Operazione completata', (string) ($result['messaggio'] ?? 'Aggiornamento eseguito.'), true);
+            return $this->esito('Operazione completata', (string) ($result['messaggio'] ?? 'Aggiornamento eseguito.'), true, $ritorno);
         } catch (InvalidArgumentException $exception) {
-            return $this->esito('Operazione non completata', $exception->getMessage(), false);
+            return $this->esito('Operazione non completata', $exception->getMessage(), false, $ritorno);
         } catch (Throwable $exception) {
             error_log('[CModerazione] ' . $exception->getMessage());
-            return $this->esito('Operazione non completata', 'Errore interno durante la moderazione. Riprova piu tardi.', false);
+            return $this->esito('Operazione non completata', 'Errore interno durante la moderazione. Riprova piu tardi.', false, $ritorno);
         }
     }
 
-    private function esito(string $titolo, string $messaggio, bool $successo): array
+    private function esito(string $titolo, string $messaggio, bool $successo, string $ritorno = '/moderazione'): array
     {
         return [
             'titolo' => $titolo,
             'messaggio' => $messaggio,
             'successo' => $successo,
-            'ritorno' => '/moderazione',
+            'ritorno' => $ritorno,
         ];
     }
 

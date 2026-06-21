@@ -54,6 +54,7 @@ class CDashboardChef
             'prenotazioniTabella' => $this->prenotazioniTabella($prenotazioni),
             'richiestePrenotazione' => $this->richiestePrenotazione($prenotazioni),
             'profiloChef' => $chef,
+            'mediaChef' => $idChef > 0 ? FPersistentManager::getMediaByOwner('chef', $idChef) : [],
             'menuChef' => FPersistentManager::loadMenuByChef($idChef),
             'piattiMenuChef' => $this->piattiMenuChef($idChef),
             'recensioniChef' => $this->recensioniChef($idChef),

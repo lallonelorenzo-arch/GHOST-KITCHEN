@@ -5,7 +5,7 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CAdminUtenti
 {
-    public function visualizzaUtentiWeb(array $accesso): array
+    public function visualizzaUtentiWeb(array $accesso, array $query = []): array
     {
         if (!$this->isAdmin($accesso)) {
             return [
@@ -19,13 +19,15 @@ class CAdminUtenti
             ];
         }
 
-        $clienti = FPersistentManager::loadClientiRegistrati();
-        $chef = FPersistentManager::loadChefRegistrati();
-        $gestori = FPersistentManager::loadGestoriRegistrati();
-        $ghostKitchen = FPersistentManager::loadGhostKitchenRegistrate();
+        $filtri = $this->filtriUtenti($query);
+        $clienti = $this->filtraProfili(FPersistentManager::loadClientiRegistrati(), $filtri, 'cliente');
+        $chef = $this->filtraProfili(FPersistentManager::loadChefRegistrati(), $filtri, 'chef');
+        $gestori = $this->filtraProfili(FPersistentManager::loadGestoriRegistrati(), $filtri, 'gestore');
+        $ghostKitchen = $this->filtraProfili(FPersistentManager::loadGhostKitchenRegistrate(), $filtri, 'ghost_kitchen');
 
         return [
             'accesso' => $accesso,
+            'filtriUtenti' => $filtri,
             'clienti' => $clienti,
             'chef' => $chef,
             'gestori' => $gestori,
@@ -178,6 +180,54 @@ class CAdminUtenti
         }
 
         return $gestori;
+    }
+
+    private function filtriUtenti(array $query): array
+    {
+        $tipo = strtolower(trim((string) ($query['tipo'] ?? 'tutti')));
+        if (!in_array($tipo, ['tutti', 'cliente', 'chef', 'gestore', 'ghost_kitchen'], true)) {
+            $tipo = 'tutti';
+        }
+
+        $stato = strtolower(trim((string) ($query['stato'] ?? 'tutti')));
+        if (!in_array($stato, ['tutti', 'attivo', 'sospeso', 'bannato', 'attiva', 'sospesa', 'non_disponibile'], true)) {
+            $stato = 'tutti';
+        }
+
+        return [
+            'q' => trim((string) ($query['q'] ?? '')),
+            'tipo' => $tipo,
+            'stato' => $stato,
+        ];
+    }
+
+    private function filtraProfili(array $items, array $filtri, string $tipo): array
+    {
+        if (($filtri['tipo'] ?? 'tutti') !== 'tutti' && ($filtri['tipo'] ?? '') !== $tipo) {
+            return [];
+        }
+
+        $q = strtolower((string) ($filtri['q'] ?? ''));
+        $stato = (string) ($filtri['stato'] ?? 'tutti');
+
+        return array_values(array_filter($items, static function (object $item) use ($q, $stato): bool {
+            if ($stato !== 'tutti' && method_exists($item, 'getStato') && $item->getStato() !== $stato) {
+                return false;
+            }
+
+            if ($q === '') {
+                return true;
+            }
+
+            $haystack = '';
+            foreach (['getNome', 'getCognome', 'getEmail', 'getTelefono', 'getCitta'] as $method) {
+                if (method_exists($item, $method)) {
+                    $haystack .= ' ' . (string) $item->{$method}();
+                }
+            }
+
+            return str_contains(strtolower($haystack), $q);
+        }));
     }
 
     private function esito(string $titolo, string $messaggio, bool $successo): array

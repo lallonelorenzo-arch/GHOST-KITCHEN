@@ -153,6 +153,17 @@ $profileNav = [
                             <?php endforeach; ?>
                         </dl>
                     <?php endif; ?>
+                    <?php if (!$isAdmin && ($isChef xor $isGestore)): ?>
+                        <section class="profile-role-action-panel">
+                            <button class="btn btn-accent" type="button" data-modal-open="<?= $isChef ? 'add-gestore-role-modal' : 'add-chef-role-modal' ?>">
+                                <?= $isChef ? 'Diventa anche gestore' : 'Diventa anche chef' ?>
+                            </button>
+                        </section>
+                    <?php elseif (!$isAdmin && $isChef && $isGestore): ?>
+                        <section class="profile-role-action-panel">
+                            <button class="btn btn-accent" type="button" data-modal-open="disable-role-modal">Disattiva ruolo</button>
+                        </section>
+                    <?php endif; ?>
                 </article>
                 <?php elseif ($section === 'sicurezza'): ?>
                     <article class="account-panel">
@@ -223,6 +234,9 @@ $profileNav = [
                                             <span>
                                                 <strong><?= V::e($item['descrizione']) ?></strong>
                                                 <small><?= V::e($item['data'] !== '' ? $item['data'] : $pagamento->getStato()) ?></small>
+                                                <?php if (($item['statoPrenotazione'] ?? '') !== ''): ?>
+                                                    <small>Prenotazione: <?= V::e(str_replace('_', ' ', (string) $item['statoPrenotazione'])) ?></small>
+                                                <?php endif; ?>
                                             </span>
                                             <b>&euro;<?= V::e(V::money($pagamento->getImporto())) ?></b>
                                         </div>
@@ -236,3 +250,82 @@ $profileNav = [
         </div>
     <?php endif; ?>
 </section>
+
+<?php if (!$isAdmin && $isChef && !$isGestore): ?>
+<dialog class="booking-detail-modal role-modal" id="add-gestore-role-modal" aria-labelledby="add-gestore-role-title">
+    <div class="booking-detail-box">
+        <header>
+            <div>
+                <span>Nuovo ruolo</span>
+                <h2 id="add-gestore-role-title">Diventa anche gestore</h2>
+            </div>
+            <button type="button" class="modal-close-button" data-modal-close aria-label="Chiudi">&times;</button>
+        </header>
+        <form class="profile-edit-form" method="post" action="<?= V::e(V::url('/profilo')) ?>">
+            <input type="hidden" name="azione" value="aggiungi_ruolo">
+            <input type="hidden" name="ruolo" value="gestore">
+            <label>Nome ghost kitchen <input name="nomeGhostKitchen" required></label>
+            <label>Citta <input name="cittaGhostKitchen" required></label>
+            <label>Indirizzo <input name="indirizzoGhostKitchen" required></label>
+            <label>CAP <input name="capGhostKitchen" required></label>
+            <label>Prezzo orario <input type="number" name="prezzoOrario" min="0" step="0.01" required></label>
+            <label>Capienza <input type="number" name="capienza" min="1" required></label>
+            <label>Metri quadri <input type="number" name="mq" min="1" step="0.01" required></label>
+            <label class="is-wide">Descrizione <textarea name="descrizioneGhostKitchen" rows="4" required></textarea></label>
+            <div class="form-actions is-wide"><button class="btn btn-accent" type="submit">Aggiungi ruolo gestore</button></div>
+        </form>
+    </div>
+</dialog>
+<?php elseif (!$isAdmin && $isGestore && !$isChef): ?>
+<dialog class="booking-detail-modal role-modal" id="add-chef-role-modal" aria-labelledby="add-chef-role-title">
+    <div class="booking-detail-box">
+        <header>
+            <div>
+                <span>Nuovo ruolo</span>
+                <h2 id="add-chef-role-title">Diventa anche chef</h2>
+            </div>
+            <button type="button" class="modal-close-button" data-modal-close aria-label="Chiudi">&times;</button>
+        </header>
+        <form class="profile-edit-form" method="post" action="<?= V::e(V::url('/profilo')) ?>">
+            <input type="hidden" name="azione" value="aggiungi_ruolo">
+            <input type="hidden" name="ruolo" value="chef">
+            <label>Specializzazione <input name="specializzazione" required></label>
+            <label>Tipologia cucina <input name="tipologiaCucina" required></label>
+            <label>Prezzo base <input type="number" name="prezzoBase" min="0" step="0.01" required></label>
+            <label>Anni esperienza <input type="number" name="anniEsperienza" min="0" max="<?= V::e(EChef::MAX_ANNI_ESPERIENZA) ?>" required></label>
+            <label class="is-wide">Biografia chef <textarea name="biografiaChef" rows="4"></textarea></label>
+            <div class="form-actions is-wide"><button class="btn btn-accent" type="submit">Aggiungi ruolo chef</button></div>
+        </form>
+    </div>
+</dialog>
+<?php elseif (!$isAdmin && $isChef && $isGestore): ?>
+<dialog class="booking-detail-modal role-modal" id="disable-role-modal" aria-labelledby="disable-role-title">
+    <div class="booking-detail-box">
+        <header>
+            <div>
+                <span>Disattivazione ruolo</span>
+                <h2 id="disable-role-title">Scegli il ruolo da disattivare</h2>
+            </div>
+            <button type="button" class="modal-close-button" data-modal-close aria-label="Chiudi">&times;</button>
+        </header>
+        <form class="profile-edit-form" method="post" action="<?= V::e(V::url('/profilo')) ?>" data-role-disable-form>
+            <input type="hidden" name="azione" value="rimuovi_ruolo">
+            <label class="is-wide">Ruolo
+                <select name="ruolo" required>
+                    <option value="">Seleziona</option>
+                    <option value="chef">Chef</option>
+                    <option value="gestore">Gestore</option>
+                </select>
+            </label>
+            <label class="is-wide role-confirm-check">
+                <input type="checkbox" name="conferma" value="1" required>
+                Confermo di voler rimuovere il ruolo selezionato e i dati collegati solo a quel ruolo.
+            </label>
+            <p class="muted-text is-wide">L'operazione non rimuove l'account e non tocca l'altro ruolo. Se esistono prenotazioni o recensioni collegate, la disattivazione viene bloccata.</p>
+            <div class="form-actions is-wide">
+                <button class="btn btn-accent" type="submit">Disattiva ruolo</button>
+            </div>
+        </form>
+    </div>
+</dialog>
+<?php endif; ?>

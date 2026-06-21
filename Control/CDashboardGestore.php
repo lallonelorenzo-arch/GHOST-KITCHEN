@@ -56,7 +56,17 @@ class CDashboardGestore
             'richiestePrenotazione' => $this->richiestePrenotazione($prenotazioni),
             'disponibilitaGhostKitchen' => $this->disponibilitaGhostKitchen($ghostKitchen),
             'attrezzatureGhostKitchen' => $this->attrezzatureGhostKitchen($ghostKitchen),
+            'mediaGhostKitchen' => $this->mediaGhostKitchen($ghostKitchen),
         ];
+    }
+
+    private function mediaGhostKitchen(array $ghostKitchen): array
+    {
+        $result = [];
+        foreach ($ghostKitchen as $cucina) {
+            $result[(int) $cucina->getId()] = FPersistentManager::getMediaByOwner('ghost_kitchen', (int) $cucina->getId());
+        }
+        return $result;
     }
 
     private function disponibilitaGhostKitchen(array $ghostKitchen): array

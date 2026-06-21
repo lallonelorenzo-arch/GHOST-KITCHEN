@@ -149,18 +149,36 @@ INSERT INTO piatti (id_piatto, id_menu, nome, categoria, descrizione, ingredient
 -- MEDIA
 -- =========================================================
 INSERT INTO media (id_media, tipo_owner, id_owner, tipo_media, nome_file, path_file, mime_type, descrizione, data_caricamento, ordine, stato) VALUES
-(1, 'chef', 5, 'foto_profilo', 'chef5_profile.jpg', '/uploads/chef/chef5_profile.jpg', 'image/jpeg', 'Profilo chef Marco Bassi', '2026-02-01 10:00:00', 0, 'attivo'),
-(2, 'chef', 6, 'foto_profilo', 'chef6_profile.jpg', '/uploads/chef/chef6_profile.jpg', 'image/jpeg', 'Profilo chef Federica Greco', '2026-02-01 10:10:00', 0, 'attivo'),
-(3, 'chef', 7, 'foto_profilo', 'chef7_profile.jpg', '/uploads/chef/chef7_profile.jpg', 'image/jpeg', 'Profilo chef Davide Romano', '2026-02-01 10:20:00', 0, 'attivo'),
-(4, 'chef', 8, 'foto_profilo', 'chef8_profile.jpg', '/uploads/chef/chef8_profile.jpg', 'image/jpeg', 'Profilo chef Marta De Luca', '2026-02-01 10:30:00', 0, 'attivo'),
-(5, 'menu', 1, 'foto_menu', 'menu1_cover.jpg', '/uploads/menu/menu1_cover.jpg', 'image/jpeg', 'Copertina menu Mediterraneo Classico', '2026-02-02 11:00:00', 0, 'attivo'),
-(6, 'menu', 3, 'foto_menu', 'menu3_cover.jpg', '/uploads/menu/menu3_cover.jpg', 'image/jpeg', 'Copertina menu Sushi Omakase Base', '2026-02-02 11:10:00', 0, 'attivo'),
-(7, 'ghost_kitchen', 1, 'foto_ambiente', 'gk1_ambiente.jpg', '/uploads/ghost_kitchen/gk1_ambiente.jpg', 'image/jpeg', 'Ambiente principale Milano Isola Lab', '2026-01-15 09:00:00', 0, 'attivo'),
-(8, 'ghost_kitchen', 1, 'planimetria', 'gk1_plan.pdf.jpg', '/uploads/ghost_kitchen/gk1_plan.jpg', 'image/jpeg', 'Planimetria semplificata GK1', '2026-01-15 09:05:00', 1, 'attivo'),
-(9, 'ghost_kitchen', 4, 'foto_ambiente', 'gk4_ambiente.jpg', '/uploads/ghost_kitchen/gk4_ambiente.jpg', 'image/jpeg', 'Ambiente Torino Centrale Kitchen', '2026-01-16 10:00:00', 0, 'attivo'),
-(10, 'piatto', 10, 'foto_piatto', 'piatto10_nigiri.jpg', '/uploads/piatti/piatto10_nigiri.jpg', 'image/jpeg', 'Nigiri misti', '2026-02-03 12:00:00', 0, 'attivo'),
-(11, 'piatto', 25, 'foto_piatto', 'piatto25_carb.jpg', '/uploads/piatti/piatto25_carb.jpg', 'image/jpeg', 'Carbonara tradizionale', '2026-02-03 12:15:00', 0, 'attivo'),
-(12, 'menu', 7, 'generica', 'menu7_extra.jpg', '/uploads/menu/menu7_extra.jpg', 'image/jpeg', 'Dettaglio impiattamento menu romano', '2026-02-03 12:30:00', 1, 'attivo');
+(1, 'chef', 5, 'foto_profilo', 'chef5_profile.jpg', 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Profilo chef Marco Bassi', '2026-02-01 10:00:00', 0, 'attivo'),
+(2, 'chef', 5, 'foto_ambiente', 'chef5_lavoro.jpg', 'https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Chef al lavoro in cucina', '2026-02-01 10:05:00', 1, 'attivo'),
+(3, 'chef', 5, 'foto_ambiente', 'chef5_impiattamento.jpg', 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Dettaglio impiattamento', '2026-02-01 10:06:00', 2, 'attivo'),
+(4, 'chef', 6, 'foto_profilo', 'chef6_profile.jpg', 'https://images.unsplash.com/photo-1607631568010-a87245c0daf8?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Profilo chef Federica Greco', '2026-02-01 10:10:00', 0, 'attivo'),
+(5, 'chef', 6, 'foto_ambiente', 'chef6_piatto.jpg', 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Piatto vegetariano', '2026-02-01 10:11:00', 1, 'attivo'),
+(6, 'chef', 6, 'foto_ambiente', 'chef6_cucina.jpg', 'https://images.unsplash.com/photo-1514986888952-8cd320577b68?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Preparazione professionale', '2026-02-01 10:12:00', 2, 'attivo'),
+(7, 'chef', 7, 'foto_profilo', 'chef7_profile.jpg', 'https://images.unsplash.com/photo-1566554273541-37a9ca77b91f?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Profilo chef Davide Romano', '2026-02-01 10:20:00', 0, 'attivo'),
+(8, 'chef', 7, 'foto_ambiente', 'chef7_dessert.jpg', 'https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Dessert da pasticceria', '2026-02-01 10:21:00', 1, 'attivo'),
+(9, 'chef', 7, 'foto_ambiente', 'chef7_lievitati.jpg', 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Lievitati artigianali', '2026-02-01 10:22:00', 2, 'attivo'),
+(10, 'chef', 8, 'foto_profilo', 'chef8_profile.jpg', 'https://images.unsplash.com/photo-1581299894007-aaa50297cf16?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Profilo chef Marta De Luca', '2026-02-01 10:30:00', 0, 'attivo'),
+(11, 'chef', 8, 'foto_ambiente', 'chef8_regionale.jpg', 'https://images.unsplash.com/photo-1495521821757-a1efb6729352?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Cucina regionale', '2026-02-01 10:31:00', 1, 'attivo'),
+(12, 'chef', 8, 'foto_ambiente', 'chef8_tavola.jpg', 'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Tavola preparata', '2026-02-01 10:32:00', 2, 'attivo'),
+(13, 'menu', 1, 'foto_menu', 'menu1_cover.jpg', 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Copertina menu Mediterraneo Classico', '2026-02-02 11:00:00', 0, 'attivo'),
+(14, 'menu', 3, 'foto_menu', 'menu3_cover.jpg', 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Copertina menu Sushi Omakase Base', '2026-02-02 11:10:00', 0, 'attivo'),
+(15, 'ghost_kitchen', 1, 'foto_ambiente', 'gk1_ambiente.jpg', 'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Ambiente principale Milano Isola Lab', '2026-01-15 09:00:00', 0, 'attivo'),
+(16, 'ghost_kitchen', 1, 'foto_ambiente', 'gk1_linea.jpg', 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Linea di cottura Milano Isola Lab', '2026-01-15 09:05:00', 1, 'attivo'),
+(17, 'ghost_kitchen', 1, 'foto_ambiente', 'gk1_forni.jpg', 'https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Area forni professionali', '2026-01-15 09:06:00', 2, 'attivo'),
+(18, 'ghost_kitchen', 1, 'foto_ambiente', 'gk1_lavorazione.jpg', 'https://images.unsplash.com/photo-1556909212-d5b604d0c90d?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Banco lavorazione', '2026-01-15 09:07:00', 3, 'attivo'),
+(19, 'ghost_kitchen', 2, 'foto_ambiente', 'gk2_ambiente.jpg', 'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Ambiente Navigli Prep Hub', '2026-01-15 10:00:00', 0, 'attivo'),
+(20, 'ghost_kitchen', 2, 'foto_ambiente', 'gk2_piano.jpg', 'https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Piano di lavoro attrezzato', '2026-01-15 10:01:00', 1, 'attivo'),
+(21, 'ghost_kitchen', 2, 'foto_ambiente', 'gk2_cottura.jpg', 'https://images.unsplash.com/photo-1564759298141-9ef8b1e01e40?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Zona cottura', '2026-01-15 10:02:00', 2, 'attivo'),
+(22, 'ghost_kitchen', 3, 'foto_ambiente', 'gk3_ambiente.jpg', 'https://images.unsplash.com/photo-1556911073-52527ac43761?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Ambiente Trastevere Lab', '2026-01-15 11:00:00', 0, 'attivo'),
+(23, 'ghost_kitchen', 3, 'foto_ambiente', 'gk3_forno.jpg', 'https://images.unsplash.com/photo-1577219492769-b63a779fac28?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Forno professionale', '2026-01-15 11:01:00', 1, 'attivo'),
+(24, 'ghost_kitchen', 3, 'foto_ambiente', 'gk3_servizio.jpg', 'https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Area servizio', '2026-01-15 11:02:00', 2, 'attivo'),
+(25, 'ghost_kitchen', 4, 'foto_ambiente', 'gk4_ambiente.jpg', 'https://images.unsplash.com/photo-1564759298141-9ef8b1e01e40?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Ambiente Torino Centrale Kitchen', '2026-01-16 10:00:00', 0, 'attivo'),
+(26, 'ghost_kitchen', 4, 'foto_ambiente', 'gk4_banco.jpg', 'https://images.unsplash.com/photo-1556911073-a517e752729c?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Banco preparazione Torino', '2026-01-16 10:01:00', 1, 'attivo'),
+(27, 'ghost_kitchen', 4, 'foto_ambiente', 'gk4_celle.jpg', 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Attrezzature e celle', '2026-01-16 10:02:00', 2, 'attivo'),
+(28, 'piatto', 10, 'foto_piatto', 'piatto10_nigiri.jpg', 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Nigiri misti', '2026-02-03 12:00:00', 0, 'attivo'),
+(29, 'piatto', 25, 'foto_piatto', 'piatto25_carb.jpg', 'https://images.unsplash.com/photo-1612874742237-6526221588e3?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Carbonara tradizionale', '2026-02-03 12:15:00', 0, 'attivo'),
+(30, 'menu', 7, 'generica', 'menu7_extra.jpg', 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&w=1000&q=80', 'image/jpeg', 'Dettaglio impiattamento menu romano', '2026-02-03 12:30:00', 1, 'attivo');
 
 -- =========================================================
 -- CERTIFICAZIONI

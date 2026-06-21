@@ -19,6 +19,7 @@ class CPrenotazioniUtente
         $prenotazioni = [];
 
         foreach (FPersistentManager::loadPrenotazioniChefByRichiedente($idUtente) as $prenotazione) {
+            $prenotazione = $this->completaSePassata($prenotazione);
             $chef = FPersistentManager::loadChef((int) $prenotazione->getIdChef());
             $prenotazioni[] = [
                 'tipo' => 'chef',
@@ -29,6 +30,7 @@ class CPrenotazioniUtente
         }
 
         foreach (FPersistentManager::loadPrenotazioniGhostKitchenByRichiedente($idUtente) as $prenotazione) {
+            $prenotazione = $this->completaSePassata($prenotazione);
             $ghostKitchen = FPersistentManager::loadGhostKitchen((int) $prenotazione->getIdGhostKitchen());
             $prenotazioni[] = [
                 'tipo' => 'ghost_kitchen',
@@ -48,5 +50,26 @@ class CPrenotazioniUtente
             'accesso' => $accesso,
             'prenotazioni' => $prenotazioni,
         ];
+    }
+
+    private function completaSePassata(EPrenotazione $prenotazione): EPrenotazione
+    {
+        if ($prenotazione->getStato() !== EPrenotazione::STATO_PAGATA || $prenotazione->getDataServizio() >= date('Y-m-d')) {
+            return $prenotazione;
+        }
+
+        $prenotazione->completa();
+
+        if ($prenotazione instanceof EPrenotazioneChef) {
+            $aggiornata = FPersistentManager::updatePrenotazioneChef($prenotazione);
+            return $aggiornata !== false ? $aggiornata : $prenotazione;
+        }
+
+        if ($prenotazione instanceof EPrenotazioneGhostKitchen) {
+            $aggiornata = FPersistentManager::updatePrenotazioneGhostKitchen($prenotazione);
+            return $aggiornata !== false ? $aggiornata : $prenotazione;
+        }
+
+        return $prenotazione;
     }
 }

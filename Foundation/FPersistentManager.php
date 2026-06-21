@@ -157,6 +157,7 @@ class FPersistentManager
 
     public static function loadMenuByChef(int $idChef): array { return FMenu::loadByChef($idChef); }
     public static function loadRecensioniByChef(int $idChef): array { return FRecensioneChef::loadByChef($idChef); }
+    public static function loadRecensioniByGhostKitchen(int $idGhostKitchen): array { return FRecensioneGhostKitchen::loadByGhostKitchen($idGhostKitchen); }
     public static function loadPiattiByMenu(int $idMenu): array { return FPiatto::loadByMenu($idMenu); }
     public static function getMediaByOwner(string $tipoOwner, int $idOwner): array { return FMedia::loadByOwner($tipoOwner, $idOwner); }
     public static function getMediaPrincipale(string $tipoOwner, int $idOwner): ?EMedia { return FMedia::getPrincipale($tipoOwner, $idOwner); }

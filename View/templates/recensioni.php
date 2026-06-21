@@ -76,6 +76,7 @@ $descrizionePagina = $descrizionePagina ?? 'Consulta le recensioni registrate su
                                     <?= V::e($item['targetNome'] ?? 'Target non disponibile') ?>
                                 </a>
                             </h2>
+                            <p>Recensito da <?= V::e(($item['autoreNome'] ?? '') !== '' ? $item['autoreNome'] : 'utente #' . (int) ($item['idAutore'] ?? 0)) ?></p>
                             <?php if (($item['targetDettaglio'] ?? '') !== ''): ?>
                                 <p><?= V::e($item['targetDettaglio']) ?></p>
                             <?php endif; ?>
@@ -91,16 +92,19 @@ $descrizionePagina = $descrizionePagina ?? 'Consulta le recensioni registrate su
                         <div class="actions review-actions">
                             <?php if ($stato !== 'nascosta'): ?>
                                 <form method="post" action="<?= V::e(V::url('/moderazione/recensione/' . $idRecensione . '/nascondi')) ?>">
+                                    <input type="hidden" name="ritorno" value="/recensioni">
                                     <button class="btn btn-ghost" type="submit">Nascondi</button>
                                 </form>
                             <?php endif; ?>
                             <?php if ($stato !== 'visibile'): ?>
                                 <form method="post" action="<?= V::e(V::url('/moderazione/recensione/' . $idRecensione . '/ripristina')) ?>">
+                                    <input type="hidden" name="ritorno" value="/recensioni">
                                     <button class="btn btn-primary" type="submit">Ripristina</button>
                                 </form>
                             <?php endif; ?>
                             <?php if ($stato !== 'rimossa'): ?>
                                 <form method="post" action="<?= V::e(V::url('/moderazione/recensione/' . $idRecensione . '/rimuovi')) ?>">
+                                    <input type="hidden" name="ritorno" value="/recensioni">
                                     <button class="btn btn-danger" type="submit">Rimuovi</button>
                                 </form>
                             <?php endif; ?>

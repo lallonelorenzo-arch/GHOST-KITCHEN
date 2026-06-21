@@ -2,17 +2,22 @@
 use ViewHelpers as V;
 /** @var EChef $chef */
 /** @var mixed $fotoProfilo */
+/** @var array $media */
 /** @var array $menu */
 /** @var array $certificazioni */
 /** @var array $disponibilitaChef */
 /** @var array $recensioni */
+/** @var array $autoriRecensioni */
 /** @var array $accesso */
 /** @var bool $canBookChef */
 /** @var bool $chefPrenotabile */
+/** @var bool $canManageGallery */
 /** @var array $indirizzoSalvato */
 /** @var string $bookingCsrfToken */
 $image = V::mediaUrl($fotoProfilo ?? null, 'https://images.unsplash.com/photo-1750943082012-efe6d2fd9e45?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200');
+$media = array_values(array_filter($media ?? [], static fn (EMedia $item): bool => $item->getStato() === EMedia::STATO_ATTIVO));
 $recensioni = array_values(array_filter($recensioni ?? [], static fn (ERecensioneChef $recensione): bool => $recensione->isVisibile()));
+$autoriRecensioni = $autoriRecensioni ?? [];
 $numeroRecensioni = count($recensioni);
 $rating = $numeroRecensioni > 0
     ? round(array_sum(array_map(static fn (ERecensioneChef $recensione): int => $recensione->getPunteggio(), $recensioni)) / $numeroRecensioni, 2)
@@ -20,6 +25,7 @@ $rating = $numeroRecensioni > 0
 $accesso = $accesso ?? [];
 $canBookChef = $canBookChef ?? false;
 $chefPrenotabile = $chefPrenotabile ?? false;
+$canManageGallery = $canManageGallery ?? false;
 $indirizzoSalvato = $indirizzoSalvato ?? ['indirizzo' => '', 'citta' => '', 'provincia' => '', 'numeroCivico' => ''];
 $bookingCsrfToken = $bookingCsrfToken ?? '';
 $savedAddressComplete = trim((string) ($indirizzoSalvato['indirizzo'] ?? '')) !== ''
@@ -35,6 +41,12 @@ $availabilityPayload = array_map(
     ],
     $disponibilitaChef ?? []
 );
+$chefGalleryFallbacks = [
+    'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900',
+    'https://images.unsplash.com/photo-1551218808-94e220e084d2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900',
+    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900',
+];
+$chefGalleryItems = $media !== [] ? $media : $chefGalleryFallbacks;
 ?>
 <section class="detail-hero" style="background-image: linear-gradient(0deg, rgba(44,24,16,.9), rgba(44,24,16,.25)), url('<?= V::e($image) ?>')">
     <a class="back-link" href="<?= V::e(V::url('/ricerca/chef')) ?>">Torna alla ricerca</a>
@@ -47,63 +59,161 @@ $availabilityPayload = array_map(
 
 <section class="section detail-layout chef-booking-page" data-chef-booking>
     <article>
-        <h2>Chi sono</h2>
-        <p class="lead"><?= V::e($chef->getBiografia() ?: 'Lo chef non ha ancora pubblicato una biografia estesa.') ?></p>
-        <div class="detail-chips">
-            <span><?= V::e($chef->getTipologiaCucina() ?: 'Cucina non specificata') ?></span>
-            <span><?= V::e($numeroRecensioni) ?> recensioni</span>
-            <span><?= V::e($rating) ?>/5</span>
-        </div>
+        <nav class="detail-tabs" aria-label="Sezioni chef" data-tabs>
+            <button class="is-active" type="button" data-tab-button="chef-menu" aria-controls="chef-menu" aria-selected="true">Menu</button>
+            <button type="button" data-tab-button="chef-recensioni" aria-controls="chef-recensioni" aria-selected="false">Recensioni</button>
+            <button type="button" data-tab-button="chef-chi-sono" aria-controls="chef-chi-sono" aria-selected="false">Chi Sono</button>
+        </nav>
 
-        <div class="menu-section-heading">
-            <div>
-                <h2>Scegli il menu</h2>
-                <p>Seleziona una proposta prima di avviare la prenotazione.</p>
+        <section class="detail-tab-panel is-active" id="chef-menu" data-tab-panel>
+            <div class="menu-section-heading">
+                <div>
+                    <h2>Scegli il menu</h2>
+                    <p>Seleziona una proposta prima di avviare la prenotazione.</p>
+                </div>
+                <span data-selected-menu-label>Nessun menu selezionato</span>
             </div>
-            <span data-selected-menu-label>Nessun menu selezionato</span>
-        </div>
-        <div class="chef-menu-grid" role="radiogroup" aria-label="Menu disponibili">
-            <?php foreach ($menu as $menuItem): ?>
-                <?php $m = $menuItem['menu']; ?>
-                <label class="chef-menu-option">
-                    <input
-                        type="radio"
-                        name="menuPreview"
-                        value="<?= V::e((int) $m->getIdMenu()) ?>"
-                        data-menu-option
-                        data-menu-name="<?= V::e($m->getNome()) ?>"
-                        data-menu-price="<?= V::e(number_format($m->getPrezzoPersona(), 2, '.', '')) ?>"
-                    >
-                    <span class="chef-menu-check" aria-hidden="true"></span>
-                    <span class="chef-menu-content">
-                        <span class="panel-title">
-                            <strong><?= V::e($m->getNome()) ?></strong>
-                            <b>&euro; <?= V::e(V::money($m->getPrezzoPersona())) ?> <small>a persona</small></b>
-                        </span>
-                        <span class="chef-menu-description"><?= V::e($m->getDescrizione()) ?></span>
-                        <?php if (($menuItem['piatti'] ?? []) !== []): ?>
-                            <span class="chef-menu-dishes">
-                                <?php foreach ($menuItem['piatti'] as $piattoData): ?>
-                                    <?php $piatto = $piattoData['piatto']; ?>
-                                    <span><small><?= V::e(ucfirst($piatto->getCategoria())) ?></small><?= V::e($piatto->getNome()) ?></span>
-                                <?php endforeach; ?>
+            <div class="chef-menu-grid" role="radiogroup" aria-label="Menu disponibili">
+                <?php foreach ($menu as $menuItem): ?>
+                    <?php $m = $menuItem['menu']; ?>
+                    <label class="chef-menu-option">
+                        <input
+                            type="radio"
+                            name="menuPreview"
+                            value="<?= V::e((int) $m->getIdMenu()) ?>"
+                            data-menu-option
+                            data-menu-name="<?= V::e($m->getNome()) ?>"
+                            data-menu-price="<?= V::e(number_format($m->getPrezzoPersona(), 2, '.', '')) ?>"
+                        >
+                        <span class="chef-menu-check" aria-hidden="true"></span>
+                        <span class="chef-menu-content">
+                            <span class="panel-title">
+                                <strong><?= V::e($m->getNome()) ?></strong>
+                                <b>&euro; <?= V::e(V::money($m->getPrezzoPersona())) ?> <small>a persona</small></b>
                             </span>
-                        <?php endif; ?>
-                    </span>
-                </label>
-            <?php endforeach; ?>
-            <?php if ($menu === []): ?>
-                <div class="empty-state">Nessun menu pubblicato per questo chef.</div>
-            <?php endif; ?>
-        </div>
+                            <span class="chef-menu-description"><?= V::e($m->getDescrizione()) ?></span>
+                            <?php if (($menuItem['piatti'] ?? []) !== []): ?>
+                                <span class="chef-menu-dishes">
+                                    <?php foreach ($menuItem['piatti'] as $piattoData): ?>
+                                        <?php $piatto = $piattoData['piatto']; ?>
+                                        <span><small><?= V::e(ucfirst($piatto->getCategoria())) ?></small><?= V::e($piatto->getNome()) ?></span>
+                                    <?php endforeach; ?>
+                                </span>
+                            <?php endif; ?>
+                        </span>
+                    </label>
+                <?php endforeach; ?>
+                <?php if ($menu === []): ?>
+                    <div class="empty-state">Nessun menu pubblicato per questo chef.</div>
+                <?php endif; ?>
+            </div>
+        </section>
 
-        <h2>Certificazioni</h2>
-        <div class="tag-row">
-            <?php foreach ($certificazioni as $certificazione): ?>
-                <span><?= V::e($certificazione->getTipo() !== '' ? $certificazione->getTipo() : 'Certificazione') ?></span>
-            <?php endforeach; ?>
-            <?php if ($certificazioni === []): ?><span>Certificazioni non ancora pubblicate</span><?php endif; ?>
-        </div>
+        <section class="detail-tab-panel" id="chef-recensioni" data-tab-panel hidden>
+            <div class="toolbar">
+                <div>
+                    <h2>Recensioni</h2>
+                    <p><?= V::e($numeroRecensioni) ?> recensioni pubblicate</p>
+                </div>
+            </div>
+
+            <?php if ($recensioni === []): ?>
+                <div class="empty-state">Nessuna recensione pubblicata per questo chef.</div>
+            <?php else: ?>
+                <div class="ops-list reviews-list compact-reviews">
+                    <?php foreach ($recensioni as $recensione): ?>
+                        <?php
+                        $autore = $recensione->getIdAutore() !== null ? ($autoriRecensioni[(int) $recensione->getIdAutore()] ?? null) : null;
+                        $autoreNome = $autore !== null ? trim($autore->getNome() . ' ' . $autore->getCognome()) : '';
+                        ?>
+                        <article class="ops-panel review-row">
+                            <header class="review-row-header">
+                                <div>
+                                    <div class="review-score">
+                                        <span class="stars" aria-label="Valutazione <?= V::e($recensione->getPunteggio()) ?> su 5"><?= V::stars((float) $recensione->getPunteggio()) ?></span>
+                                        <strong><?= V::e($recensione->getPunteggio()) ?>/5</strong>
+                                    </div>
+                                    <?php if ($autoreNome !== ''): ?><p>Recensito da <?= V::e($autoreNome) ?></p><?php endif; ?>
+                                    <time datetime="<?= V::e($recensione->getDataRecensione()) ?>"><?= V::e($recensione->getDataRecensione()) ?></time>
+                                </div>
+                            </header>
+
+                            <?php if ($recensione->getCommento() !== ''): ?>
+                                <p class="review-comment"><?= V::e($recensione->getCommento()) ?></p>
+                            <?php endif; ?>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </section>
+
+        <section class="detail-tab-panel" id="chef-chi-sono" data-tab-panel hidden>
+            <h2>Chi Sono</h2>
+            <p class="lead"><?= V::e($chef->getBiografia() ?: 'Lo chef non ha ancora pubblicato una biografia estesa.') ?></p>
+            <div class="chef-about-grid">
+                <div class="about-card">
+                    <span class="detail-info-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v6a5 5 0 0 1-10 0V4Z"/><path d="M5 6H3v3a4 4 0 0 0 4 4"/><path d="M19 6h2v3a4 4 0 0 1-4 4"/></svg>
+                    </span>
+                    <h3>Certificazioni</h3>
+                    <ul class="clean-list">
+                        <?php foreach ($certificazioni as $certificazione): ?>
+                            <li><?= V::e($certificazione->getTipo() !== '' ? $certificazione->getTipo() : 'Certificazione') ?></li>
+                        <?php endforeach; ?>
+                        <?php if ($certificazioni === []): ?><li>Certificazioni non ancora pubblicate</li><?php endif; ?>
+                    </ul>
+                </div>
+                <div class="about-card">
+                    <span class="detail-info-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    </span>
+                    <h3>Esperienza</h3>
+                    <strong><?= V::e($chef->getAnniEsperienza()) ?>+ anni</strong>
+                    <p>di esperienza professionale<?= $chef->getTipologiaCucina() !== '' ? ' in ' . V::e($chef->getTipologiaCucina()) : '' ?></p>
+                </div>
+            </div>
+
+            <div class="gallery-heading" id="profilo-gallery">
+                <h2>Galleria</h2>
+                <?php if ($canManageGallery): ?>
+                    <form class="gallery-upload-form" method="post" action="<?= V::e(V::url('/dashboard/chef/media')) ?>" enctype="multipart/form-data">
+                        <input type="hidden" name="azione" value="carica">
+                        <input type="hidden" name="returnTo" value="<?= V::e('/chef/' . (int) $chef->getIdChef() . '#profilo-gallery') ?>">
+                        <label class="gallery-add-button" title="Aggiungi foto">
+                            <span aria-hidden="true">+</span>
+                            <input type="file" name="media" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required onchange="this.form.requestSubmit()">
+                        </label>
+                    </form>
+                <?php endif; ?>
+            </div>
+            <div class="detail-gallery">
+                <?php foreach ($chefGalleryItems as $item): ?>
+                    <?php
+                    $galleryImage = is_string($item)
+                        ? $item
+                        : V::mediaUrl($item, 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900');
+                    $galleryAlt = is_object($item) && method_exists($item, 'getDescrizione') && $item->getDescrizione() !== ''
+                        ? $item->getDescrizione()
+                        : $chef->getNome() . ' ' . $chef->getCognome();
+                    ?>
+                    <figure class="gallery-item">
+                        <button type="button" data-gallery-open data-gallery-src="<?= V::e($galleryImage) ?>" data-gallery-alt="<?= V::e($galleryAlt) ?>">
+                            <img src="<?= V::e($galleryImage) ?>" alt="<?= V::e($galleryAlt) ?>" loading="lazy">
+                        </button>
+                        <?php if ($canManageGallery && is_object($item) && method_exists($item, 'getIdMedia')): ?>
+                            <form method="post" action="<?= V::e(V::url('/dashboard/chef/media')) ?>" class="gallery-delete-form">
+                                <input type="hidden" name="azione" value="rimuovi">
+                                <input type="hidden" name="idMedia" value="<?= V::e((int) $item->getIdMedia()) ?>">
+                                <input type="hidden" name="returnTo" value="<?= V::e('/chef/' . (int) $chef->getIdChef() . '#profilo-gallery') ?>">
+                                <button type="submit" aria-label="Elimina foto">
+                                    <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </figure>
+                <?php endforeach; ?>
+            </div>
+        </section>
     </article>
 
     <aside class="booking-box">
@@ -128,39 +238,6 @@ $availabilityPayload = array_map(
     </aside>
 
     <script type="application/json" data-chef-availability><?= json_encode($availabilityPayload, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?></script>
-</section>
-
-<section class="section ops-flow reviews-page" id="recensioni-chef">
-    <div class="toolbar">
-        <div>
-            <h2>Recensioni</h2>
-            <p><?= V::e($numeroRecensioni) ?> recensioni pubblicate</p>
-        </div>
-    </div>
-
-    <?php if ($recensioni === []): ?>
-        <div class="empty-state">Nessuna recensione pubblicata per questo chef.</div>
-    <?php else: ?>
-        <div class="ops-list reviews-list">
-            <?php foreach ($recensioni as $recensione): ?>
-                <article class="ops-panel review-row">
-                    <header class="review-row-header">
-                        <div>
-                            <div class="review-score">
-                                <span class="stars" aria-label="Valutazione <?= V::e($recensione->getPunteggio()) ?> su 5"><?= V::stars((float) $recensione->getPunteggio()) ?></span>
-                                <strong><?= V::e($recensione->getPunteggio()) ?>/5</strong>
-                            </div>
-                            <time datetime="<?= V::e($recensione->getDataRecensione()) ?>"><?= V::e($recensione->getDataRecensione()) ?></time>
-                        </div>
-                    </header>
-
-                    <?php if ($recensione->getCommento() !== ''): ?>
-                        <p class="review-comment"><?= V::e($recensione->getCommento()) ?></p>
-                    <?php endif; ?>
-                </article>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
 </section>
 
 <dialog class="booking-detail-modal booking-alert-modal" id="chef-booking-access-modal" aria-labelledby="chef-booking-access-title">

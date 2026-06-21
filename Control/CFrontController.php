@@ -35,17 +35,19 @@ class CFrontController
             '/disponibilita/ghost-kitchen' => ['CGestioneDisponibilita', 'aggiungiDisponibilitaGhostKitchenWeb', 'richiesta_esito'],
             '/mie-certificazioni' => ['CCertificazioniChef', 'caricaCertificazioneWeb', 'richiesta_esito'],
             '/dashboard/chef/profilo' => ['CContenutiChef', 'aggiornaProfiloWeb', 'richiesta_esito'],
+            '/dashboard/chef/media' => ['CContenutiChef', 'gestisciMediaWeb', 'richiesta_esito'],
             '/dashboard/chef/menu' => ['CContenutiChef', 'gestisciMenuWeb', 'richiesta_esito'],
             '/dashboard/chef/piatto' => ['CContenutiChef', 'gestisciPiattoWeb', 'richiesta_esito'],
             '/dashboard/gestore/ghost-kitchen' => ['CGestioneGhostKitchen', 'gestisciGhostKitchenWeb', 'richiesta_esito'],
+            '/dashboard/gestore/media' => ['CGestioneGhostKitchen', 'gestisciMediaWeb', 'richiesta_esito'],
             '/dashboard/gestore/attrezzatura' => ['CGestioneGhostKitchen', 'gestisciAttrezzaturaWeb', 'richiesta_esito'],
         ],
     ];
 
     public function handle(): void
-    {
+    {   // ?? -> usa $_SERVER[..] se esiste e non è null, altrimenti..
         // 1. Normalizzazione richiesta: metodo, path, query string e body POST.
-        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET'); //$_SERVER superglobale php che ha info sulla richiesta HTTP
         $path = $this->normalizePath((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
         $query = $this->normalizeRequest($_GET);
         $post = $this->normalizeRequest($_POST);
@@ -85,8 +87,8 @@ class CFrontController
             }
 
             if ($method === 'POST' && preg_match('#^/prenotazione/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
-                $this->renderController('CPrenotazioneChef', 'confermaPrenotazioneChefWizardWeb', 'richiesta_esito', [(int) $matches[1], $this->accessContext(), $post]);
-                return;
+                $this->renderController('CPrenotazioneChef', 'confermaPrenotazioneChefWizardWeb', 'richiesta_esito', [(int) $matches[1], $this->accessContext(), $post]); //[..] array da passare al metodo controller
+                return; //il return serve a fermare l'esecuz del metodo corrente, poiché nel FrontController ci sono tante regole di routing una dopo l'altra
             }
 
             if ($method === 'GET' && preg_match('#^/prenotazione/ghost-kitchen/([1-9][0-9]*)$#', $path, $matches) === 1) {
@@ -158,7 +160,7 @@ class CFrontController
             }
 
             if ($method === 'POST' && preg_match('#^/moderazione/recensione/([1-9][0-9]*)/(nascondi|rimuovi|ripristina)$#', $path, $matches) === 1) {
-                $this->renderController('CModerazione', 'moderaRecensioneWeb', 'richiesta_esito', [(int) $matches[1], $matches[2], $this->accessContext()]);
+                $this->renderController('CModerazione', 'moderaRecensioneWeb', 'richiesta_esito', [(int) $matches[1], $matches[2], $this->accessContext(), $post]);
                 return;
             }
 
@@ -198,7 +200,7 @@ class CFrontController
             }
 
             if ($method === 'GET' && preg_match('#^/ghost-kitchen/([1-9][0-9]*)$#', $path, $matches) === 1) {
-                $this->renderController('CDettaglioGhostKitchen', 'visualizzaDettaglioGhostKitchen', 'dettaglio_ghost_kitchen', [(int) $matches[1]]);
+                $this->renderController('CDettaglioGhostKitchen', 'visualizzaDettaglioGhostKitchen', 'dettaglio_ghost_kitchen', [(int) $matches[1], $this->accessContext()]);
                 return;
             }
 
@@ -243,15 +245,17 @@ class CFrontController
                 '/dashboard' => [$accessContext, $query],
                 '/recensioni' => [$accessContext, $query],
                 '/moderazione' => [$accessContext],
-                '/utenti' => [$accessContext],
+                '/utenti' => [$accessContext, $query],
                 '/certificazioni' => [$accessContext],
                 '/mie-certificazioni' => $method === 'POST' ? [$accessContext, $post, $_FILES] : [$accessContext],
                 '/disponibilita/chef' => [$accessContext, $post],
                 '/disponibilita/ghost-kitchen' => [$accessContext, $post],
                 '/dashboard/chef/profilo' => [$accessContext, $post],
+                '/dashboard/chef/media' => [$accessContext, $post, $_FILES],
                 '/dashboard/chef/menu' => [$accessContext, $post],
                 '/dashboard/chef/piatto' => [$accessContext, $post],
                 '/dashboard/gestore/ghost-kitchen' => [$accessContext, $post],
+                '/dashboard/gestore/media' => [$accessContext, $post, $_FILES],
                 '/dashboard/gestore/attrezzatura' => [$accessContext, $post],
                 default => [],
             };
@@ -465,7 +469,7 @@ class CFrontController
         }
 
         if (in_array('chef', $ruoli, true)) {
-            return '/dashboard';
+            return '/dashboard?ruolo=chef';
         }
 
         if (in_array('gestore', $ruoli, true)) {
@@ -530,11 +534,11 @@ class CFrontController
     }
 
     // Carica sempre i dati aggiornati dal DB invece di fidarsi solo della sessione.
-    private function currentUtente(): ?EUtente
+    private function currentUtente(): ?EUtente //restituisce EUtente o null
     {
         $idUtente = FSession::getIdUtente();
         return $idUtente !== null ? FPersistentManager::loadUtente($idUtente) : null;
-    }
+    }  //      condizione ? val se vero : val se falso (operatore ternario)
 
     // Controllo accessi centralizzato per aree admin, chef, gestore e utente loggato.
     private function isPathAllowed(string $path, string $method, array $accesso): bool

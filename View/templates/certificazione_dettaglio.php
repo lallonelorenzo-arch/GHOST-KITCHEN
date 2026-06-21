@@ -60,12 +60,14 @@ $scadenza = $scadenza ?? null;
                     </label>
                     <button class="btn btn-danger" type="submit">Rifiuta</button>
                 </form>
-                <form class="ops-form" method="post" action="<?= V::e(V::url('/certificazioni/' . $certificazione->getIdCertificazione() . '/in-attesa')) ?>">
-                    <label>Note revisione
-                        <textarea name="noteAdmin" rows="3"><?= V::e($certificazione->getNoteAdmin()) ?></textarea>
-                    </label>
-                    <button class="btn btn-ghost" type="submit">Rimetti in attesa</button>
-                </form>
+                <?php if ($certificazione->getStato() !== ECertificazione::STATO_IN_ATTESA): ?>
+                    <form class="ops-form" method="post" action="<?= V::e(V::url('/certificazioni/' . $certificazione->getIdCertificazione() . '/in-attesa')) ?>">
+                        <label>Note revisione
+                            <textarea name="noteAdmin" rows="3"><?= V::e($certificazione->getNoteAdmin()) ?></textarea>
+                        </label>
+                        <button class="btn btn-ghost" type="submit">Rimetti in attesa</button>
+                    </form>
+                <?php endif; ?>
             </article>
         </div>
     <?php else: ?>

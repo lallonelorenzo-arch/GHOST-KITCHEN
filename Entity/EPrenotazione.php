@@ -9,6 +9,7 @@ abstract class EPrenotazione
     public const STATO_IN_ATTESA = 'in_attesa';
     public const STATO_ACCETTATA = 'accettata';
     public const STATO_RIFIUTATA = 'rifiutata';
+    public const STATO_CANCELLATA = 'cancellata';
     public const STATO_PAGATA = 'pagata';
     public const STATO_COMPLETATA = 'completata';
 
@@ -124,6 +125,7 @@ abstract class EPrenotazione
             self::STATO_IN_ATTESA,
             self::STATO_ACCETTATA,
             self::STATO_RIFIUTATA,
+            self::STATO_CANCELLATA,
             self::STATO_PAGATA,
             self::STATO_COMPLETATA
         ];

@@ -6,6 +6,7 @@ use ViewHelpers as V;
 /** @var array $ghostKitchen */
 /** @var array $gestoriGhostKitchen */
 /** @var array $riepilogoUtenti */
+/** @var array $filtriUtenti */
 /** @var array $accesso */
 /** @var string|null $messaggioAccesso */
 $clienti = $clienti ?? [];
@@ -14,6 +15,7 @@ $gestori = $gestori ?? [];
 $ghostKitchen = $ghostKitchen ?? [];
 $gestoriGhostKitchen = $gestoriGhostKitchen ?? [];
 $riepilogoUtenti = $riepilogoUtenti ?? ['clienti' => 0, 'chef' => 0, 'gestori' => 0, 'ghostKitchen' => 0];
+$filtriUtenti = $filtriUtenti ?? ['q' => '', 'tipo' => 'tutti', 'stato' => 'tutti'];
 $accesso = $accesso ?? [];
 $idAdminCorrente = isset($accesso['idUtente']) ? (int) $accesso['idUtente'] : null;
 ?>
@@ -45,6 +47,38 @@ $idAdminCorrente = isset($accesso['idUtente']) ? (int) $accesso['idUtente'] : nu
             <strong><?= V::e($riepilogoUtenti['ghostKitchen'] ?? 0) ?></strong>
         </article>
     </div>
+
+    <form class="ops-panel ops-form reviews-filter-panel" method="get" action="<?= V::e(V::url('/utenti')) ?>">
+        <div class="toolbar">
+            <div>
+                <h2>Filtri utenti</h2>
+                <p>Sospendi blocca temporaneamente l'account; banna indica un blocco piu severo finche l'admin non lo riattiva.</p>
+            </div>
+            <div class="actions">
+                <a class="btn btn-ghost" href="<?= V::e(V::url('/utenti')) ?>">Reset</a>
+                <button class="btn btn-accent" type="submit">Cerca</button>
+            </div>
+        </div>
+        <div class="filter-select-grid">
+            <label>Ricerca
+                <input name="q" value="<?= V::e($filtriUtenti['q'] ?? '') ?>" placeholder="Nome, email, telefono o citta">
+            </label>
+            <label>Tipo
+                <select name="tipo">
+                    <?php foreach (['tutti' => 'Tutti', 'cliente' => 'Clienti', 'chef' => 'Chef', 'gestore' => 'Gestori', 'ghost_kitchen' => 'Ghost kitchen'] as $value => $label): ?>
+                        <option value="<?= V::e($value) ?>" <?= ($filtriUtenti['tipo'] ?? 'tutti') === $value ? 'selected' : '' ?>><?= V::e($label) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+            <label>Stato
+                <select name="stato">
+                    <?php foreach (['tutti' => 'Tutti', 'attivo' => 'Attivo', 'sospeso' => 'Sospeso', 'bannato' => 'Bannato', 'attiva' => 'GK attiva', 'sospesa' => 'GK sospesa', 'non_disponibile' => 'GK non disponibile'] as $value => $label): ?>
+                        <option value="<?= V::e($value) ?>" <?= ($filtriUtenti['stato'] ?? 'tutti') === $value ? 'selected' : '' ?>><?= V::e($label) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </label>
+        </div>
+    </form>
 
     <section class="ops-panel admin-directory-panel">
         <div class="toolbar">

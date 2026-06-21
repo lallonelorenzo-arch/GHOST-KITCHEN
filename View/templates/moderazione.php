@@ -39,7 +39,7 @@ $riepilogoModerazione = $riepilogoModerazione ?? ['totale' => 0, 'recensioni' =>
         <div class="toolbar">
             <div>
                 <h2>Segnalazioni aperte</h2>
-                <p>Parti dalla segnalazione, verifica il contenuto collegato e scegli se prenderla in carico o chiuderla con un esito.</p>
+                <p>Le segnalazioni aperte sono da valutare; prendendole in carico passano in valutazione per indicare che l'admin le sta gestendo.</p>
             </div>
         </div>
 
@@ -66,6 +66,7 @@ $riepilogoModerazione = $riepilogoModerazione ?? ['totale' => 0, 'recensioni' =>
                         </div>
                         <div class="moderation-meta">
                             <span>#<?= V::e($idSegnalazione) ?></span>
+                            <?php if ($stato === 'aperta'): ?><span>Segnalazione aperta da valutare</span><?php endif; ?>
                             <span class="status-pill <?= $stato === 'aperta' ? '' : 'neutral' ?>"><?= V::e(str_replace('_', ' ', $stato)) ?></span>
                         </div>
                     </header>
@@ -83,7 +84,7 @@ $riepilogoModerazione = $riepilogoModerazione ?? ['totale' => 0, 'recensioni' =>
                     <div class="moderation-actions">
                         <?php if ($stato === 'aperta'): ?>
                             <form method="post" action="<?= V::e(V::url('/moderazione/segnalazione/' . $idSegnalazione . '/prendi')) ?>">
-                                <button class="btn btn-primary" type="submit">Prendi in carico</button>
+                                <button class="btn btn-primary" type="submit">Prendi in carico e metti in valutazione</button>
                             </form>
                         <?php endif; ?>
 
@@ -124,40 +125,4 @@ $riepilogoModerazione = $riepilogoModerazione ?? ['totale' => 0, 'recensioni' =>
         </div>
     </section>
 
-    <section class="ops-panel moderation-quick-tools">
-        <div class="toolbar">
-            <div>
-                <h2>Interventi rapidi</h2>
-                <p>Usali quando conosci gia l'ID del contenuto da correggere, anche se non parte da una segnalazione aperta.</p>
-            </div>
-        </div>
-
-        <div class="ops-grid">
-            <form class="ops-form quick-moderation-form" method="post" action="<?= V::e(V::url('/moderazione/recensione/1/nascondi')) ?>" data-dynamic-action="/moderazione/recensione/{id}/{azione}">
-                <h3>Recensione</h3>
-                <label>ID recensione <input name="dynamicId" type="number" min="1" required></label>
-                <label>Azione
-                    <select name="dynamicAction" required>
-                        <option value="nascondi">Nascondi temporaneamente</option>
-                        <option value="rimuovi">Rimuovi</option>
-                        <option value="ripristina">Ripristina visibilita</option>
-                    </select>
-                </label>
-                <button class="btn btn-accent" type="submit">Applica alla recensione</button>
-            </form>
-
-            <form class="ops-form quick-moderation-form" method="post" action="<?= V::e(V::url('/moderazione/profilo/1/sospendi')) ?>" data-dynamic-action="/moderazione/profilo/{id}/{azione}">
-                <h3>Profilo utente</h3>
-                <label>ID utente <input name="dynamicId" type="number" min="1" required></label>
-                <label>Azione
-                    <select name="dynamicAction" required>
-                        <option value="sospendi">Sospendi</option>
-                        <option value="banna">Banna</option>
-                        <option value="riattiva">Riattiva</option>
-                    </select>
-                </label>
-                <button class="btn btn-accent" type="submit">Applica al profilo</button>
-            </form>
-        </div>
-    </section>
 </section>

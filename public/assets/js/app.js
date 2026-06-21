@@ -52,6 +52,83 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  document.querySelectorAll('[data-tabs]').forEach((tabs) => {
+    const buttons = Array.from(tabs.querySelectorAll('[data-tab-button]'));
+    const scope = tabs.parentElement || document;
+    const panels = buttons
+      .map((button) => {
+        const targetId = button.dataset.tabButton || '';
+        return targetId ? scope.querySelector(`[id="${targetId}"]`) : null;
+      })
+      .filter(Boolean);
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const targetId = button.dataset.tabButton || '';
+        buttons.forEach((item) => {
+          const active = item === button;
+          item.classList.toggle('is-active', active);
+          item.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        panels.forEach((panel) => {
+          const active = panel.id === targetId;
+          panel.classList.toggle('is-active', active);
+          panel.toggleAttribute('hidden', !active);
+        });
+      });
+    });
+  });
+
+  const galleryLightbox = document.createElement('dialog');
+  galleryLightbox.className = 'gallery-lightbox';
+  galleryLightbox.innerHTML = '<figure><button type="button" aria-label="Chiudi immagine">&times;</button><img alt=""></figure>';
+  document.body.append(galleryLightbox);
+  const galleryLightboxImage = galleryLightbox.querySelector('img');
+  const galleryLightboxClose = galleryLightbox.querySelector('button');
+
+  galleryLightboxClose.addEventListener('click', () => galleryLightbox.close());
+  galleryLightbox.addEventListener('click', (event) => {
+    if (event.target === galleryLightbox) {
+      galleryLightbox.close();
+    }
+  });
+
+  document.querySelectorAll('[data-gallery-open]').forEach((button) => {
+    button.addEventListener('click', () => {
+      if (!galleryLightboxImage) {
+        return;
+      }
+      galleryLightboxImage.src = button.dataset.gallerySrc || '';
+      galleryLightboxImage.alt = button.dataset.galleryAlt || '';
+      if (typeof galleryLightbox.showModal === 'function') {
+        galleryLightbox.showModal();
+      }
+    });
+  });
+
+  document.querySelectorAll('.gallery-delete-form').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      if (!window.confirm('Eliminare questa foto dalla galleria?')) {
+        event.preventDefault();
+      }
+    });
+  });
+
+  document.querySelectorAll('.detail-gallery img').forEach((image) => {
+    image.addEventListener('error', () => {
+      image.src = 'data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 800 420%22%3E%3Crect width=%22800%22 height=%22420%22 fill=%22%23f5f1ec%22/%3E%3Cpath d=%22M180 292l116-116 86 86 58-58 180 180H180z%22 fill=%22%23d8c9bf%22/%3E%3Ccircle cx=%22588%22 cy=%22118%22 r=%2244%22 fill=%22%23c77152%22 opacity=%22.72%22/%3E%3C/svg%3E';
+    }, { once: true });
+  });
+
+  document.querySelectorAll('[data-role-disable-form]').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      const role = form.querySelector('[name="ruolo"]')?.value || '';
+      if (!role || !window.confirm(`Disattivare davvero il ruolo ${role}? L'altro ruolo restera attivo.`)) {
+        event.preventDefault();
+      }
+    });
+  });
+
   document.querySelectorAll('form').forEach((form) => {
     form.querySelectorAll('[data-filter-copy-to]').forEach((select) => {
       select.addEventListener('change', () => {
@@ -548,6 +625,247 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     renderCalendar();
+  });
+
+  document.querySelectorAll('[data-gk-booking]').forEach((form) => {
+    const availabilityNode = form.querySelector('[data-gk-availability]');
+    const steps = Array.from(form.querySelectorAll('[data-gk-booking-step]'));
+    const indicators = Array.from(form.querySelectorAll('[data-gk-step-indicator]'));
+    const prevButton = form.querySelector('[data-gk-prev]');
+    const nextButton = form.querySelector('[data-gk-next]');
+    const submitButton = form.querySelector('[data-gk-submit]');
+    const dateInput = form.querySelector('[data-gk-date]');
+    const startInput = form.querySelector('[data-gk-start]');
+    const endInput = form.querySelector('[data-gk-end]');
+    const calendarGrid = form.querySelector('[data-gk-calendar-grid]');
+    const calendarTitle = form.querySelector('[data-gk-calendar-title]');
+    const calendarPrev = form.querySelector('[data-gk-calendar-prev]');
+    const calendarNext = form.querySelector('[data-gk-calendar-next]');
+    const timePicker = form.querySelector('[data-gk-time-picker]');
+    const startSelect = form.querySelector('[data-gk-start-select]');
+    const endSelect = form.querySelector('[data-gk-end-select]');
+    const notes = form.querySelector('[data-gk-notes]');
+    const hourPrice = Number(form.dataset.hourPrice || 0);
+    const gkName = form.dataset.gkName || '';
+    let availability = [];
+    let currentStep = 1;
+    let selectedDate = dateInput?.value || '';
+
+    if (!availabilityNode || !calendarGrid || !calendarTitle || !startSelect || !endSelect) {
+      return;
+    }
+
+    try {
+      availability = JSON.parse(availabilityNode.textContent || '[]');
+    } catch (error) {
+      availability = [];
+    }
+
+    const slotsByDate = availability.reduce((result, slot) => {
+      if (!slot.date || !slot.start || !slot.end) {
+        return result;
+      }
+      result[slot.date] = result[slot.date] || [];
+      result[slot.date].push(slot);
+      return result;
+    }, {});
+
+    const today = new Date();
+    const firstVisibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastVisibleMonth = new Date(today.getFullYear(), today.getMonth() + 11, 1);
+    let visibleMonth = selectedDate
+      ? new Date(Number(selectedDate.slice(0, 4)), Number(selectedDate.slice(5, 7)) - 1, 1)
+      : new Date(firstVisibleMonth);
+
+    const toDateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const toMinutes = (time) => {
+      const parts = String(time).slice(0, 5).split(':').map(Number);
+      return (parts[0] * 60) + parts[1];
+    };
+    const toTime = (minutes) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:00`;
+    const formatMoney = (value) => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(value);
+    const formatDate = (dateKey) => {
+      const parts = dateKey.split('-').map(Number);
+      return parts.length === 3
+        ? new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(parts[0], parts[1] - 1, parts[2]))
+        : dateKey;
+    };
+
+    const setError = (step, message = '') => {
+      const error = form.querySelector(`[data-gk-step-error="${step}"]`);
+      if (!error) {
+        return;
+      }
+      error.textContent = message;
+      error.hidden = message === '';
+    };
+
+    const selectedHours = () => Math.max(0, (toMinutes(endInput.value) - toMinutes(startInput.value)) / 60);
+
+    const updateReview = () => {
+      form.querySelector('[data-gk-review-name]').textContent = gkName;
+      form.querySelector('[data-gk-review-date]').textContent = `${formatDate(dateInput.value)} · ${startInput.value} - ${endInput.value}`;
+      form.querySelector('[data-gk-review-hours]').textContent = `${selectedHours()} ore`;
+      form.querySelector('[data-gk-review-total]').textContent = formatMoney(selectedHours() * hourPrice);
+      form.querySelector('[data-gk-review-notes]').textContent = notes?.value.trim() || 'Nessuna nota';
+    };
+
+    const showStep = (step) => {
+      currentStep = Math.max(1, Math.min(2, step));
+      steps.forEach((item) => {
+        const active = Number(item.dataset.gkBookingStep || 0) === currentStep;
+        item.classList.toggle('is-active', active);
+        item.toggleAttribute('hidden', !active);
+      });
+      indicators.forEach((item) => {
+        const itemStep = Number(item.dataset.gkStepIndicator || 0);
+        item.classList.toggle('is-active', itemStep === currentStep);
+        item.classList.toggle('is-complete', itemStep < currentStep);
+      });
+      prevButton.hidden = currentStep === 1;
+      nextButton.hidden = currentStep === 2;
+      submitButton.hidden = currentStep !== 2;
+      setError(currentStep);
+    };
+
+    const renderTimeOptions = () => {
+      const slots = slotsByDate[selectedDate] || [];
+      const times = new Set();
+      slots.forEach((slot) => {
+        const start = Math.ceil(toMinutes(slot.start) / 60) * 60;
+        const end = Math.floor(toMinutes(slot.end) / 60) * 60;
+        for (let value = start; value <= end; value += 60) {
+          times.add(value);
+        }
+      });
+      const sortedTimes = Array.from(times).sort((a, b) => a - b);
+      startSelect.replaceChildren();
+      endSelect.replaceChildren();
+      sortedTimes.forEach((minutes) => {
+        startSelect.add(new Option(toTime(minutes), toTime(minutes)));
+        endSelect.add(new Option(toTime(minutes), toTime(minutes)));
+      });
+      if (sortedTimes.length >= 2) {
+        startSelect.value = startInput.value || toTime(sortedTimes[0]);
+        endSelect.value = endInput.value || toTime(sortedTimes[1]);
+        if (toMinutes(endSelect.value) <= toMinutes(startSelect.value)) {
+          endSelect.value = toTime(sortedTimes.find((value) => value > toMinutes(startSelect.value)) || sortedTimes[sortedTimes.length - 1]);
+        }
+        startInput.value = startSelect.value;
+        endInput.value = endSelect.value;
+      }
+      timePicker.hidden = sortedTimes.length < 2;
+    };
+
+    const selectDate = (dateKey) => {
+      selectedDate = dateKey;
+      dateInput.value = dateKey;
+      startInput.value = '';
+      endInput.value = '';
+      calendarGrid.querySelectorAll('[data-gk-calendar-date]').forEach((button) => {
+        const selected = button.dataset.gkCalendarDate === dateKey;
+        button.classList.toggle('is-selected', selected);
+        button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      });
+      renderTimeOptions();
+      setError(1);
+    };
+
+    const renderCalendar = () => {
+      calendarGrid.replaceChildren();
+      calendarTitle.textContent = new Intl.DateTimeFormat('it-IT', { month: 'long', year: 'numeric' }).format(visibleMonth);
+      const year = visibleMonth.getFullYear();
+      const month = visibleMonth.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const offset = (firstDay.getDay() + 6) % 7;
+      const days = new Date(year, month + 1, 0).getDate();
+      for (let blank = 0; blank < offset; blank += 1) {
+        const spacer = document.createElement('span');
+        spacer.className = 'is-empty';
+        spacer.setAttribute('aria-hidden', 'true');
+        calendarGrid.append(spacer);
+      }
+      for (let day = 1; day <= days; day += 1) {
+        const date = new Date(year, month, day);
+        const dateKey = toDateKey(date);
+        const slots = slotsByDate[dateKey] || [];
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.innerHTML = `<span>${day}</span>${slots.map((slot) => `<i>${slot.start}-${slot.end}</i>`).join('')}`;
+        if (slots.length === 0 || date < new Date(today.getFullYear(), today.getMonth(), today.getDate())) {
+          button.disabled = true;
+          button.className = 'is-unavailable';
+        } else {
+          button.dataset.gkCalendarDate = dateKey;
+          button.setAttribute('aria-label', `${formatDate(dateKey)}, disponibilità ${slots.map((slot) => `${slot.start}-${slot.end}`).join(', ')}`);
+          button.setAttribute('aria-pressed', dateKey === selectedDate ? 'true' : 'false');
+          button.classList.toggle('is-selected', dateKey === selectedDate);
+          button.addEventListener('click', () => selectDate(dateKey));
+        }
+        calendarGrid.append(button);
+      }
+      calendarPrev.disabled = visibleMonth <= firstVisibleMonth;
+      calendarNext.disabled = visibleMonth >= lastVisibleMonth;
+    };
+
+    const validateStep = () => {
+      if (currentStep !== 1) {
+        return true;
+      }
+      const matchingSlot = (slotsByDate[dateInput.value] || []).some((slot) => (
+        toMinutes(slot.start) <= toMinutes(startInput.value)
+        && toMinutes(slot.end) >= toMinutes(endInput.value)
+        && toMinutes(endInput.value) > toMinutes(startInput.value)
+      ));
+      if (!dateInput.value || !startInput.value || !endInput.value || !matchingSlot) {
+        setError(1, 'Seleziona data e orari a ore piene dentro una disponibilità libera.');
+        return false;
+      }
+      return true;
+    };
+
+    startSelect.addEventListener('change', () => {
+      startInput.value = startSelect.value;
+      const later = Array.from(endSelect.options).find((option) => toMinutes(option.value) > toMinutes(startSelect.value));
+      if (later && toMinutes(endSelect.value) <= toMinutes(startSelect.value)) {
+        endSelect.value = later.value;
+      }
+      endInput.value = endSelect.value;
+      setError(1);
+    });
+    endSelect.addEventListener('change', () => {
+      endInput.value = endSelect.value;
+      setError(1);
+    });
+    calendarPrev.addEventListener('click', () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+      renderCalendar();
+    });
+    calendarNext.addEventListener('click', () => {
+      visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+      renderCalendar();
+    });
+    nextButton.addEventListener('click', () => {
+      if (!validateStep()) {
+        return;
+      }
+      updateReview();
+      showStep(2);
+    });
+    prevButton.addEventListener('click', () => showStep(1));
+    form.addEventListener('submit', (event) => {
+      if (!validateStep()) {
+        event.preventDefault();
+        return;
+      }
+      submitButton.disabled = true;
+      submitButton.textContent = 'Invio in corso...';
+    });
+
+    renderCalendar();
+    if (selectedDate) {
+      selectDate(selectedDate);
+    }
   });
 
   document.querySelectorAll('.service-period-options').forEach((periodGroup) => {

@@ -413,6 +413,44 @@ $statusLabels = [
                         </div>
                     </form>
 
+                    <div class="equipment-management" id="profilo-gallery-<?= V::e($idGhostKitchen) ?>">
+                        <div class="management-card-heading">
+                            <h3>Galleria</h3>
+                            <form class="gallery-upload-form" method="post" action="<?= V::e(V::url('/dashboard/gestore/media')) ?>" enctype="multipart/form-data">
+                                <input type="hidden" name="azione" value="carica">
+                                <input type="hidden" name="idGhostKitchen" value="<?= V::e($idGhostKitchen) ?>">
+                                <input type="hidden" name="returnTo" value="<?= V::e('/dashboard?ruolo=gestore&tab=ghost_kitchen#profilo-gallery-' . $idGhostKitchen) ?>">
+                                <label class="gallery-add-button" title="Aggiungi foto">
+                                    <span aria-hidden="true">+</span>
+                                    <input type="file" name="media" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" required onchange="this.form.requestSubmit()">
+                                </label>
+                            </form>
+                        </div>
+                        <?php $mediaCucina = array_values(array_filter($mediaGhostKitchen[$idGhostKitchen] ?? [], static fn (EMedia $item): bool => $item->getStato() === EMedia::STATO_ATTIVO)); ?>
+                        <div class="detail-gallery dashboard-gallery">
+                            <?php foreach ($mediaCucina as $mediaItem): ?>
+                                <?php $mediaUrl = V::mediaUrl($mediaItem, ''); ?>
+                                <?php if ($mediaUrl !== ''): ?>
+                                    <figure class="gallery-item">
+                                        <button type="button" data-gallery-open data-gallery-src="<?= V::e($mediaUrl) ?>" data-gallery-alt="<?= V::e($mediaItem->getDescrizione() ?: 'Foto galleria ghost kitchen') ?>">
+                                            <img src="<?= V::e($mediaUrl) ?>" alt="<?= V::e($mediaItem->getDescrizione() ?: 'Foto galleria ghost kitchen') ?>" loading="lazy">
+                                        </button>
+                                        <form method="post" action="<?= V::e(V::url('/dashboard/gestore/media')) ?>" class="gallery-delete-form">
+                                            <input type="hidden" name="azione" value="rimuovi">
+                                            <input type="hidden" name="idGhostKitchen" value="<?= V::e($idGhostKitchen) ?>">
+                                            <input type="hidden" name="idMedia" value="<?= V::e((int) $mediaItem->getIdMedia()) ?>">
+                                            <input type="hidden" name="returnTo" value="<?= V::e('/dashboard?ruolo=gestore&tab=ghost_kitchen#profilo-gallery-' . $idGhostKitchen) ?>">
+                                            <button type="submit" aria-label="Elimina foto">
+                                                <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v5"/><path d="M14 11v5"/></svg>
+                                            </button>
+                                        </form>
+                                    </figure>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                            <?php if ($mediaCucina === []): ?><div class="empty-state">Nessuna foto caricata.</div><?php endif; ?>
+                        </div>
+                    </div>
+
                     <div class="equipment-management">
                         <h3>Attrezzature</h3>
                         <?php foreach (($attrezzatureGhostKitchen[$idGhostKitchen] ?? []) as $attrezzatura): ?>

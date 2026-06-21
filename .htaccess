@@ -1,8 +1,15 @@
-Options -Indexes
-RewriteEngine On
+Options -Indexes 
+#disabilita visualizzazione automatica del contenuto delle cartelle
+#se nella directory non c'è file .html/.php non espone la struttura del progetto
+
+RewriteEngine On 
+#attiva mod_rewrite (motore di riscrittura URL di Apache)
 
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
+#se la richiesta punta a un file o una cartella reale
 RewriteRule ^ - [L]
+#non mandare a index.php ,L sta per last ("fermati qui")
 
 RewriteRule ^ index.php [L]
+#per tutto il resto (file/dir che non sono reali) esegui index.php

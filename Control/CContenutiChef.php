@@ -5,6 +5,9 @@ require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
 class CContenutiChef
 {
+    private const MAX_GALLERY_PHOTO_SIZE = 5242880;
+    private const GALLERY_PHOTO_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
+
     public function aggiornaProfiloWeb(array $accesso, array $post): array
     {
         $idChef = $this->requireChef($accesso);
@@ -147,6 +150,62 @@ class CContenutiChef
         }
     }
 
+    public function gestisciMediaWeb(array $accesso, array $post, array $files = []): array
+    {
+        $idChef = $this->requireChef($accesso);
+        $azione = strtolower(trim((string) ($post['azione'] ?? '')));
+        $returnTo = $this->safeReturn((string) ($post['returnTo'] ?? '/dashboard?ruolo=chef&tab=profilo#profilo-gallery'));
+
+        try {
+            if ($azione === 'rimuovi') {
+                $idMedia = (int) ($post['idMedia'] ?? 0);
+                $media = $idMedia > 0 ? FPersistentManager::loadMedia($idMedia) : null;
+                if ($media === null || $media->getTipoOwner() !== EMedia::OWNER_CHEF || (int) $media->getIdOwner() !== $idChef) {
+                    return $this->esito('Galleria chef', 'Foto non trovata o non appartenente al tuo profilo.', false, $returnTo);
+                }
+
+                $media->setStato(EMedia::STATO_RIMOSSO);
+                return FPersistentManager::updateMedia($media) !== false
+                    ? $this->esito('Galleria chef', 'Foto rimossa dalla galleria.', true, $returnTo)
+                    : $this->esito('Galleria chef', 'Non e stato possibile rimuovere la foto.', false, $returnTo);
+            }
+
+            if ($azione !== 'carica') {
+                return $this->esito('Galleria chef', 'Azione media non valida.', false, $returnTo);
+            }
+
+            $file = $files['media'] ?? null;
+            if (!is_array($file)) {
+                return $this->esito('Galleria chef', 'Seleziona una foto valida.', false, $returnTo);
+            }
+
+            $stored = $this->storeGalleryPhoto($file, 'chef');
+            $ordine = $this->nextMediaOrder(EMedia::OWNER_CHEF, $idChef);
+            $media = new EMedia(
+                null,
+                EMedia::OWNER_CHEF,
+                $idChef,
+                EMedia::TIPO_MEDIA_FOTO_AMBIENTE,
+                $stored['name'],
+                $stored['path'],
+                $stored['mime'],
+                (string) ($post['descrizione'] ?? 'Foto galleria chef'),
+                date('Y-m-d H:i:s'),
+                $ordine,
+                EMedia::STATO_ATTIVO
+            );
+
+            return FPersistentManager::storeMedia($media) !== false
+                ? $this->esito('Galleria chef', 'Foto aggiunta alla galleria.', true, $returnTo)
+                : $this->esito('Galleria chef', 'Non e stato possibile salvare la foto.', false, $returnTo);
+        } catch (InvalidArgumentException $exception) {
+            return $this->esito('Galleria chef', $exception->getMessage(), false, $returnTo);
+        } catch (Throwable $exception) {
+            error_log('[CContenutiChef media] ' . $exception->getMessage());
+            return $this->esito('Galleria chef', 'Errore interno durante la gestione della galleria.', false, $returnTo);
+        }
+    }
+
     private function requireChef(array $accesso): int
     {
         if (($accesso['isLogged'] ?? false) !== true || !in_array('chef', $accesso['ruoli'] ?? [], true)) {
@@ -184,13 +243,74 @@ class CContenutiChef
         }
     }
 
+    private function storeGalleryPhoto(array $file, string $folder): array
+    {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            throw new InvalidArgumentException('Upload non valido.');
+        }
+
+        $size = (int) ($file['size'] ?? 0);
+        if ($size <= 0 || $size > self::MAX_GALLERY_PHOTO_SIZE) {
+            throw new InvalidArgumentException('La foto supera la dimensione massima consentita.');
+        }
+
+        $extension = strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION));
+        if (!in_array($extension, self::GALLERY_PHOTO_EXTENSIONS, true)) {
+            throw new InvalidArgumentException('Formato immagine non consentito.');
+        }
+
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        $mime = is_file($tmpName) ? mime_content_type($tmpName) : '';
+        if (!in_array($mime, ['image/jpeg', 'image/png', 'image/webp'], true)) {
+            throw new InvalidArgumentException('Il file caricato non e una immagine valida.');
+        }
+
+        $uploadDir = dirname(__DIR__) . '/public/uploads/media/' . $folder;
+        if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
+            throw new RuntimeException('Cartella upload non disponibile.');
+        }
+
+        $fileName = $folder . '_' . (int) random_int(100000, 999999) . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+        $target = $uploadDir . '/' . $fileName;
+        if (!move_uploaded_file($tmpName, $target)) {
+            throw new RuntimeException('Salvataggio foto non riuscito.');
+        }
+
+        return [
+            'name' => $fileName,
+            'path' => '/public/uploads/media/' . $folder . '/' . $fileName,
+            'mime' => $mime,
+        ];
+    }
+
+    private function nextMediaOrder(string $tipoOwner, int $idOwner): int
+    {
+        $max = -1;
+        foreach (FPersistentManager::getMediaByOwner($tipoOwner, $idOwner) as $media) {
+            $max = max($max, $media->getOrdine());
+        }
+
+        return $max + 1;
+    }
+
+    private function safeReturn(string $returnTo): string
+    {
+        $returnTo = trim($returnTo);
+        if ($returnTo === '' || !str_starts_with($returnTo, '/') || str_starts_with($returnTo, '//')) {
+            return '/dashboard?ruolo=chef&tab=profilo#profilo-gallery';
+        }
+
+        return $returnTo;
+    }
+
     private function esito(string $titolo, string $messaggio, bool $successo, string $tab): array
     {
+        $ritorno = str_starts_with($tab, '/') ? $tab : '/dashboard?ruolo=chef&tab=' . $tab;
         return [
             'titolo' => $titolo,
             'messaggio' => $messaggio,
             'successo' => $successo,
-            'ritorno' => '/dashboard?ruolo=chef&tab=' . $tab,
+            'ritorno' => $ritorno,
         ];
     }
 }

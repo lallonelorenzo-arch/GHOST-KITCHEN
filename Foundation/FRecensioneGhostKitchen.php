@@ -49,6 +49,34 @@ class FRecensioneGhostKitchen
     }
     public static function delete(int $id): bool { return FRecensione::delete($id); }
 
+    public static function loadByGhostKitchen(int $idGhostKitchen): array
+    {
+        return FBaseJoinPersistence::run('load recensioni ghost kitchen', static function () use ($idGhostKitchen): array {
+            $sql = 'SELECT r.*, rgk.id_ghost_kitchen, rgk.id_prenotazione_ghost_kitchen
+                    FROM recensioni r INNER JOIN recensioni_ghost_kitchen rgk ON rgk.id_recensione = r.id_recensione
+                    WHERE rgk.id_ghost_kitchen = :id_ghost_kitchen
+                    ORDER BY r.data_recensione DESC';
+            $statement = FBaseJoinPersistence::connection()->prepare($sql);
+            $statement->execute(['id_ghost_kitchen' => $idGhostKitchen]);
+
+            $items = [];
+            foreach ($statement->fetchAll() as $row) {
+                $items[] = new ERecensioneGhostKitchen(
+                    (int) $row['id_recensione'],
+                    (int) $row['id_autore'],
+                    (int) $row['punteggio'],
+                    (string) ($row['commento'] ?? ''),
+                    (string) $row['data_recensione'],
+                    (string) $row['stato'],
+                    (int) $row['id_ghost_kitchen'],
+                    (int) $row['id_prenotazione_ghost_kitchen']
+                );
+            }
+
+            return $items;
+        });
+    }
+
     public static function aggiornaValutazioneGhostKitchen(int $idGhostKitchen): array
     {
         return FBaseJoinPersistence::run('aggiorna valutazione ghost kitchen', static function () use ($idGhostKitchen): array {

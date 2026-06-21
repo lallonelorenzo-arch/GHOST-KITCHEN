@@ -63,7 +63,7 @@ class CPrenotazioneGhostKitchen
             throw new InvalidArgumentException('Dati prenotazione ghost kitchen incompleti.');
         }
 
-        $disponibile = FPersistentManager::verificaDisponibilitaGhostKitchen($idGhostKitchen, $data, $oraInizio, $oraFine);
+        $disponibile = $this->slotLiberoCompatibile($idGhostKitchen, $data, $oraInizio, $oraFine) !== null;
 
         return [
             'dati' => $datiPrenotazione,
@@ -104,7 +104,8 @@ class CPrenotazioneGhostKitchen
             return ['errore' => $erroreSlot];
         }
 
-        if (!FPersistentManager::verificaDisponibilitaGhostKitchen($idGhostKitchen, $dataServizio, $oraInizio, $oraFine)) {
+        $slotDisponibile = $this->slotLiberoCompatibile($idGhostKitchen, $dataServizio, $oraInizio, $oraFine);
+        if ($slotDisponibile === null) {
             return ['errore' => 'Ghost kitchen non disponibile nello slot richiesto'];
         }
 
@@ -131,7 +132,7 @@ class CPrenotazioneGhostKitchen
             return ['errore' => 'Prenotazione non salvata. Riprova piu tardi.'];
         }
 
-        $this->occupaSlotGhostKitchen($idGhostKitchen, $dataServizio, $oraInizio, $oraFine);
+        $this->occupaSlotGhostKitchen($slotDisponibile, $oraInizio, $oraFine);
 
         return [
             'prenotazione' => $prenotazioneSalvata,
@@ -156,6 +157,7 @@ class CPrenotazioneGhostKitchen
         $data = [
             'ghostKitchen' => $ghostKitchen,
             'disponibilita' => FPersistentManager::loadDisponibilitaGhostKitchen($idGhostKitchen),
+            'availabilityPayload' => $this->availabilityPayload($idGhostKitchen),
             'tipoRichiedente' => $tipoRichiedente,
             'accesso' => $accesso,
             'form' => [],
@@ -249,13 +251,28 @@ class CPrenotazioneGhostKitchen
         return null;
     }
 
-    private function occupaSlotGhostKitchen(int $idGhostKitchen, string $dataServizio, string $oraInizio, string $oraFine): void
+    private function occupaSlotGhostKitchen(EDisponibilitaGhostKitchen $slot, string $oraInizio, string $oraFine): void
     {
-        $slot = FPersistentManager::loadDisponibilitaGhostKitchenBySlot($idGhostKitchen, $dataServizio, $oraInizio, $oraFine);
-        if ($slot === null || !$slot->isLibera()) {
+        if (!$slot->isLibera() || $slot->getIdGhostKitchen() === null || $slot->getIdDisponibilitaGhostKitchen() === null) {
             return;
         }
 
+        $idGhostKitchen = (int) $slot->getIdGhostKitchen();
+        $data = $slot->getData();
+        $slotStart = substr($slot->getOraInizio(), 0, 5);
+        $slotEnd = substr($slot->getOraFine(), 0, 5);
+        $oraInizio = substr($oraInizio, 0, 5);
+        $oraFine = substr($oraFine, 0, 5);
+
+        if ($slotStart < $oraInizio) {
+            FPersistentManager::storeDisponibilitaGhostKitchen(new EDisponibilitaGhostKitchen(null, $idGhostKitchen, $data, $slotStart, $oraInizio, EDisponibilitaGhostKitchen::STATO_LIBERA));
+        }
+        if ($oraFine < $slotEnd) {
+            FPersistentManager::storeDisponibilitaGhostKitchen(new EDisponibilitaGhostKitchen(null, $idGhostKitchen, $data, $oraFine, $slotEnd, EDisponibilitaGhostKitchen::STATO_LIBERA));
+        }
+
+        $slot->setOraInizio($oraInizio);
+        $slot->setOraFine($oraFine);
         $slot->occupa();
         FPersistentManager::updateDisponibilitaGhostKitchen($slot);
     }
@@ -277,7 +294,44 @@ class CPrenotazioneGhostKitchen
             return 'Ora fine deve essere successiva all ora inizio.';
         }
 
+        if ($inizio->format('i') !== '00' || $fine->format('i') !== '00') {
+            return 'Gli orari devono essere selezionati a ore piene.';
+        }
+
         return null;
+    }
+
+    private function slotLiberoCompatibile(int $idGhostKitchen, string $data, string $oraInizio, string $oraFine): ?EDisponibilitaGhostKitchen
+    {
+        $data = trim($data);
+        $oraInizio = substr(trim($oraInizio), 0, 5);
+        $oraFine = substr(trim($oraFine), 0, 5);
+
+        foreach (FPersistentManager::loadDisponibilitaGhostKitchen($idGhostKitchen) as $slot) {
+            if (!$slot instanceof EDisponibilitaGhostKitchen || !$slot->isLibera() || $slot->getData() !== $data) {
+                continue;
+            }
+
+            if (substr($slot->getOraInizio(), 0, 5) <= $oraInizio && substr($slot->getOraFine(), 0, 5) >= $oraFine) {
+                return $slot;
+            }
+        }
+
+        return null;
+    }
+
+    private function availabilityPayload(int $idGhostKitchen): array
+    {
+        $slots = array_filter(
+            FPersistentManager::loadDisponibilitaGhostKitchen($idGhostKitchen),
+            static fn (EDisponibilitaGhostKitchen $slot): bool => $slot->isLibera() && $slot->getData() >= date('Y-m-d')
+        );
+
+        return array_map(static fn (EDisponibilitaGhostKitchen $slot): array => [
+            'date' => $slot->getData(),
+            'start' => substr($slot->getOraInizio(), 0, 5),
+            'end' => substr($slot->getOraFine(), 0, 5),
+        ], array_values($slots));
     }
 
 }
