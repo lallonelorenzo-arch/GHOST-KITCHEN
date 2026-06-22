@@ -183,35 +183,6 @@ Per la demo è consigliato usare:
 - UC13: moderazione contenuti
 - UC14: dashboard statistiche
 
-## Scaletta demo consigliata
-
-seguire docs/DEMO_CHECKLIST.md
-
-## Verifiche rapide
-
-Controllo sintassi PHP:
-
-```bash
-find . -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
-```
-
-Controllo Apache:
-
-```bash
-curl -I http://localhost/GHOST-KITCHEN/
-```
-
-Controllo MySQL:
-
-```bash
-mysqladmin ping
-```
-
-Controllo database:
-
-```bash
-mysql -uroot -e "SHOW DATABASES LIKE 'GhostKitchen';"
-```
 
 ## test Control | Foundation
 La cartella `test/` contiene script di verifica per Foundation e Control.

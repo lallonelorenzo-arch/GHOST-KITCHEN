@@ -269,8 +269,8 @@ $profileNav = [
             <label>Indirizzo <input name="indirizzoGhostKitchen" required></label>
             <label>CAP <input name="capGhostKitchen" required></label>
             <label>Prezzo orario <input type="number" name="prezzoOrario" min="0" step="0.01" required></label>
-            <label>Capienza <input type="number" name="capienza" min="1" required></label>
-            <label>Metri quadri <input type="number" name="mq" min="1" step="0.01" required></label>
+            <label>Capienza massima persone <input type="number" name="capienza" min="1" required></label>
+            <label>Superficie m&sup2; <input type="number" name="mq" min="1" step="0.01" required></label>
             <label class="is-wide">Descrizione <textarea name="descrizioneGhostKitchen" rows="4" required></textarea></label>
             <div class="form-actions is-wide"><button class="btn btn-accent" type="submit">Aggiungi ruolo gestore</button></div>
         </form>

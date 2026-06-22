@@ -427,6 +427,7 @@ $statusLabels = [
                                 <?php else: ?>
                                     <button class="btn btn-ghost" type="submit" name="azione" value="pubblica">Pubblica</button>
                                 <?php endif; ?>
+                                <button class="btn btn-ghost" type="submit" name="azione" value="elimina" onclick="return confirm('Eliminare definitivamente questo menu e i suoi piatti?')">Elimina menu</button>
                             </div>
                         </form>
                     <div class="ops-panel equipment-management">
@@ -444,8 +445,8 @@ $statusLabels = [
                                 <input type="text" name="descrizione" value="<?= V::e($piatto->getDescrizione()) ?>" placeholder="Descrizione">
                                 <input type="text" name="ingredienti" value="<?= V::e($piatto->getIngredienti()) ?>" placeholder="Ingredienti">
                                 <input type="text" name="allergeni" value="<?= V::e($piatto->getAllergeni()) ?>" placeholder="Allergeni">
-                                <input type="number" name="prezzoSupplemento" min="0" step="0.01" value="<?= V::e($piatto->getPrezzoSupplemento()) ?>" aria-label="Supplemento">
-                                <input type="number" name="ordineVisualizzazione" min="0" value="<?= V::e($piatto->getOrdineVisualizzazione()) ?>" aria-label="Ordine">
+                                <input type="number" name="prezzoSupplemento" min="0" step="0.01" value="<?= V::e($piatto->getPrezzoSupplemento()) ?>" aria-label="Supplemento" placeholder="Suppl. euro">
+                                <input type="number" name="ordineVisualizzazione" min="0" value="<?= V::e($piatto->getOrdineVisualizzazione()) ?>" aria-label="Ordine" placeholder="Ordine">
                                 <button class="btn btn-ghost" type="submit" name="azione" value="aggiorna">Salva</button>
                                 <button class="btn btn-ghost" type="submit" name="azione" value="rimuovi">Rimuovi</button>
                             </form>
@@ -462,8 +463,8 @@ $statusLabels = [
                             <input type="text" name="descrizione" placeholder="Descrizione">
                             <input type="text" name="ingredienti" placeholder="Ingredienti">
                             <input type="text" name="allergeni" placeholder="Allergeni">
-                            <input type="number" name="prezzoSupplemento" min="0" step="0.01" value="0" aria-label="Supplemento">
-                            <input type="number" name="ordineVisualizzazione" min="0" value="<?= V::e(count($piattiMenuChef[(int) $menuItem->getIdMenu()] ?? []) + 1) ?>" aria-label="Ordine">
+                            <input type="number" name="prezzoSupplemento" min="0" step="0.01" value="0" aria-label="Supplemento" placeholder="Suppl. euro">
+                            <input type="number" name="ordineVisualizzazione" min="0" value="<?= V::e(count($piattiMenuChef[(int) $menuItem->getIdMenu()] ?? []) + 1) ?>" aria-label="Ordine" placeholder="Ordine">
                             <button class="btn btn-accent" type="submit">Aggiungi</button>
                         </form>
                     </div>

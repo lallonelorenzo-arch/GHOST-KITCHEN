@@ -2,6 +2,7 @@
 /** @var string $contentTemplate */
 /** @var array|null $utenteCorrente */
 /** @var string $currentPath */
+/** @var string|null $dashboardRole */
 use ViewHelpers as V;
 $currentPath = (string) ($currentPath ?? '/');
 $isActive = static fn (string $path): string => ($path === '/' ? $currentPath === '/' : str_starts_with($currentPath, $path)) ? ' is-active' : '';
@@ -13,7 +14,7 @@ $utenteId = $utenteCorrente !== null ? (int) ($utenteCorrente['idUtente'] ?? 0) 
 $isAdminUser = in_array('admin', $utenteRuoli, true) || in_array('amministratore', $utenteRuoli, true);
 $isChefUser = in_array('chef', $utenteRuoli, true);
 $isGestoreUser = in_array('gestore', $utenteRuoli, true);
-$dashboardRole = strtolower(trim((string) ($_GET['ruolo'] ?? $utenteRuolo)));
+$dashboardRole = strtolower(trim((string) ($dashboardRole ?? $utenteRuolo)));
 if (!in_array($dashboardRole, ['chef', 'gestore'], true)
     || ($dashboardRole === 'chef' && !$isChefUser)
     || ($dashboardRole === 'gestore' && !$isGestoreUser)

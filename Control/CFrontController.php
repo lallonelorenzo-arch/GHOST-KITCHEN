@@ -525,6 +525,7 @@ class CFrontController
         return [
             'baseUrl' => $this->baseUrl(),
             'currentPath' => $this->currentPath(),
+            'dashboardRole' => FSession::getRuoloAttivo(),
             'utenteCorrente' => FSession::isLogged() ? [
                 'idUtente' => FSession::getIdUtente(),
                 'nome' => FSession::getNome(),

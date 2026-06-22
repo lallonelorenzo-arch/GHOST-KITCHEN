@@ -97,6 +97,21 @@ class FPersistentManager
         return FUtente::getRuoli($idUtente);
     }
 
+    public static function addRuoloChef(int $idUtente, array $chefData): void
+    {
+        FRolePersistence::addChefRole($idUtente, $chefData);
+    }
+
+    public static function addRuoloGestore(int $idUtente, array $ghostKitchenData): void
+    {
+        FRolePersistence::addGestoreRole($idUtente, $ghostKitchenData);
+    }
+
+    public static function removeRuoloProfessionale(int $idUtente, string $ruolo): void
+    {
+        FRolePersistence::removeProfessionalRole($idUtente, $ruolo);
+    }
+
     public static function login(string $email, string $password): bool
     {
         $utente = self::verificaCredenziali($email, $password);
@@ -200,6 +215,7 @@ class FPersistentManager
     public static function updateAttrezzatura(EAttrezzatura $entity): EAttrezzatura|false { return self::updateAndReturn($entity, static fn (EAttrezzatura $item): bool => FAttrezzatura::update($item)); }
     public static function deleteAttrezzatura(int $idAttrezzatura): bool { return FAttrezzatura::delete($idAttrezzatura); }
     public static function updateMenu(EMenu $entity): EMenu|false { return self::updateAndReturn($entity, static fn (EMenu $item): bool => FMenu::update($item)); }
+    public static function deleteMenu(int $idMenu): bool { return FMenu::delete($idMenu); }
     public static function updatePiatto(EPiatto $entity): EPiatto|false { return self::updateAndReturn($entity, static fn (EPiatto $item): bool => FPiatto::update($item)); }
     public static function deletePiatto(int $idPiatto): bool { return FPiatto::delete($idPiatto); }
     public static function updateMedia(EMedia $entity): EMedia|false { return self::updateAndReturn($entity, static fn (EMedia $item): bool => FMedia::update($item)); }

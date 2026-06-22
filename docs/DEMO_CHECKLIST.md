@@ -263,8 +263,3 @@ Pagine principali da controllare:
 - [ ] Come vengono escapati i dati in output.
 - [ ] Quali sono i limiti noti del progetto.
 
-## Note finali
-
-Prima della demo finale conviene reimportare il database o usare una copia pulita, cosi lo stato dei dati e prevedibile.
-
-Durante l'esame e meglio mostrare pochi flussi ma sicuri, invece di provare tutte le funzioni disponibili.

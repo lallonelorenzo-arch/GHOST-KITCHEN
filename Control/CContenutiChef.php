@@ -72,6 +72,10 @@ class CContenutiChef
                 $menu->setAttivo(true);
             } elseif ($azione === 'rimuovi') {
                 $menu->setAttivo(false);
+            } elseif ($azione === 'elimina') {
+                return FPersistentManager::deleteMenu($idMenu)
+                    ? $this->esito('Gestione menu', 'Menu eliminato correttamente.', true, 'profilo#profilo-menu')
+                    : $this->esito('Gestione menu', 'Menu non eliminato.', false, 'profilo#profilo-menu');
             } else {
                 return $this->esito('Gestione menu', 'Azione menu non valida.', false, 'profilo#profilo-menu');
             }
@@ -83,7 +87,7 @@ class CContenutiChef
             return $this->esito('Gestione menu', $exception->getMessage(), false, 'profilo#profilo-menu');
         } catch (Throwable $exception) {
             error_log('[CContenutiChef] ' . $exception->getMessage());
-            return $this->esito('Gestione menu', 'Operazione non completata. Verifica che il nome del menu non sia gia utilizzato.', false, 'profilo#profilo-menu');
+            return $this->esito('Gestione menu', 'Operazione non completata. Verifica che il menu non sia usato in prenotazioni e che i dati siano validi.', false, 'profilo#profilo-menu');
         }
     }
 

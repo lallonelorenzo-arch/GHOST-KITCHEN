@@ -248,22 +248,18 @@ class CAutenticazione
                 return $this->esitoProfilo('Ruolo non aggiornato', 'Richiesta ruolo non valida.', false);
             }
 
-            $connection = FPersistentManager::getConnection();
             if ($ruolo === 'chef') {
                 $specializzazione = trim((string) ($post['specializzazione'] ?? ''));
                 $tipologiaCucina = trim((string) ($post['tipologiaCucina'] ?? ''));
                 if ($specializzazione === '' || $tipologiaCucina === '') {
                     return $this->esitoProfilo('Ruolo chef non attivato', 'Specializzazione e tipologia cucina sono obbligatorie.', false);
                 }
-                $statement = $connection->prepare('INSERT INTO chef (id_utente, biografia, specializzazione, tipologia_cucina, prezzo_base, anni_esperienza, stato_verifica, valutazione_media, numero_recensioni) VALUES (:id_utente, :biografia, :specializzazione, :tipologia_cucina, :prezzo_base, :anni_esperienza, :stato_verifica, 0.00, 0)');
-                $statement->execute([
-                    'id_utente' => $idUtente,
+                FPersistentManager::addRuoloChef($idUtente, [
                     'biografia' => trim((string) ($post['biografiaChef'] ?? '')) ?: null,
                     'specializzazione' => $specializzazione,
                     'tipologia_cucina' => $tipologiaCucina,
                     'prezzo_base' => max(0, (float) ($post['prezzoBase'] ?? 0)),
                     'anni_esperienza' => max(0, min(EChef::MAX_ANNI_ESPERIENZA, (int) ($post['anniEsperienza'] ?? 0))),
-                    'stato_verifica' => EChef::STATO_VERIFICA_IN_ATTESA,
                 ]);
             } else {
                 $nome = trim((string) ($post['nomeGhostKitchen'] ?? ''));
@@ -275,11 +271,7 @@ class CAutenticazione
                     return $this->esitoProfilo('Ruolo gestore non attivato', 'Compila i dati principali della ghost kitchen.', false);
                 }
 
-                $connection->prepare('INSERT INTO gestori (id_utente, stato_verifica) VALUES (:id_utente, :stato_verifica)')
-                    ->execute(['id_utente' => $idUtente, 'stato_verifica' => EGestore::STATO_VERIFICA_IN_ATTESA]);
-                $statement = $connection->prepare('INSERT INTO ghost_kitchen (id_gestore, nome, descrizione, indirizzo, citta, cap, prezzo_orario, capienza, mq, stato, valutazione_media, numero_recensioni) VALUES (:id_gestore, :nome, :descrizione, :indirizzo, :citta, :cap, :prezzo_orario, :capienza, :mq, :stato, 0.00, 0)');
-                $statement->execute([
-                    'id_gestore' => $idUtente,
+                FPersistentManager::addRuoloGestore($idUtente, [
                     'nome' => $nome,
                     'descrizione' => $descrizione,
                     'indirizzo' => $indirizzo,
@@ -288,7 +280,6 @@ class CAutenticazione
                     'prezzo_orario' => max(0, (float) ($post['prezzoOrario'] ?? 0)),
                     'capienza' => max(1, (int) ($post['capienza'] ?? 1)),
                     'mq' => max(1, (float) ($post['mq'] ?? 1)),
-                    'stato' => EGhostKitchen::STATO_SOSPESA,
                 ]);
             }
 
@@ -331,22 +322,7 @@ class CAutenticazione
                 return $this->esitoProfilo('Ruolo non rimosso', 'La disattivazione e disponibile solo per account con ruolo chef e gestore.', false);
             }
 
-            $connection = FPersistentManager::getConnection();
-            $connection->beginTransaction();
-            try {
-                if ($ruolo === 'chef') {
-                    $this->rimuoviRuoloChef($connection, $idUtente);
-                } else {
-                    $this->rimuoviRuoloGestore($connection, $idUtente);
-                }
-
-                $connection->commit();
-            } catch (Throwable $exception) {
-                if ($connection->inTransaction()) {
-                    $connection->rollBack();
-                }
-                throw $exception;
-            }
+            FPersistentManager::removeRuoloProfessionale($idUtente, $ruolo);
 
             if ($utente !== null) {
                 $ruoliAggiornati = FPersistentManager::getRuoliUtente($idUtente);
@@ -368,79 +344,6 @@ class CAutenticazione
         } catch (Throwable $exception) {
             error_log('[CAutenticazione] rimuovi ruolo: ' . $exception->getMessage());
             return $this->esitoProfilo('Ruolo non rimosso', 'Non e stato possibile rimuovere il ruolo selezionato senza compromettere dati storici.', false);
-        }
-    }
-
-    private function rimuoviRuoloChef(PDO $connection, int $idChef): void
-    {
-        $prenotazioni = $this->countWhere($connection, 'prenotazioni_chef', 'id_chef = :id', ['id' => $idChef]);
-        $recensioni = $this->countWhere($connection, 'recensioni_chef', 'id_chef = :id', ['id' => $idChef]);
-        if ($prenotazioni > 0 || $recensioni > 0) {
-            throw new InvalidArgumentException('Non posso rimuovere il ruolo chef perche esistono prenotazioni o recensioni collegate.');
-        }
-
-        $menuIds = $this->idsWhere($connection, 'menu', 'id_menu', 'id_chef = :id', ['id' => $idChef]);
-        $piattoIds = [];
-        foreach ($menuIds as $idMenu) {
-            $piattoIds = array_merge($piattoIds, $this->idsWhere($connection, 'piatti', 'id_piatto', 'id_menu = :id', ['id' => $idMenu]));
-        }
-
-        $this->deleteMediaOwners($connection, 'piatto', $piattoIds);
-        $this->deleteMediaOwners($connection, 'menu', $menuIds);
-        $this->deleteMediaOwners($connection, 'chef', [$idChef]);
-        $connection->prepare('DELETE FROM segnalazioni WHERE tipo_target = :tipo AND id_target = :id')
-            ->execute(['tipo' => 'chef', 'id' => $idChef]);
-        $connection->prepare('DELETE FROM chef WHERE id_utente = :id')
-            ->execute(['id' => $idChef]);
-    }
-
-    private function rimuoviRuoloGestore(PDO $connection, int $idGestore): void
-    {
-        $ghostKitchenIds = $this->idsWhere($connection, 'ghost_kitchen', 'id_ghost_kitchen', 'id_gestore = :id', ['id' => $idGestore]);
-        foreach ($ghostKitchenIds as $idGhostKitchen) {
-            $prenotazioni = $this->countWhere($connection, 'prenotazioni_ghost_kitchen', 'id_ghost_kitchen = :id', ['id' => $idGhostKitchen]);
-            $recensioni = $this->countWhere($connection, 'recensioni_ghost_kitchen', 'id_ghost_kitchen = :id', ['id' => $idGhostKitchen]);
-            if ($prenotazioni > 0 || $recensioni > 0) {
-                throw new InvalidArgumentException('Non posso rimuovere il ruolo gestore perche una ghost kitchen ha prenotazioni o recensioni collegate.');
-            }
-        }
-
-        foreach ($ghostKitchenIds as $idGhostKitchen) {
-            $this->deleteMediaOwners($connection, 'ghost_kitchen', [$idGhostKitchen]);
-            $connection->prepare('DELETE FROM certificazioni WHERE tipo_owner = :tipo AND id_owner = :id')
-                ->execute(['tipo' => 'ghost_kitchen', 'id' => $idGhostKitchen]);
-            $connection->prepare('DELETE FROM segnalazioni WHERE tipo_target = :tipo AND id_target = :id')
-                ->execute(['tipo' => 'ghost_kitchen', 'id' => $idGhostKitchen]);
-            $connection->prepare('DELETE FROM ghost_kitchen WHERE id_ghost_kitchen = :id')
-                ->execute(['id' => $idGhostKitchen]);
-        }
-
-        $connection->prepare('DELETE FROM gestori WHERE id_utente = :id')
-            ->execute(['id' => $idGestore]);
-    }
-
-    private function countWhere(PDO $connection, string $table, string $where, array $params): int
-    {
-        $statement = $connection->prepare(sprintf('SELECT COUNT(*) FROM %s WHERE %s', $table, $where));
-        $statement->execute($params);
-        return (int) $statement->fetchColumn();
-    }
-
-    private function idsWhere(PDO $connection, string $table, string $column, string $where, array $params): array
-    {
-        $statement = $connection->prepare(sprintf('SELECT %s FROM %s WHERE %s', $column, $table, $where));
-        $statement->execute($params);
-        return array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
-    }
-
-    private function deleteMediaOwners(PDO $connection, string $tipoOwner, array $ids): void
-    {
-        foreach (array_values(array_unique(array_map('intval', $ids))) as $idOwner) {
-            if ($idOwner <= 0) {
-                continue;
-            }
-            $connection->prepare('DELETE FROM media WHERE tipo_owner = :tipo_owner AND id_owner = :id_owner')
-                ->execute(['tipo_owner' => $tipoOwner, 'id_owner' => $idOwner]);
         }
     }
 

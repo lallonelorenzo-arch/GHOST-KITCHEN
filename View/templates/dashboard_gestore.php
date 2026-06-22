@@ -373,8 +373,8 @@ $statusLabels = [
                 </div>
                 <div class="ops-form-row management-three-columns">
                     <label>CAP <input type="text" name="cap" required></label>
-                    <label>Capienza <input type="number" name="capienza" min="1" required></label>
-                    <label>Metri quadri <input type="number" name="mq" min="1" step="0.01" required></label>
+                    <label>Capienza massima persone <input type="number" name="capienza" min="1" required></label>
+                    <label>Superficie m&sup2; <input type="number" name="mq" min="1" step="0.01" required></label>
                 </div>
                 <button class="btn btn-accent" type="submit">Crea Ghost Kitchen</button>
             </form>
@@ -399,8 +399,8 @@ $statusLabels = [
                         </div>
                         <div class="ops-form-row management-three-columns">
                             <label>CAP <input type="text" name="cap" value="<?= V::e($ghostKitchen->getCap()) ?>" required></label>
-                            <label>Capienza <input type="number" name="capienza" min="1" value="<?= V::e($ghostKitchen->getCapienza()) ?>" required></label>
-                            <label>Metri quadri <input type="number" name="mq" min="1" step="0.01" value="<?= V::e($ghostKitchen->getMq()) ?>" required></label>
+                            <label>Capienza massima persone <input type="number" name="capienza" min="1" value="<?= V::e($ghostKitchen->getCapienza()) ?>" required></label>
+                            <label>Superficie m&sup2; <input type="number" name="mq" min="1" step="0.01" value="<?= V::e($ghostKitchen->getMq()) ?>" required></label>
                         </div>
                         <div class="actions">
                             <button class="btn btn-accent" type="submit" name="azione" value="aggiorna">Salva dati</button>
