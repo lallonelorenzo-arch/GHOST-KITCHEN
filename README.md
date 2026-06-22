@@ -159,7 +159,7 @@ Account disponibili:
 | Gestore | `paolo.galli@gk.it` |
 | Admin | `irene.villa@gk.it` |
 
-Per la demo e consigliato usare:
+Per la demo è consigliato usare:
 
 - cliente: `marco.rinaldi@gk.it`
 - chef: `alessandro.bassi@gk.it`
@@ -185,18 +185,7 @@ Per la demo e consigliato usare:
 
 ## Scaletta demo consigliata
 
-1. Aprire la home come visitatore.
-2. Mostrare ricerca chef e ghost kitchen.
-3. Aprire una pagina dettaglio chef e una pagina dettaglio ghost kitchen.
-4. Effettuare login come cliente.
-5. Mostrare prenotazioni e profilo cliente.
-6. Mostrare una richiesta di prenotazione chef o ghost kitchen.
-7. Effettuare login come chef.
-8. Mostrare dashboard chef, disponibilita, richieste e certificazioni.
-9. Effettuare login come gestore.
-10. Mostrare dashboard gestore e disponibilita ghost kitchen.
-11. Effettuare login come admin.
-12. Mostrare dashboard admin, moderazione, utenti e certificazioni.
+seguire docs/DEMO_CHECKLIST.md
 
 ## Verifiche rapide
 
@@ -224,22 +213,11 @@ Controllo database:
 mysql -uroot -e "SHOW DATABASES LIKE 'GhostKitchen';"
 ```
 
-## Note sui test
+## test Control | Foundation
+La cartella `test/` contiene script di verifica per Foundation e Control.
 
-La cartella `test/` contiene script di verifica per Foundation e Control. Molti test sono script dimostrativi con output tramite `print_r` o `var_dump`, quindi non sostituiscono una suite automatica con asserzioni.
-
-Per una verifica ordinata prima dell'esame usare:
-
-```text
-docs/TESTING.md
-docs/DEMO_CHECKLIST.md
-```
-
-`docs/TESTING.md` distingue tra controllo sintassi, controllo ambiente, smoke test sicuri, script che possono modificare il database e collaudo manuale web.
 
 ## Note di sicurezza
-
-Aspetti gia presenti:
 
 - query SQL tramite prepared statements;
 - password hashate con `password_hash`;
@@ -248,18 +226,3 @@ Aspetti gia presenti:
 - token CSRF sui form POST;
 - routing centralizzato con whitelist;
 - controllo dei ruoli nelle route sensibili.
-
-Aspetti migliorabili:
-
-- test automatici con asserzioni;
-- configurazione database tramite variabili ambiente;
-
-## Stato progetto
-
-Il progetto e funzionalmente avanzato e copre i principali flussi richiesti. Prima della consegna e consigliato concentrarsi su:
-
-- collaudo manuale completo;
-- preparazione della demo;
-- studio del flusso `FrontController -> Control -> Foundation -> View`;
-- eventuali correzioni emerse durante i test POST;
-- pulizia delle note tecniche non necessarie.

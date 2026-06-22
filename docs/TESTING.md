@@ -71,7 +71,7 @@ test/control/test_CRecensione.php
 test/control/test_CSegnalazione.php
 test/control/test_CModerazione.php
 test/control/test_CValidazioneCertificazioni.php
-test/foundation/test_FFoundationGenerale.php
+test/foundation/test_FoundationGenerale.php
 ```
 
 Prima di eseguirli conviene usare un database di prova oppure essere pronti a reimportare:
