@@ -235,6 +235,35 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   document.querySelectorAll('[data-booking-calendar]').forEach((calendar) => {
+    const months = Array.from(calendar.querySelectorAll('[data-booking-calendar-month]'));
+    const prev = calendar.querySelector('[data-booking-calendar-prev]');
+    const next = calendar.querySelector('[data-booking-calendar-next]');
+    let activeMonth = months.findIndex((month) => !month.hidden);
+    activeMonth = activeMonth >= 0 ? activeMonth : 0;
+
+    const showMonth = (index) => {
+      activeMonth = Math.max(0, Math.min(months.length - 1, index));
+      months.forEach((month, monthIndex) => {
+        month.toggleAttribute('hidden', monthIndex !== activeMonth);
+      });
+      if (prev) {
+        prev.disabled = activeMonth === 0;
+      }
+      if (next) {
+        next.disabled = activeMonth >= months.length - 1;
+      }
+    };
+
+    if (months.length > 0) {
+      showMonth(activeMonth);
+      if (prev) {
+        prev.addEventListener('click', () => showMonth(activeMonth - 1));
+      }
+      if (next) {
+        next.addEventListener('click', () => showMonth(activeMonth + 1));
+      }
+    }
+
     calendar.addEventListener('click', (event) => {
       const slot = event.target.closest('[data-slot-select]');
       if (!slot) {

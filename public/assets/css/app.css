@@ -2856,6 +2856,27 @@ textarea:focus {
   gap: 12px;
 }
 
+.booking-calendar-month[hidden] {
+  display: none;
+}
+
+.booking-calendar-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.booking-calendar-controls .btn {
+  min-width: 42px;
+  padding-inline: 12px;
+}
+
+.booking-calendar-controls .btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .calendar-weekdays,
 .calendar-grid {
   display: grid;

@@ -71,7 +71,7 @@ $hero = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?crop=entro
         <p>Affitta cucine professionali completamente attrezzate per ore o giornate. Perfette per chef, catering e progetti culinari.</p>
         <ul class="feature-list">
             <li>Attrezzature professionali certificate</li>
-            <li>Disponibilita flessibile a fasce orarie</li>
+            <li>Disponibilità flessibile a fasce orarie</li>
             <li>Igiene e sicurezza garantite</li>
             <li>Posizioni strategiche in tutta Italia</li>
         </ul>

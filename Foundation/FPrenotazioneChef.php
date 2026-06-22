@@ -91,7 +91,7 @@ class FPrenotazioneChef
         return FBaseJoinPersistence::run('load richieste prenotazione chef', static function () use ($idChef): array {
             $statement = FBaseJoinPersistence::connection()->prepare(
                 self::selectSql() . '
-                 WHERE pc.id_chef = :id_chef AND p.stato = :stato
+                 WHERE pc.id_chef = :id_chef AND p.stato = :stato AND p.data_servizio >= CURDATE()
                  ORDER BY p.data_servizio ASC, p.ora_inizio ASC'
             );
             $statement->execute([
@@ -122,7 +122,7 @@ class FPrenotazioneChef
         return FBaseJoinPersistence::run('load prenotazioni ricevute chef', static function () use ($idChef): array {
             $statement = FBaseJoinPersistence::connection()->prepare(
                 self::selectSql() . '
-                 WHERE pc.id_chef = :id_chef
+                 WHERE pc.id_chef = :id_chef AND p.data_servizio >= CURDATE()
                  ORDER BY FIELD(p.stato, :in_attesa, :accettata, :rifiutata, :pagata, :completata),
                           p.data_servizio ASC, p.ora_inizio ASC'
             );

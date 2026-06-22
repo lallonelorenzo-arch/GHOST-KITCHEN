@@ -12,6 +12,8 @@ use ViewHelpers as V;
 /** @var string|null $tipoRichiedente */
 /** @var bool $ghostKitchenPrenotabile */
 /** @var bool $canManageGallery */
+/** @var string|null $erroreForm */
+/** @var string|null $messaggioSuccesso */
 $image = V::mediaUrl($mediaPrincipale ?? null, 'https://images.unsplash.com/photo-1767785990437-dfe1fe516fe8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200');
 $rating = $ghostKitchen->getValutazioneMedia();
 $gestore = $gestore ?? null;
@@ -22,6 +24,8 @@ $availabilityPayload = $availabilityPayload ?? [];
 $tipoRichiedente = $tipoRichiedente ?? null;
 $ghostKitchenPrenotabile = $ghostKitchenPrenotabile ?? false;
 $canManageGallery = $canManageGallery ?? false;
+$erroreForm = $erroreForm ?? null;
+$messaggioSuccesso = $messaggioSuccesso ?? null;
 $galleryFallbacks = [
     'https://images.unsplash.com/photo-1556911220-bff31c812dba?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900',
     'https://images.unsplash.com/photo-1556910103-1c02745aae4d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=900',
@@ -40,6 +44,9 @@ $galleryItems = $media !== [] ? $media : $galleryFallbacks;
 
 <section class="section detail-layout">
     <article>
+        <?php if (!empty($messaggioSuccesso)): ?><div class="notice"><?= V::e($messaggioSuccesso) ?></div><?php endif; ?>
+        <?php if (!empty($erroreForm)): ?><div class="alert"><?= V::e($erroreForm) ?></div><?php endif; ?>
+
         <h2>Descrizione</h2>
         <p class="lead"><?= V::e($ghostKitchen->getDescrizione()) ?></p>
         <div class="detail-info-grid">

@@ -8,6 +8,8 @@ $calendarSlots = $calendarSlots ?? [];
 $calendarTitle = $calendarTitle ?? 'Calendario';
 $calendarEmptyText = $calendarEmptyText ?? 'Nessuno slot disponibile.';
 $calendarSelectable = $calendarSelectable ?? false;
+$today = new DateTimeImmutable('today');
+$currentMonth = $today->modify('first day of this month');
 $monthFormatter = static function (string $monthKey): string {
     $date = DateTimeImmutable::createFromFormat('!Y-m', $monthKey);
     return $date !== false ? $date->format('m/Y') : $monthKey;
@@ -19,17 +21,27 @@ $dayFormatter = static function (DateTimeImmutable $date): string {
 $slotsByMonth = [];
 foreach ($calendarSlots as $slot) {
     $date = DateTimeImmutable::createFromFormat('!Y-m-d', $slot->getData());
-    if ($date === false) {
+    if ($date === false || $date < $today) {
         continue;
     }
     $slotsByMonth[$date->format('Y-m')][$slot->getData()][] = $slot;
 }
 ksort($slotsByMonth);
+$lastSlotMonth = $slotsByMonth !== [] ? DateTimeImmutable::createFromFormat('!Y-m', (string) array_key_last($slotsByMonth)) : false;
+$lastMonth = $lastSlotMonth instanceof DateTimeImmutable && $lastSlotMonth > $currentMonth ? $lastSlotMonth : $currentMonth;
+$monthKeys = [];
+for ($month = $currentMonth; $month <= $lastMonth; $month = $month->modify('+1 month')) {
+    $monthKeys[] = $month->format('Y-m');
+}
 ?>
 <section class="booking-calendar" data-booking-calendar>
     <div class="booking-calendar-header">
         <h2><?= V::e($calendarTitle) ?></h2>
-        <div class="booking-calendar-legend" aria-label="Legenda stati disponibilita">
+        <div class="booking-calendar-controls">
+            <button class="btn btn-ghost" type="button" data-booking-calendar-prev aria-label="Mese precedente">&larr;</button>
+            <button class="btn btn-ghost" type="button" data-booking-calendar-next aria-label="Mese successivo">&rarr;</button>
+        </div>
+        <div class="booking-calendar-legend" aria-label="Legenda stati disponibilità">
             <span><i class="calendar-dot is-free"></i>Libera</span>
             <span><i class="calendar-dot is-busy"></i>Occupata</span>
             <span><i class="calendar-dot is-blocked"></i>Bloccata</span>
@@ -40,8 +52,9 @@ ksort($slotsByMonth);
         <p class="muted-text"><?= V::e($calendarEmptyText) ?></p>
     <?php endif; ?>
 
-    <?php foreach ($slotsByMonth as $monthKey => $slotsByDate): ?>
+    <?php foreach ($monthKeys as $monthIndex => $monthKey): ?>
         <?php
+        $slotsByDate = $slotsByMonth[$monthKey] ?? [];
         $firstDay = DateTimeImmutable::createFromFormat('!Y-m-d', $monthKey . '-01');
         if ($firstDay === false) {
             continue;
@@ -49,7 +62,7 @@ ksort($slotsByMonth);
         $daysInMonth = (int) $firstDay->format('t');
         $offset = ((int) $firstDay->format('N')) - 1;
         ?>
-        <article class="booking-calendar-month">
+        <article class="booking-calendar-month" data-booking-calendar-month="<?= V::e((string) $monthIndex) ?>" <?= $monthIndex === 0 ? '' : 'hidden' ?>>
             <h3><?= V::e($monthFormatter($monthKey)) ?></h3>
             <div class="calendar-weekdays" aria-hidden="true">
                 <span>Lun</span><span>Mar</span><span>Mer</span><span>Gio</span><span>Ven</span><span>Sab</span><span>Dom</span>

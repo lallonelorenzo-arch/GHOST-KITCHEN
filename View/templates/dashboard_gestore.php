@@ -20,7 +20,7 @@ $tabs = [
     'prenotazioni' => 'Prenotazioni ricevute',
     'richieste' => 'Richieste',
     'ghost_kitchen' => 'Ghost Kitchen',
-    'disponibilita' => 'Disponibilita',
+    'disponibilita' => 'Disponibilità',
 ];
 $fatturatoMensile = $fatturatoMensile ?? [];
 $prenotazioniSettimanali = $prenotazioniSettimanali ?? [];

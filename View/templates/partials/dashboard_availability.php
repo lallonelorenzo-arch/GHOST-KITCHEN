@@ -12,14 +12,14 @@ $availabilityByGhostKitchen = $availabilityByGhostKitchen ?? [];
 <section class="dashboard-management">
     <div class="management-heading">
         <div>
-            <h2>Disponibilita</h2>
+            <h2>Disponibilità</h2>
             <p>Pubblica e consulta gli slot disponibili direttamente dalla dashboard.</p>
         </div>
     </div>
 
     <?php if ($availabilityRole === 'chef'): ?>
         <form class="ops-panel ops-form dashboard-inline-form" method="post" action="<?= V::e(V::url('/disponibilita/chef')) ?>">
-            <h3>Nuova disponibilita chef</h3>
+            <h3>Nuova disponibilità chef</h3>
             <p class="muted-text">Scegli il giorno e una o entrambe le fasce di servizio.</p>
             <label>Data <input type="date" name="data" min="<?= V::e(date('Y-m-d')) ?>" required></label>
             <div class="service-period-options">
@@ -32,13 +32,13 @@ $availabilityByGhostKitchen = $availabilityByGhostKitchen ?? [];
                     <span><strong>Cena</strong><small>19:00 - 23:00</small></span>
                 </label>
             </div>
-            <button class="btn btn-accent" type="submit">Aggiungi disponibilita</button>
+            <button class="btn btn-accent" type="submit">Aggiungi disponibilità</button>
         </form>
         <section class="ops-panel">
             <?php
             $calendarSlots = $availabilitySlots;
             $calendarTitle = 'Calendario chef';
-            $calendarEmptyText = 'Nessuna disponibilita pubblicata.';
+            $calendarEmptyText = 'Nessuna disponibilità pubblicata.';
             $calendarSelectable = false;
             include __DIR__ . '/booking_calendar.php';
             ?>
@@ -58,7 +58,7 @@ $availabilityByGhostKitchen = $availabilityByGhostKitchen ?? [];
         </section>
     <?php else: ?>
         <?php if ($availabilityGhostKitchens === []): ?>
-            <div class="empty-state">Crea una Ghost Kitchen prima di pubblicare disponibilita.</div>
+            <div class="empty-state">Crea una Ghost Kitchen prima di pubblicare disponibilità.</div>
         <?php endif; ?>
         <?php foreach ($availabilityGhostKitchens as $cucina): ?>
             <?php $idCucina = (int) $cucina->getId(); ?>
@@ -76,7 +76,7 @@ $availabilityByGhostKitchen = $availabilityByGhostKitchen ?? [];
                 <?php
                 $calendarSlots = $availabilityByGhostKitchen[$idCucina] ?? [];
                 $calendarTitle = 'Calendario ' . $cucina->getNome();
-                $calendarEmptyText = 'Nessuna disponibilita pubblicata per questa cucina.';
+                $calendarEmptyText = 'Nessuna disponibilità pubblicata per questa cucina.';
                 $calendarSelectable = false;
                 include __DIR__ . '/booking_calendar.php';
                 ?>

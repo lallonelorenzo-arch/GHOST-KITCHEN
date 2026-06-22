@@ -20,7 +20,7 @@ class FDisponibilitaChef extends FAbstractTable
     }
     public static function loadByChef(int $idChef): array
     {
-        return static::fetchAllWhere('id_chef = :id ORDER BY data ASC, ora_inizio ASC', ['id' => $idChef]);
+        return static::fetchAllWhere('id_chef = :id AND data >= CURDATE() ORDER BY data ASC, ora_inizio ASC', ['id' => $idChef]);
     }
 
     public static function loadBySlot(int $idChef, string $data, string $oraInizio, string $oraFine): ?EDisponibilitaChef

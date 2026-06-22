@@ -5,7 +5,7 @@ use ViewHelpers as V;
 ?>
 <section class="page-hero compact-hero">
     <h1>Accedi</h1>
-    <p>Entra nella tua area personale per gestire prenotazioni, disponibilita e richieste.</p>
+    <p>Entra nella tua area personale per gestire prenotazioni, disponibilità e richieste.</p>
 </section>
 
 <section class="section auth-section">

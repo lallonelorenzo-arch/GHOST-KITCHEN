@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Foundation/FPersistentManager.php';
+require_once __DIR__ . '/../Foundation/FSession.php';
 
 class CDettaglioGhostKitchen
 {
@@ -25,7 +26,7 @@ class CDettaglioGhostKitchen
             }
         }
 
-        return [
+        $data = [
             'ghostKitchen' => $ghostKitchen,
             'gestore' => $gestore,
             'attrezzature' => FPersistentManager::loadAttrezzatureByGhostKitchen($idGhostKitchen),
@@ -45,10 +46,15 @@ class CDettaglioGhostKitchen
                 && in_array('gestore', $accesso['ruoli'] ?? [], true)
                 && $gestore !== null
                 && (int) ($accesso['idUtente'] ?? 0) === (int) $gestore->getIdGestore(),
-            'azioni' => [
-                'prenotaGhostKitchen' => '/PrenotazioneGhostKitchen/avviaPrenotazioneGhostKitchen'
-            ]
         ];
+
+        $flash = FSession::get('gk_booking_flash');
+        if (is_array($flash) && (int) ($flash['idGhostKitchen'] ?? 0) === $idGhostKitchen) {
+            $data['messaggioSuccesso'] = (string) ($flash['messaggioSuccesso'] ?? '');
+            FSession::remove('gk_booking_flash');
+        }
+
+        return $data;
     }
 
     private function availabilityPayload(int $idGhostKitchen): array

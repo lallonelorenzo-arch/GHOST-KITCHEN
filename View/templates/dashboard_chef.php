@@ -24,7 +24,7 @@ $tabs = [
     'panoramica' => 'Panoramica',
     'prenotazioni' => 'Prenotazioni ricevute',
     'richieste' => 'Richieste',
-    'disponibilita' => 'Disponibilita',
+    'disponibilita' => 'Disponibilità',
     'profilo' => 'Profilo pubblico',
     'recensioni' => 'Recensioni',
 ];

@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../Foundation/FPersistentManager.php';
+require_once __DIR__ . '/../Foundation/FSession.php';
+require_once __DIR__ . '/CDettaglioGhostKitchen.php';
 
 class CPrenotazioneGhostKitchen
 {
@@ -38,12 +40,12 @@ class CPrenotazioneGhostKitchen
     public function selezionaDisponibilitaGhostKitchen(int $idDisponibilitaGhostKitchen): array
     {
         if ($idDisponibilitaGhostKitchen <= 0) {
-            throw new InvalidArgumentException('ID disponibilita ghost kitchen non valido.');
+            throw new InvalidArgumentException('ID disponibilità ghost kitchen non valido.');
         }
 
         $disponibilita = FPersistentManager::loadDisponibilitaGhostKitchenById($idDisponibilitaGhostKitchen);
         if ($disponibilita === null) {
-            return ['errore' => 'Disponibilita non trovata'];
+            return ['errore' => 'Disponibilità non trovata'];
         }
 
         return [
@@ -141,83 +143,6 @@ class CPrenotazioneGhostKitchen
         ];
     }
 
-    public function mostraPrenotazioneGhostKitchenWeb(int $idGhostKitchen, array $accesso): array
-    {
-        if ($idGhostKitchen <= 0) {
-            throw new InvalidArgumentException('ID ghost kitchen non valido.');
-        }
-
-        $ghostKitchen = FPersistentManager::loadGhostKitchen($idGhostKitchen);
-        if ($ghostKitchen === null) {
-            return ['errore' => 'Ghost kitchen non trovata.'];
-        }
-
-        $prenotabile = !$this->ghostKitchenNonPrenotabile($ghostKitchen);
-        $tipoRichiedente = $this->tipoRichiedenteDaAccesso($accesso);
-        $data = [
-            'ghostKitchen' => $ghostKitchen,
-            'disponibilita' => FPersistentManager::loadDisponibilitaGhostKitchen($idGhostKitchen),
-            'availabilityPayload' => $this->availabilityPayload($idGhostKitchen),
-            'tipoRichiedente' => $tipoRichiedente,
-            'accesso' => $accesso,
-            'form' => [],
-            'prenotazione' => null,
-            'ghostKitchenPrenotabile' => $prenotabile,
-        ];
-
-        if (!$prenotabile) {
-            $data['accessoRichiesto'] = true;
-            $data['messaggioAccesso'] = 'Questa ghost kitchen non e prenotabile perche lo stato non e attivo oppure le certificazioni non risultano approvate e valide.';
-            return $data;
-        }
-
-        if ($tipoRichiedente === null) {
-            $data['accessoRichiesto'] = true;
-            $data['messaggioAccesso'] = 'Accedi come cliente o chef per confermare la prenotazione. Per ora la pagina mostra i dati reali disponibili.';
-        }
-
-        return $data;
-    }
-
-    public function confermaPrenotazioneGhostKitchenWeb(int $idGhostKitchen, array $accesso, array $post): array
-    {
-        $data = $this->mostraPrenotazioneGhostKitchenWeb($idGhostKitchen, $accesso);
-        $data['form'] = $post;
-
-        $tipoRichiedente = $this->tipoRichiedenteDaAccesso($accesso);
-        if ($tipoRichiedente === null) {
-            return $data;
-        }
-
-        try {
-            $result = $this->confermaPrenotazioneGhostKitchen([
-                'idRichiedente' => (int) $accesso['idUtente'],
-                'tipoRichiedente' => $tipoRichiedente,
-                'idGhostKitchen' => $idGhostKitchen,
-                'dataServizio' => (string) ($post['dataServizio'] ?? ''),
-                'oraInizio' => (string) ($post['oraInizio'] ?? ''),
-                'oraFine' => (string) ($post['oraFine'] ?? ''),
-                'note' => (string) ($post['note'] ?? ''),
-            ]);
-
-            if (isset($result['errore'])) {
-                $data['erroreForm'] = $result['errore'];
-                return $data;
-            }
-
-            $data['prenotazione'] = $result['prenotazione'] ?? null;
-            $data['messaggioSuccesso'] = 'Richiesta di prenotazione inviata. Stato: in attesa di accettazione.';
-            return $data;
-        } catch (InvalidArgumentException $exception) {
-            $data['erroreForm'] = $exception->getMessage();
-            return $data;
-        } catch (Throwable $exception) {
-            error_log('[CPrenotazioneGhostKitchen] ' . $exception->getMessage());
-            $data['erroreForm'] = 'Non e stato possibile inviare la prenotazione. Riprova piu tardi.';
-            return $data;
-        }
-    }
-
     private function ghostKitchenNonPrenotabile(EGhostKitchen $ghostKitchen): bool
     {
         $gestore = FPersistentManager::loadGestore((int) $ghostKitchen->getIdGestore());
@@ -275,6 +200,51 @@ class CPrenotazioneGhostKitchen
         $slot->setOraFine($oraFine);
         $slot->occupa();
         FPersistentManager::updateDisponibilitaGhostKitchen($slot);
+    }
+
+    public function confermaPrenotazioneGhostKitchenDettaglioWeb(int $idGhostKitchen, array $accesso, array $post): array
+    {
+        $data = (new CDettaglioGhostKitchen())->visualizzaDettaglioGhostKitchen($idGhostKitchen, $accesso);
+        if (isset($data['errore'])) {
+            return $data;
+        }
+
+        $tipoRichiedente = $this->tipoRichiedenteDaAccesso($accesso);
+        if ($tipoRichiedente === null) {
+            $data['erroreForm'] = 'Accedi come cliente o chef per inviare una richiesta di prenotazione.';
+            return $data;
+        }
+
+        try {
+            $result = $this->confermaPrenotazioneGhostKitchen([
+                'idRichiedente' => (int) $accesso['idUtente'],
+                'tipoRichiedente' => $tipoRichiedente,
+                'idGhostKitchen' => $idGhostKitchen,
+                'dataServizio' => (string) ($post['dataServizio'] ?? ''),
+                'oraInizio' => (string) ($post['oraInizio'] ?? ''),
+                'oraFine' => (string) ($post['oraFine'] ?? ''),
+                'note' => (string) ($post['note'] ?? ''),
+            ]);
+
+            if (isset($result['errore'])) {
+                $data['erroreForm'] = $result['errore'];
+                return $data;
+            }
+
+            FSession::set('gk_booking_flash', [
+                'idGhostKitchen' => $idGhostKitchen,
+                'messaggioSuccesso' => 'Richiesta di prenotazione inviata. Stato: in attesa di accettazione.',
+            ]);
+
+            return ['redirectTo' => '/ghost-kitchen/' . $idGhostKitchen];
+        } catch (InvalidArgumentException $exception) {
+            $data['erroreForm'] = $exception->getMessage();
+            return $data;
+        } catch (Throwable $exception) {
+            error_log('[CPrenotazioneGhostKitchen] ' . $exception->getMessage());
+            $data['erroreForm'] = 'Non e stato possibile inviare la prenotazione. Riprova piu tardi.';
+            return $data;
+        }
     }
 
     private function validaSlotPrenotazione(string $dataServizio, string $oraInizio, string $oraFine): ?string

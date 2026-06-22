@@ -210,7 +210,7 @@ class CPrenotazioneChef
                 }
             }
             if (!$slot instanceof EDisponibilitaChef) {
-                throw new InvalidArgumentException('La disponibilita selezionata non e piu libera.');
+                throw new InvalidArgumentException('La disponibilità selezionata non e piu libera.');
             }
             $oraInizio = $slot->getOraInizio();
             $oraFine = $slot->getOraFine();

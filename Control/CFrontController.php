@@ -92,12 +92,12 @@ class CFrontController
             }
 
             if ($method === 'GET' && preg_match('#^/prenotazione/ghost-kitchen/([1-9][0-9]*)$#', $path, $matches) === 1) {
-                $this->renderController('CPrenotazioneGhostKitchen', 'mostraPrenotazioneGhostKitchenWeb', 'prenotazione_ghost_kitchen', [(int) $matches[1], $this->accessContext()]);
+                $this->redirect('/ghost-kitchen/' . (int) $matches[1]);
                 return;
             }
 
             if ($method === 'POST' && preg_match('#^/prenotazione/ghost-kitchen/([1-9][0-9]*)$#', $path, $matches) === 1) {
-                $this->renderController('CPrenotazioneGhostKitchen', 'confermaPrenotazioneGhostKitchenWeb', 'prenotazione_ghost_kitchen', [(int) $matches[1], $this->accessContext(), $post]);
+                $this->renderController('CPrenotazioneGhostKitchen', 'confermaPrenotazioneGhostKitchenDettaglioWeb', 'dettaglio_ghost_kitchen', [(int) $matches[1], $this->accessContext(), $post]);
                 return;
             }
 
@@ -318,6 +318,11 @@ class CFrontController
     private function renderController(string $controller, string $action, string $template, array $params): void
     {
         $data = $this->callController($controller, $action, $params);
+        if (is_array($data) && isset($data['redirectTo'])) {
+            $this->redirect((string) $data['redirectTo']);
+            return;
+        }
+
         if (is_array($data) && isset($data['errore'])) {
             $this->renderError(404, (string) $data['errore'], 'Controlla l identificativo nella URL.');
             return;

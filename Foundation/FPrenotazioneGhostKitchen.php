@@ -57,7 +57,7 @@ class FPrenotazioneGhostKitchen
                     FROM prenotazioni p
                     INNER JOIN prenotazioni_ghost_kitchen pgk ON pgk.id_prenotazione = p.id_prenotazione
                     INNER JOIN ghost_kitchen gk ON gk.id_ghost_kitchen = pgk.id_ghost_kitchen
-                    WHERE gk.id_gestore = :id_gestore AND p.stato = :stato
+                    WHERE gk.id_gestore = :id_gestore AND p.stato = :stato AND p.data_servizio >= CURDATE()
                     ORDER BY p.data_servizio ASC, p.ora_inizio ASC';
             $statement = FBaseJoinPersistence::connection()->prepare($sql);
             $statement->execute(['id_gestore' => $idGestore, 'stato' => EPrenotazione::STATO_IN_ATTESA]);
@@ -88,7 +88,7 @@ class FPrenotazioneGhostKitchen
                     FROM prenotazioni p
                     INNER JOIN prenotazioni_ghost_kitchen pgk ON pgk.id_prenotazione = p.id_prenotazione
                     INNER JOIN ghost_kitchen gk ON gk.id_ghost_kitchen = pgk.id_ghost_kitchen
-                    WHERE gk.id_gestore = :id_gestore
+                    WHERE gk.id_gestore = :id_gestore AND p.data_servizio >= CURDATE()
                     ORDER BY p.data_servizio DESC, p.ora_inizio DESC';
             $statement = FBaseJoinPersistence::connection()->prepare($sql);
             $statement->execute(['id_gestore' => $idGestore]);
