@@ -2,7 +2,7 @@
 
 Progetto universitario per l'esame di Programmazione Web.
 
-Ghost Kitchen e una piattaforma web per mettere in contatto clienti, chef, gestori di ghost kitchen e amministratori. Il sistema permette di cercare chef e cucine, gestire prenotazioni, pagamenti, disponibilita, certificazioni, recensioni, segnalazioni e dashboard operative.
+Ghost Kitchen è una piattaforma web per mettere in contatto clienti, chef a domicilio e gestori di ghost kitchen. Il sistema permette di cercare chef e cucine, gestire prenotazioni, pagamenti, disponibilità, certificazioni, recensioni, segnalazioni e dashboard operative.
 
 ## Stack
 
@@ -41,7 +41,7 @@ Ruolo delle cartelle principali:
 
 ## Architettura
 
-Il flusso principale e:
+Il flusso principale è:
 
 ```text
 Browser
@@ -56,7 +56,7 @@ Browser
   -> HTML
 ```
 
-Il routing e centralizzato in `Control/CFrontController.php`.
+Il routing è centralizzato in `Control/CFrontController.php`.
 
 Le View non accedono direttamente al database e non contengono query SQL. I dati vengono preparati dai Control e passati ai template tramite `ViewRenderer`.
 
@@ -71,7 +71,7 @@ Le View non accedono direttamente al database e non contengono query SQL. I dati
 /Applications/XAMPP/xamppfiles/htdocs/GHOST-KITCHEN
 ```
 
-Su Windows il percorso equivalente puo essere:
+Su Windows il percorso equivalente può essere:
 
 ```text
 C:\xampp\htdocs\GHOST-KITCHEN
@@ -96,7 +96,7 @@ mysql -uroot GhostKitchen < database/popolazioneDB.sql
 
 ## Configurazione database
 
-La connessione e configurata in:
+La connessione è configurata in:
 
 ```text
 Foundation/FConnectionDB.php
