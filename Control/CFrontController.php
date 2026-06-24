@@ -80,7 +80,7 @@ class CFrontController
                 }
             }
 
-            // 4. Route dinamiche: URL con id o azione, validati tramite regex.
+            // 4. Route dinamiche: URL con id o azione, validati tramite regex (espressione regolare).
             if ($method === 'GET' && preg_match('#^/prenotazione/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
                 $this->redirect('/chef/' . (int) $matches[1]);
                 return;
@@ -221,6 +221,7 @@ class CFrontController
                 return;
             }
 
+            // Preparazione parametri da passare al controller: query string, body POST, file upload e contesto utente.
             [$controller, $action, $template] = $route;
             $params = match ($path) {
                 '/ricerca/chef' => [[

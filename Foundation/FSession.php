@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 class FSession
 {
-    private const UTENTE_KEY = 'utente';
-    private const CSRF_KEY = 'csrf_tokens';
+    private const UTENTE_KEY = 'utente';        // Dati dell'utente loggato (idUtente, email, nome, cognome, fotoProfilo...)
+    private const CSRF_KEY = 'csrf_tokens';     // Token CSRF per protezione contro attacchi CSRF nei form POST.
 
     public static function start(): void
     {
@@ -13,30 +13,35 @@ class FSession
         }
     }
 
+    // Salva un valore nella sessione con la chiave specificata.
     public static function set(string $key, mixed $value): void
     {
         self::start();
         $_SESSION[$key] = $value;
     }
 
+    // Recupera un valore dalla sessione con la chiave specificata, oppure restituisce un valore di default se la chiave non esiste.
     public static function get(string $key, mixed $default = null): mixed
     {
         self::start();
         return $_SESSION[$key] ?? $default;
     }
 
+    // Verifica se esiste un valore nella sessione con la chiave specificata.
     public static function has(string $key): bool
     {
         self::start();
         return array_key_exists($key, $_SESSION);
     }
 
+    // Rimuove un valore dalla sessione con la chiave specificata.
     public static function remove(string $key): void
     {
         self::start();
         unset($_SESSION[$key]);
     }
 
+    // Distrugge la sessione corrente, rimuovendo tutti i dati e i cookie associati.
     public static function destroy(): void
     {
         self::start();
@@ -58,6 +63,7 @@ class FSession
         session_destroy();
     }
 
+    // Effettua il login dell'utente, salvando i dati nella sessione.
     public static function login(array $utenteData, array $ruoli, ?string $ruoloAttivo = null): void
     {
         self::start();
@@ -65,10 +71,10 @@ class FSession
         unset($_SESSION[self::CSRF_KEY]);
 
         $ruoli = array_values(array_unique(array_map(
-            static fn (string $ruolo): string => strtolower(trim($ruolo)),
+            static fn (string $ruolo): string => strtolower(trim($ruolo)),      // Normalizza i ruoli in minuscolo e rimuove eventuali duplicati
             $ruoli
         )));
-        $ruoli = array_values(array_filter($ruoli, static fn (string $ruolo): bool => $ruolo !== ''));
+        $ruoli = array_values(array_filter($ruoli, static fn (string $ruolo): bool => $ruolo !== ''));      // Rimuove eventuali ruoli vuoti
 
         $ruoloAttivo = $ruoloAttivo !== null ? strtolower(trim($ruoloAttivo)) : null;
         if ($ruoloAttivo === null || !in_array($ruoloAttivo, $ruoli, true)) {
@@ -86,6 +92,7 @@ class FSession
         ];
     }
 
+    // Effettua il logout dell'utente, rimuovendo i dati dalla sessione.
     public static function logout(): void
     {
         self::remove(self::UTENTE_KEY);
@@ -182,23 +189,25 @@ class FSession
         return self::isLogged();
     }
 
+    // Genera o recupera un token CSRF per il contesto specificato.
     public static function csrfToken(string $scope): string
     {
         self::start();
-        $scope = trim($scope);
+        $scope = trim($scope);  // Normalizzazione del nome/etichetta del form a cui devo applicare il token CSRF (es. "login", "registrazione", "modifica-profilo", ecc.)
         if ($scope === '') {
             throw new InvalidArgumentException('Ambito CSRF non valido.');
         }
 
         $token = $_SESSION[self::CSRF_KEY][$scope] ?? null;
         if (!is_string($token) || strlen($token) !== 64) {
-            $token = bin2hex(random_bytes(32));
+            $token = bin2hex(random_bytes(32));     // Se il token non esiste o non è valido, generane uno nuovo sicuro.
             $_SESSION[self::CSRF_KEY][$scope] = $token;
         }
 
         return $token;
     }
 
+    // Verifica se un token CSRF è valido per il contesto specificato.
     public static function verifyCsrfToken(string $scope, string $token): bool
     {
         self::start();
@@ -206,12 +215,14 @@ class FSession
         return is_string($stored) && $stored !== '' && hash_equals($stored, trim($token));
     }
 
+    // Prende un campo dalla sessione solo se è una stringa non vuota, altrimenti restituisce null.
     private static function getStringField(string $key): ?string
     {
         $value = self::getUtenteField($key);
         return is_string($value) && $value !== '' ? $value : null;
     }
 
+    // Recupera un campo specifico dell'utente dalla sessione, restituendo un valore di default se il campo non esiste.
     private static function getUtenteField(string $key, mixed $default = null): mixed
     {
         self::start();
