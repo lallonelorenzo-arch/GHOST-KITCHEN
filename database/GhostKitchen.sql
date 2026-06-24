@@ -16,7 +16,6 @@ DROP TABLE IF EXISTS recensioni_chef;
 DROP TABLE IF EXISTS segnalazioni;
 DROP TABLE IF EXISTS recensioni;
 DROP TABLE IF EXISTS pagamenti;
-DROP TABLE IF EXISTS metodi_pagamento;
 DROP TABLE IF EXISTS prenotazioni_ghost_kitchen;
 DROP TABLE IF EXISTS prenotazioni_chef;
 DROP TABLE IF EXISTS prenotazioni;

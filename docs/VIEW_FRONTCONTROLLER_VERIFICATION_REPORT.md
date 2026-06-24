@@ -28,7 +28,6 @@
   - `dettaglio_ghost_kitchen.php`
   - `login.php`
   - `error.php`
-  - `placeholder.php`
   - `partials/chef_card.php`
   - `partials/ghost_kitchen_card.php`
 - Asset presenti:
@@ -126,7 +125,6 @@ Verifiche:
 | `/login` | GET | `CAutenticazione` | `mostraLogin` | `login.php` | PASS | PASS 200 | Form POST presente. |
 | `/login` | POST | `CAutenticazione` | `login` | `login.php` / redirect | PASS | PASS | Credenziali errate mostrano errore; credenziali valide caricano home. |
 | `/logout` | GET | `CAutenticazione` | `logout` | redirect | PASS | PASS 200 dopo redirect | Pulisce sessione e torna alla home. |
-| `/prenotazione/placeholder` | GET | `CHome` | `placeholder` | `placeholder.php` | PASS | PASS 200 | Non chiama impropriamente `CHome::home()`. |
 | `/route-inesistente` | GET | nessuno | nessuno | `error.php` | PASS | PASS 404 | Route inesistente gestita. |
 
 ## Comandi runtime eseguiti
@@ -142,7 +140,6 @@ Invoke-WebRequest http://localhost/GHOST-KITCHEN/chef/5
 Invoke-WebRequest http://localhost/GHOST-KITCHEN/chef/999999
 Invoke-WebRequest http://localhost/GHOST-KITCHEN/ghost-kitchen/1
 Invoke-WebRequest http://localhost/GHOST-KITCHEN/ghost-kitchen/999999
-Invoke-WebRequest http://localhost/GHOST-KITCHEN/prenotazione/placeholder
 Invoke-WebRequest http://localhost/GHOST-KITCHEN/route-inesistente
 Invoke-WebRequest -Method Post http://localhost/GHOST-KITCHEN/login
 ```
@@ -159,7 +156,6 @@ Risultati rilevanti:
 - `/chef/999999`: 404.
 - `/ghost-kitchen/1`: 200.
 - `/ghost-kitchen/999999`: 404.
-- `/prenotazione/placeholder`: 200.
 - `/route-inesistente`: 404.
 - `POST /login` con credenziali errate: 200 con errore controllato.
 - `POST /login` con `marco.rinaldi@gk.it` / `Password123!`: 200 dopo redirect/home.
@@ -287,7 +283,7 @@ Fallback/hardcoded:
 - Descrizione:
   - Le immagini principali usano media reali se presenti in dettaglio, ma le card e alcune sezioni usano fallback Unsplash.
 - Correzione minima proposta:
-  - In fase successiva, passare media reali anche alle liste/card.
+  - Le liste/card usano fallback grafici quando non e' disponibile un media dedicato.
 
 ## Esito finale
 
@@ -304,5 +300,4 @@ Motivo: il flusso ECFV e l'architettura sono impostati correttamente e, dopo la 
 - `GET /ghost-kitchen/1` -> 200
 - `GET /ghost-kitchen/999999` -> 404
 - `GET /login` -> 200
-- `GET /prenotazione/placeholder` -> 200
 - `GET /route-inesistente` -> 404

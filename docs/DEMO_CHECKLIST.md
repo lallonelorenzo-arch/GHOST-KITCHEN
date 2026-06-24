@@ -247,7 +247,7 @@ Pagine principali da controllare:
 /mie-certificazioni
 ```
 
-## Cose da saper spiegare all'esame
+## Aspetti tecnici finali
 
 - [ ] Perche il progetto usa `index.php` come punto di ingresso unico.
 - [ ] Come funziona `CFrontController`.

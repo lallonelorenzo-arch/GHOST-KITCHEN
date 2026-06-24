@@ -106,11 +106,3 @@ Per testare un POST web:
 1. aprire la pagina nel browser;
 2. compilare il form;
 3. inviare dal browser.
-
-## 7. Cosa dichiarare all'esame
-
-Formula consigliata:
-
-```text
-Abbiamo verifiche automatiche di sintassi, script dimostrativi per Foundation e Control, e una checklist di collaudo manuale per i flussi web principali. Gli script in test/ non sono una suite PHPUnit completa con asserzioni, ma servono a validare rapidamente i casi d'uso e l'integrazione con il database demo.
-```
