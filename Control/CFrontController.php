@@ -7,6 +7,10 @@ require_once __DIR__ . '/../View/ViewRenderer.php';
 
 class CFrontController
 {
+    // Questo e il punto di ingresso dell'app dopo index.php.
+    // Centralizza routing, sicurezza e scelta della view: i singoli controller
+    // rimangono concentrati sulla logica della propria funzionalita.
+
     // Route statiche: URL esatti associati a controller, metodo e template.
     // Le route con parametri numerici sono gestite piu sotto con regex dedicate.
     private const ALLOWED_ROUTES = [
@@ -45,9 +49,12 @@ class CFrontController
     ];
 
     public function handle(): void
-    {   // ?? -> usa $_SERVER[..] se esiste e non è null, altrimenti..
+    {
+        // handle() e il "regista" della richiesta HTTP:
+        // legge l'URL, controlla sicurezza/permessi, sceglie il controller
+        // e alla fine renderizza il template corretto.
         // 1. Normalizzazione richiesta: metodo, path, query string e body POST.
-        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET'); //$_SERVER superglobale php che ha info sulla richiesta HTTP
+        $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET'); // $_SERVER contiene i dati della richiesta HTTP.
         $path = $this->normalizePath((string) parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
         $query = $this->normalizeRequest($_GET);
         $post = $this->normalizeRequest($_POST);
@@ -81,14 +88,15 @@ class CFrontController
             }
 
             // 4. Route dinamiche: URL con id o azione, validati tramite regex (espressione regolare).
+            // Esempio: /chef/12 non puo stare in ALLOWED_ROUTES perche l'id cambia.
             if ($method === 'GET' && preg_match('#^/prenotazione/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
                 $this->redirect('/chef/' . (int) $matches[1]);
                 return;
             }
 
             if ($method === 'POST' && preg_match('#^/prenotazione/chef/([1-9][0-9]*)$#', $path, $matches) === 1) {
-                $this->renderController('CPrenotazioneChef', 'confermaPrenotazioneChefWizardWeb', 'richiesta_esito', [(int) $matches[1], $this->accessContext(), $post]); //[..] array da passare al metodo controller
-                return; //il return serve a fermare l'esecuz del metodo corrente, poiché nel FrontController ci sono tante regole di routing una dopo l'altra
+                $this->renderController('CPrenotazioneChef', 'confermaPrenotazioneChefWizardWeb', 'richiesta_esito', [(int) $matches[1], $this->accessContext(), $post]); // Array di parametri passati al metodo del controller.
+                return; // Ferma handle(): una volta trovata la route, non deve provare le successive.
             }
 
             if ($method === 'GET' && preg_match('#^/prenotazione/ghost-kitchen/([1-9][0-9]*)$#', $path, $matches) === 1) {
@@ -114,6 +122,7 @@ class CFrontController
             }
 
             if ($method === 'GET' && preg_match('#^/pagamento/(chef|ghost-kitchen)/([1-9][0-9]*)$#', $path, $matches) === 1) {
+                // Le URL pubbliche usano "ghost-kitchen", mentre il dominio interno usa "ghost_kitchen".
                 $tipoPrenotazione = $matches[1] === 'ghost-kitchen' ? 'ghost_kitchen' : 'chef';
                 $this->renderController('CPagamento', 'mostraPagamentoWeb', 'pagamento', [$tipoPrenotazione, (int) $matches[2], $this->accessContext(), $query]);
                 return;
@@ -222,6 +231,7 @@ class CFrontController
             }
 
             // Preparazione parametri da passare al controller: query string, body POST, file upload e contesto utente.
+            // Questo match rende esplicito cosa riceve ogni action e aiuta a studiare il flusso richiesta -> controller.
             [$controller, $action, $template] = $route;
             $params = match ($path) {
                 '/ricerca/chef' => [[
@@ -262,6 +272,7 @@ class CFrontController
             };
 
             // 6. Casi speciali: logout e dashboard differenziata per ruolo.
+            // La dashboard ha una sola URL, ma mostra controller/template diversi in base al ruolo.
             if ($path === '/logout') {
                 $this->callController($controller, $action, []);
                 $this->redirect('/');
@@ -302,8 +313,10 @@ class CFrontController
 
             ViewRenderer::render((string) $template, is_array($data) ? $data : [], $this->sharedViewData());
         } catch (InvalidArgumentException $exception) {
+            // Errori di input o id non validi: per l'utente sono risorse non trovate/non corrette.
             $this->renderError(404, 'Risorsa non valida', $exception->getMessage());
         } catch (Throwable $exception) {
+            // Errori inattesi: si loggano i dettagli e si mostra un messaggio generico.
             error_log(sprintf(
                 '[CFrontController] %s: %s in %s:%d',
                 $exception::class,
@@ -345,6 +358,7 @@ class CFrontController
             throw new RuntimeException('Azione non disponibile.');
         }
 
+        // Il controller viene istanziato solo quando la sua route viene richiesta.
         $controller = new $className();
         return $controller->$actionName(...$params);
     }
@@ -389,6 +403,7 @@ class CFrontController
             }
 
             if (is_array($value)) {
+                // I campi multipli dei form restano array, ma con valori uniformati a stringhe pulite.
                 $normalized[$key] = array_map(static fn (mixed $item): string => trim((string) $item), $value);
             } else {
                 $normalized[$key] = trim((string) $value);
@@ -490,6 +505,7 @@ class CFrontController
     {
         FSession::start();
 
+        // Context passato ai controller: evita che ogni Control debba interrogare direttamente la sessione.
         return [
             'isLogged' => FSession::isLogged(),
             'idUtente' => FSession::getIdUtente(),
@@ -545,7 +561,7 @@ class CFrontController
     {
         $idUtente = FSession::getIdUtente();
         return $idUtente !== null ? FPersistentManager::loadUtente($idUtente) : null;
-    }  //      condizione ? val se vero : val se falso (operatore ternario)
+    }  // Operatore ternario: condizione ? valore se vero : valore se falso.
 
     // Controllo accessi centralizzato per aree admin, chef, gestore e utente loggato.
     private function isPathAllowed(string $path, string $method, array $accesso): bool

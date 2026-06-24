@@ -5,12 +5,15 @@ require_once __DIR__ . '/FBaseJoinPersistence.php';
 require_once __DIR__ . '/FPrenotazione.php';
 require_once __DIR__ . '/../Entity/EPrenotazioneGhostKitchen.php';
 
+// Mapper della prenotazione ghost kitchen: unisce tabella base `prenotazioni`
+// e tabella specializzata `prenotazioni_ghost_kitchen`.
 class FPrenotazioneGhostKitchen
 {
     public static function exist(int $id): bool { return FBaseJoinPersistence::exists($id, 'prenotazioni_ghost_kitchen', 'id_prenotazione'); }
     public static function load(int $id): ?EPrenotazioneGhostKitchen
     {
         return FBaseJoinPersistence::run('load prenotazione ghost kitchen', static function () use ($id): ?EPrenotazioneGhostKitchen {
+            // JOIN tra campi comuni e campi specifici della prenotazione ghost kitchen.
             $sql = 'SELECT p.*, pgk.id_ghost_kitchen, pgk.tipo_richiedente
                     FROM prenotazioni p INNER JOIN prenotazioni_ghost_kitchen pgk ON pgk.id_prenotazione = p.id_prenotazione
                     WHERE p.id_prenotazione = :id LIMIT 1';
@@ -24,10 +27,13 @@ class FPrenotazioneGhostKitchen
     {
         return FBaseJoinPersistence::run('store prenotazione ghost kitchen', static function () use ($p): bool|int {
             $pdo = FBaseJoinPersistence::connection();
+            // Transazione: base e dettaglio devono essere salvati insieme.
             $pdo->beginTransaction();
             try {
+                // Prima salva la parte comune in `prenotazioni`.
                 $id = FBaseJoinPersistence::storePrenotazioneBase($p);
                 $p->setIdPrenotazione($id);
+                // Poi salva la parte specifica in `prenotazioni_ghost_kitchen`.
                 $sql = 'INSERT INTO prenotazioni_ghost_kitchen (id_prenotazione, id_ghost_kitchen, tipo_richiedente)
                         VALUES (:id_prenotazione, :id_ghost_kitchen, :tipo_richiedente)';
                 $pdo->prepare($sql)->execute(['id_prenotazione' => $p->getIdPrenotazione(), 'id_ghost_kitchen' => $p->getIdGhostKitchen(), 'tipo_richiedente' => $p->getTipoRichiedente()]);
@@ -43,6 +49,7 @@ class FPrenotazioneGhostKitchen
     {
         return FBaseJoinPersistence::run('update prenotazione ghost kitchen', static function () use ($p): bool {
             if ($p->getIdPrenotazione() === null) { return false; }
+            // Aggiorna prima i campi comuni, poi quelli specifici.
             FBaseJoinPersistence::updatePrenotazioneBase($p);
             $sql = 'UPDATE prenotazioni_ghost_kitchen SET id_ghost_kitchen = :id_ghost_kitchen, tipo_richiedente = :tipo_richiedente WHERE id_prenotazione = :id_prenotazione';
             return FBaseJoinPersistence::connection()->prepare($sql)->execute(['id_prenotazione' => $p->getIdPrenotazione(), 'id_ghost_kitchen' => $p->getIdGhostKitchen(), 'tipo_richiedente' => $p->getTipoRichiedente()]);
@@ -53,6 +60,7 @@ class FPrenotazioneGhostKitchen
     public static function loadRichiesteByGestore(int $idGestore): array
     {
         return FBaseJoinPersistence::run('load richieste prenotazione ghost kitchen', static function () use ($idGestore): array {
+            // Richieste visibili al gestore: solo ghost kitchen possedute, in attesa e future.
             $sql = 'SELECT p.*, pgk.id_ghost_kitchen, pgk.tipo_richiedente
                     FROM prenotazioni p
                     INNER JOIN prenotazioni_ghost_kitchen pgk ON pgk.id_prenotazione = p.id_prenotazione
@@ -122,6 +130,7 @@ class FPrenotazioneGhostKitchen
 
     private static function hydrate(array $row): EPrenotazioneGhostKitchen
     {
+        // Converte una riga SQL completa nell'Entity di dominio.
         return new EPrenotazioneGhostKitchen((int) $row['id_prenotazione'], (int) $row['id_richiedente'], (string) $row['data_creazione'], (string) $row['data_servizio'], (string) $row['ora_inizio'], (string) $row['ora_fine'], (string) $row['stato'], (float) $row['importo_totale'], (string) ($row['note'] ?? ''), (int) $row['id_ghost_kitchen'], (string) $row['tipo_richiedente']);
     }
 }

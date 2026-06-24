@@ -3,11 +3,14 @@ declare(strict_types=1);
 
 class FSession
 {
+    // Wrapper della sessione PHP: il resto dell'app usa questa classe
+    // invece di leggere/scrivere direttamente $_SESSION.
     private const UTENTE_KEY = 'utente';        // Dati dell'utente loggato (idUtente, email, nome, cognome, fotoProfilo...)
     private const CSRF_KEY = 'csrf_tokens';     // Token CSRF per protezione contro attacchi CSRF nei form POST.
 
     public static function start(): void
     {
+        // session_start() va chiamato una sola volta per richiesta.
         if (session_status() !== PHP_SESSION_ACTIVE) {
             session_start();
         }
@@ -48,6 +51,7 @@ class FSession
         $_SESSION = [];
 
         if (ini_get('session.use_cookies')) {
+            // Cancella anche il cookie lato browser, non solo i dati lato server.
             $params = session_get_cookie_params();
             setcookie(
                 session_name(),
@@ -67,7 +71,9 @@ class FSession
     public static function login(array $utenteData, array $ruoli, ?string $ruoloAttivo = null): void
     {
         self::start();
+        // Cambiare id sessione dopo il login riduce il rischio di session fixation.
         session_regenerate_id(true);
+        // I token vecchi non devono sopravvivere al cambio utente.
         unset($_SESSION[self::CSRF_KEY]);
 
         $ruoli = array_values(array_unique(array_map(
@@ -78,9 +84,11 @@ class FSession
 
         $ruoloAttivo = $ruoloAttivo !== null ? strtolower(trim($ruoloAttivo)) : null;
         if ($ruoloAttivo === null || !in_array($ruoloAttivo, $ruoli, true)) {
+            // Se non viene scelto un ruolo valido, usa il primo ruolo disponibile.
             $ruoloAttivo = $ruoli[0] ?? null;
         }
 
+        // In sessione salviamo solo dati essenziali, non l'intero oggetto EUtente.
         $_SESSION[self::UTENTE_KEY] = [
             'idUtente' => isset($utenteData['idUtente']) ? (int) $utenteData['idUtente'] : null,
             'email' => isset($utenteData['email']) ? (string) $utenteData['email'] : '',
@@ -102,6 +110,7 @@ class FSession
     public static function isLogged(): bool
     {
         self::start();
+        // Login valido significa avere un id utente intero e positivo in sessione.
         return isset($_SESSION[self::UTENTE_KEY]['idUtente'])
             && is_int($_SESSION[self::UTENTE_KEY]['idUtente'])
             && $_SESSION[self::UTENTE_KEY]['idUtente'] > 0;
@@ -154,6 +163,7 @@ class FSession
             return;
         }
 
+        // Aggiorna solo i campi mostrati spesso nell'interfaccia, senza toccare id e ruoli.
         foreach (['email', 'nome', 'cognome', 'fotoProfilo'] as $key) {
             if (array_key_exists($key, $utenteData)) {
                 $_SESSION[self::UTENTE_KEY][$key] = (string) $utenteData[$key];
@@ -176,6 +186,7 @@ class FSession
         self::start();
         $ruolo = strtolower(trim($ruolo));
 
+        // Un utente puo attivare solo ruoli che possiede davvero.
         if (!self::hasRuolo($ruolo)) {
             return false;
         }
@@ -200,6 +211,7 @@ class FSession
 
         $token = $_SESSION[self::CSRF_KEY][$scope] ?? null;
         if (!is_string($token) || strlen($token) !== 64) {
+            // 32 byte casuali diventano 64 caratteri esadecimali con bin2hex().
             $token = bin2hex(random_bytes(32));     // Se il token non esiste o non è valido, generane uno nuovo sicuro.
             $_SESSION[self::CSRF_KEY][$scope] = $token;
         }
@@ -212,6 +224,7 @@ class FSession
     {
         self::start();
         $stored = $_SESSION[self::CSRF_KEY][trim($scope)] ?? null;
+        // hash_equals confronta stringhe sensibili evitando differenze misurabili nei tempi.
         return is_string($stored) && $stored !== '' && hash_equals($stored, trim($token));
     }
 

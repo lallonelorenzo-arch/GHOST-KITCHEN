@@ -5,6 +5,8 @@ require_once __DIR__ . '/FBaseJoinPersistence.php';
 require_once __DIR__ . '/FPrenotazione.php';
 require_once __DIR__ . '/../Entity/EPrenotazioneChef.php';
 
+// Mapper della prenotazione chef: unisce tabella base `prenotazioni`
+// e tabella specializzata `prenotazioni_chef`.
 class FPrenotazioneChef
 {
     public static function exist(int $id): bool
@@ -15,6 +17,7 @@ class FPrenotazioneChef
     public static function load(int $id): ?EPrenotazioneChef
     {
         return FBaseJoinPersistence::run('load prenotazione chef', static function () use ($id): ?EPrenotazioneChef {
+            // JOIN tra campi comuni e campi specifici della prenotazione chef.
             $statement = FBaseJoinPersistence::connection()->prepare(
                 'SELECT p.*, pc.id_chef, pc.id_menu, pc.indirizzo_servizio, pc.numero_persone,
                         pc.richieste_speciali, pc.abbinamento_vini
@@ -34,10 +37,13 @@ class FPrenotazioneChef
     {
         return FBaseJoinPersistence::run('store prenotazione chef', static function () use ($prenotazione): bool|int {
             $pdo = FBaseJoinPersistence::connection();
+            // Transazione: base e dettaglio devono essere salvati insieme.
             $pdo->beginTransaction();
             try {
+                // Prima salva la parte comune in `prenotazioni`.
                 $id = FBaseJoinPersistence::storePrenotazioneBase($prenotazione);
                 $prenotazione->setIdPrenotazione($id);
+                // Poi salva la parte specifica in `prenotazioni_chef`.
                 $statement = $pdo->prepare(
                     'INSERT INTO prenotazioni_chef (
                         id_prenotazione, id_chef, id_menu, indirizzo_servizio,
@@ -65,6 +71,7 @@ class FPrenotazioneChef
                 return false;
             }
 
+            // Aggiorna prima i campi comuni, poi quelli specifici.
             FBaseJoinPersistence::updatePrenotazioneBase($prenotazione);
             $statement = FBaseJoinPersistence::connection()->prepare(
                 'UPDATE prenotazioni_chef
@@ -89,6 +96,7 @@ class FPrenotazioneChef
     public static function loadRichieste(int $idChef): array
     {
         return FBaseJoinPersistence::run('load richieste prenotazione chef', static function () use ($idChef): array {
+            // Richieste visibili al professionista: solo in attesa e future.
             $statement = FBaseJoinPersistence::connection()->prepare(
                 self::selectSql() . '
                  WHERE pc.id_chef = :id_chef AND p.stato = :stato AND p.data_servizio >= CURDATE()
@@ -164,6 +172,7 @@ class FPrenotazioneChef
 
     private static function selectSql(): string
     {
+        // SELECT condivisa dalle query lista: evita duplicare la JOIN principale.
         return 'SELECT p.*, pc.id_chef, pc.id_menu, pc.indirizzo_servizio, pc.numero_persone,
                        pc.richieste_speciali, pc.abbinamento_vini
                 FROM prenotazioni p
@@ -172,6 +181,7 @@ class FPrenotazioneChef
 
     private static function hydrate(array $row): EPrenotazioneChef
     {
+        // Converte una riga SQL completa nell'Entity di dominio.
         return new EPrenotazioneChef(
             (int) $row['id_prenotazione'],
             (int) $row['id_richiedente'],
@@ -193,6 +203,7 @@ class FPrenotazioneChef
 
     private static function specialValues(EPrenotazioneChef $prenotazione): array
     {
+        // Valori specifici della tabella figlia `prenotazioni_chef`.
         return [
             'id_prenotazione' => $prenotazione->getIdPrenotazione(),
             'id_chef' => $prenotazione->getIdChef(),

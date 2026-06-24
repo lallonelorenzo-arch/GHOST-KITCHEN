@@ -33,6 +33,9 @@ require_once __DIR__ . '/FRegistrazione.php';
  * FSession resta statica e incapsula la sessione PHP;
  * FPersistentManager e una facciata statica verso la persistenza;
  * le classi specifiche come FUtente sono mapper/persistor statici senza stato proprio.
+ *
+ * Da ricordare per lo studio: i Control dovrebbero parlare con questa facciata,
+ * mentre le query SQL restano nelle classi Foundation specializzate.
  */
 class FPersistentManager
 {
@@ -43,10 +46,13 @@ class FPersistentManager
 
     public static function getConnection(): PDO
     {
+        // Punto unico per ottenere PDO quando una classe Foundation deve accedere al DB.
         return FConnectionDB::getInstance()->getConnection();
     }
 
     // Utenti, autenticazione e ruoli.
+    // Questi metodi sono quasi tutti deleghe: espongono ai Control nomi stabili
+    // senza far conoscere loro i dettagli di FUtente, FCliente, FChef, ecc.
     public static function existUtente(int $idUtente): bool
     {
         return FUtente::exist($idUtente);
@@ -84,6 +90,7 @@ class FPersistentManager
 
     public static function registraAccount(EUtente $utente, array $ruoli, array $chefData = [], array $certificazioni = [], array $ghostKitchenData = []): int|false
     {
+        // La registrazione e un caso composto: utente + ruoli + dati professionali.
         return FRegistrazione::registra($utente, $ruoli, $chefData, $certificazioni, $ghostKitchenData);
     }
 
@@ -114,6 +121,7 @@ class FPersistentManager
 
     public static function login(string $email, string $password): bool
     {
+        // Flusso login: verifica credenziali, recupera ruoli dal DB, poi popola FSession.
         $utente = self::verificaCredenziali($email, $password);
         if ($utente === null || $utente->getIdUtente() === null) {
             return false;
@@ -135,6 +143,7 @@ class FPersistentManager
     public static function loadClientiRegistrati(): array { return FCliente::loadAll(); }
 
     // Profili professionali e amministrativi.
+    // Qui convivono ruoli diversi della stessa persona: cliente, chef, gestore, admin.
     public static function loadChef(int $idChef): ?EChef { return FChef::load($idChef); }
     public static function loadChefRegistrati(): array { return FChef::loadAll(); }
     public static function loadGestore(int $idGestore): ?EGestore { return FGestore::load($idGestore); }
@@ -149,6 +158,7 @@ class FPersistentManager
     public static function storeAmministratore(EAmministratore $amministratore): EAmministratore|false { return self::storeAndReturn($amministratore, static fn (EAmministratore $entity): bool|int => FAmministratore::store($entity), 'setIdAmministratore'); }
 
     // Catalogo operativo: ghost kitchen, attrezzature, menu, piatti, media e certificazioni.
+    // Questa sezione raccoglie gli oggetti "consultabili" o modificabili nelle dashboard.
     public static function loadGhostKitchen(int $idGhostKitchen): ?EGhostKitchen { return FGhostKitchen::load($idGhostKitchen); }
     public static function loadGhostKitchenRegistrate(): array { return FGhostKitchen::loadAll(); }
     public static function loadGhostKitchenByGestore(int $idGestore): array { return FGhostKitchen::loadByGestore($idGestore); }
@@ -197,6 +207,7 @@ class FPersistentManager
     public static function loadSegnalazioniDaModerare(): array { return FSegnalazione::loadByStato(ESegnalazione::STATO_APERTA); }
 
     // Creazione entita: i metodi restituiscono l'oggetto aggiornato con id generato.
+    // I mapper spesso restituiscono true/id/false; la facciata uniforma il risultato per i Control.
     public static function storeAttrezzatura(EAttrezzatura $entity): EAttrezzatura|false { return self::storeAndReturn($entity, static fn (EAttrezzatura $item): bool|int => FAttrezzatura::store($item), 'setIdAttrezzatura'); }
     public static function storeMenu(EMenu $entity): EMenu|false { return self::storeAndReturn($entity, static fn (EMenu $item): bool|int => FMenu::store($item), 'setIdMenu'); }
     public static function storePiatto(EPiatto $entity): EPiatto|false { return self::storeAndReturn($entity, static fn (EPiatto $item): bool|int => FPiatto::store($item), 'setIdPiatto'); }
@@ -230,6 +241,7 @@ class FPersistentManager
     public static function updateRecensioneGhostKitchen(ERecensioneGhostKitchen $entity): ERecensioneGhostKitchen|false { return self::updateAndReturn($entity, static fn (ERecensioneGhostKitchen $item): bool => FRecensioneGhostKitchen::update($item)); }
 
     // Query applicative usate dai Control: ricerca, disponibilita, prenotazioni, recensioni e dashboard.
+    // Sono operazioni piu vicine ai casi d'uso rispetto al semplice load/store/update.
     public static function cercaChef(string $localita, string $tipologiaCucina, float $budgetMax, int $valutazioneMin): array { return FChef::search($localita, $tipologiaCucina, $budgetMax, $valutazioneMin); }
     public static function cercaGhostKitchen(string $localita, float $budgetMax, int $valutazioneMin): array { return FGhostKitchen::search($localita, $budgetMax, $valutazioneMin); }
     public static function verificaDisponibilitaChef(int $idChef, string $data, string $oraInizio, string $oraFine): bool { return FDisponibilitaChef::verificaDisponibilita($idChef, $data, $oraInizio, $oraFine); }
@@ -238,6 +250,7 @@ class FPersistentManager
     public static function calcolaImportoPagamento(string $tipoPrenotazione, int $idPrenotazione): float { return FPagamento::calcolaImporto($tipoPrenotazione, $idPrenotazione); }
     public static function verificaPrenotazioneRecensibile(string $tipoTarget, int $idPrenotazione, int $idAutore): array
     {
+        // Smista il controllo alla prenotazione corretta: chef oppure ghost kitchen.
         return strtolower(trim($tipoTarget)) === 'chef'
             ? FPrenotazioneChef::verificaRecensibile($idPrenotazione, $idAutore)
             : FPrenotazioneGhostKitchen::verificaRecensibile($idPrenotazione, $idAutore);
@@ -268,6 +281,7 @@ class FPersistentManager
         }
 
         if (is_int($result) && $result > 0 && method_exists($entity, $idSetter)) {
+            // Se il DB genera un id, lo rimette dentro l'Entity appena salvata.
             $entity->{$idSetter}($result);
         }
 
@@ -278,6 +292,7 @@ class FPersistentManager
     {
         $result = $updateCallback($entity);
 
+        // I Control ricevono l'oggetto aggiornato in caso di successo, false in caso di errore.
         return $result === true ? $entity : false;
     }
 }

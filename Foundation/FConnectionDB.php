@@ -3,14 +3,16 @@ declare(strict_types=1);
 
 class FConnectionDB
 {
+    // Singleton: una sola istanza della classe e una sola connessione PDO riusabile.
     private static ?FConnectionDB $instance = null;
     private ?PDO $connection = null;
 
+    // Parametri XAMPP locali usati dal progetto demo.
     private string $host = 'localhost';
     private string $dbname = 'GhostKitchen';
     private string $user = 'root';
     private string $password = '';
-    private string $charset = 'utf8mb4'; //x salvare anche caratteri speciali come emoji
+    private string $charset = 'utf8mb4'; // Supporta caratteri speciali e accenti.
 
     private function __construct()
     {
@@ -25,6 +27,7 @@ class FConnectionDB
         throw new RuntimeException('Cannot unserialize singleton');
     }
 
+    // Punto di accesso globale alla connessione condivisa.
     public static function getInstance(): FConnectionDB
     {
         if (self::$instance === null) {
@@ -36,6 +39,7 @@ class FConnectionDB
 
     public function getConnection(): PDO
     {
+        // Se la connessione e gia aperta, viene riutilizzata.
         if ($this->connection !== null) {
             return $this->connection;
         }
@@ -50,6 +54,7 @@ class FConnectionDB
 
         try {
             $this->connection = new PDO($dsn, $this->user, $this->password, [
+                // Le eccezioni rendono gli errori DB gestibili dai blocchi try/catch.
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                 PDO::ATTR_EMULATE_PREPARES => false,
@@ -67,6 +72,7 @@ class FConnectionDB
 
     public function closeConnection(): void
     {
+        // Impostando null, PHP chiude la connessione PDO quando non e piu referenziata.
         $this->connection = null;
     }
 }
