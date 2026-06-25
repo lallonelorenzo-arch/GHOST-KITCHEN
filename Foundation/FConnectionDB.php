@@ -4,8 +4,10 @@ declare(strict_types=1);
 class FConnectionDB
 {
     // Singleton: una sola istanza della classe e una sola connessione PDO riusabile.
-    private static ?FConnectionDB $instance = null;
+    private static ?FConnectionDB $instance = null;  // ?FconectionDB indica che $instance può accettare 2 tipi di valori: un'instanza della classe o un null.
     private ?PDO $connection = null;
+
+    //FConnectionDB garantisce che esiste una sola istanza con una sola connessione PDO riutilizzabile durante la richiesta.
 
     // Parametri XAMPP locali usati dal progetto demo.
     private string $host = 'localhost';
@@ -30,7 +32,7 @@ class FConnectionDB
     // Punto di accesso globale alla connessione condivisa.
     public static function getInstance(): FConnectionDB
     {
-        if (self::$instance === null) {
+        if (self::$instance === null) { // === confronto stretto
             self::$instance = new self();
         }
 

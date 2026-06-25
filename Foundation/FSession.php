@@ -167,7 +167,7 @@ class FSession
         foreach (['email', 'nome', 'cognome', 'fotoProfilo'] as $key) {
             if (array_key_exists($key, $utenteData)) {
                 $_SESSION[self::UTENTE_KEY][$key] = (string) $utenteData[$key];
-            }
+              }
         }
     }
 

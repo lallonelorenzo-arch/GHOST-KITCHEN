@@ -44,12 +44,12 @@ class ViewHelpers
     {
         $url = trim((string) $url);
 
-        if ($url === '') {
+        if ($url === '') { // trimma e fa casting dell'url, se empty -> 'none'
             return 'none';
         }
 
-        $isLocalPath = str_starts_with($url, '/');
-        $isHttpUrl = preg_match('#^https?://#i', $url) === 1;
+        $isLocalPath = str_starts_with($url, '/');  //controlla se inizia con /
+        $isHttpUrl = preg_match('#^https?://#i', $url) === 1; //regex per vedere se inizia con http o https, i: controllo non case sensitive
 
         if (!$isLocalPath && !$isHttpUrl) {
             return 'none';
