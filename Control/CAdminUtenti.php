@@ -3,6 +3,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 
+/*
+ * Classe CAdminUtenti
+ * Riceve richieste dall'area admin, controlla il contesto di accesso, chiama FPersistentManager per 
+ * ottenere i dati di utenti/gestori e ghost kitchen,
+ *  filtra i risultati in base ai parametri di ricerca e restituisce i dati al front-end.
+ */
+
 class CAdminUtenti
 {
     public function visualizzaUtentiWeb(array $accesso, array $query = []): array

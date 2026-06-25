@@ -28,20 +28,19 @@ require_once __DIR__ . '/FStatisticheDashboard.php';
 require_once __DIR__ . '/FRegistrazione.php';
 
 /*
- * Foundation ibrida controllata:
- * FConnectionDB e Singleton per la risorsa tecnica condivisa PDO;
- * FSession resta statica e incapsula la sessione PHP;
- * FPersistentManager e una facciata statica verso la persistenza;
- * le classi specifiche come FUtente sono mapper/persistor statici senza stato proprio.
- *
- * Da ricordare per lo studio: i Control dovrebbero parlare con questa facciata,
- * mentre le query SQL restano nelle classi Foundation specializzate.
+ * Facciata centrale verso il livello Foundation. Invece di far chiamare ai controller direttamente i 
+ * mapper Foundation, i controller chiamano questa classe FPersistentManager in modo da poter utilizzare il 
+ * database.
  */
+
 class FPersistentManager
 {
     private function __construct()
     {
-        // Facciata statica: non istanziabile.
+        /* Costruttore privato e vuoto perchè la classe è  statica: non deve essere instanziata con new. 
+         * Deve essere usata solo dai suoi metodi statici.
+         */
+
     }
 
     public static function getConnection(): PDO
@@ -50,9 +49,11 @@ class FPersistentManager
         return FConnectionDB::getInstance()->getConnection();
     }
 
-    // Utenti, autenticazione e ruoli.
-    // Questi metodi sono quasi tutti deleghe: espongono ai Control nomi stabili
-    // senza far conoscere loro i dettagli di FUtente, FCliente, FChef, ecc.
+    /* Sezione che riguarda utenti, login e ruoli. Quando i controller devono effettuare delle richieste 
+     * relative agli utenti, devono passare attraverso questi metodi che hanno il compito di girare le 
+     * richieste alle classi Foudation (mapper) corrette. In questo modo i controller non devono conoscere
+     *  i dettagli di implementazione dei mapper.
+     */
     public static function existUtente(int $idUtente): bool
     {
         return FUtente::exist($idUtente);
@@ -90,7 +91,7 @@ class FPersistentManager
 
     public static function registraAccount(EUtente $utente, array $ruoli, array $chefData = [], array $certificazioni = [], array $ghostKitchenData = []): int|false
     {
-        // La registrazione e un caso composto: utente + ruoli + dati professionali.
+        // La registrazione è un caso composto: utente + ruoli + dati professionali.
         return FRegistrazione::registra($utente, $ruoli, $chefData, $certificazioni, $ghostKitchenData);
     }
 
@@ -122,12 +123,14 @@ class FPersistentManager
     public static function login(string $email, string $password): bool
     {
         // Flusso login: verifica credenziali, recupera ruoli dal DB, poi popola FSession.
+        // self:: richiama un meotodo della stessa classe in cui siamo
         $utente = self::verificaCredenziali($email, $password);
-        if ($utente === null || $utente->getIdUtente() === null) {
+        if ($utente === null || $utente->getIdUtente() === null) { 
             return false;
         }
 
         $ruoli = self::getRuoliUtente((int) $utente->getIdUtente());
+        // Salvataggio dei dati essenziali dell'utente da salvare in sessione.
         FSession::login([
             'idUtente' => $utente->getIdUtente(),
             'email' => $utente->getEmail(),
@@ -142,8 +145,9 @@ class FPersistentManager
     public static function loadCliente(int $idCliente): ?ECliente { return FCliente::load($idCliente); }
     public static function loadClientiRegistrati(): array { return FCliente::loadAll(); }
 
-    // Profili professionali e amministrativi.
-    // Qui convivono ruoli diversi della stessa persona: cliente, chef, gestore, admin.
+    /* Metodi per caricare e salvare i profili associati ai ruoli dell'utente. Ogni ruolo ha una entity e un 
+    mapper (foundation) dedicato. 
+    */
     public static function loadChef(int $idChef): ?EChef { return FChef::load($idChef); }
     public static function loadChefRegistrati(): array { return FChef::loadAll(); }
     public static function loadGestore(int $idGestore): ?EGestore { return FGestore::load($idGestore); }
@@ -157,8 +161,10 @@ class FPersistentManager
     public static function updateGestore(EGestore $gestore): EGestore|false { return self::updateAndReturn($gestore, static fn (EGestore $entity): bool => FGestore::update($entity)); }
     public static function storeAmministratore(EAmministratore $amministratore): EAmministratore|false { return self::storeAndReturn($amministratore, static fn (EAmministratore $entity): bool|int => FAmministratore::store($entity), 'setIdAmministratore'); }
 
-    // Catalogo operativo: ghost kitchen, attrezzature, menu, piatti, media e certificazioni.
-    // Questa sezione raccoglie gli oggetti "consultabili" o modificabili nelle dashboard.
+    /* Metodi per caricare e gestire le entità principali dell'applicazione.
+    * Qui ci sono oggetti come ghost kitchen, menu, piatti, media, certificazioni, 
+    * disponibilità, prenotazioni e recensioni.
+    */
     public static function loadGhostKitchen(int $idGhostKitchen): ?EGhostKitchen { return FGhostKitchen::load($idGhostKitchen); }
     public static function loadGhostKitchenRegistrate(): array { return FGhostKitchen::loadAll(); }
     public static function loadGhostKitchenByGestore(int $idGestore): array { return FGhostKitchen::loadByGestore($idGestore); }
@@ -206,8 +212,10 @@ class FPersistentManager
     public static function loadPagamentiByUtente(int $idUtente): array { return FPagamento::loadByUtente($idUtente); }
     public static function loadSegnalazioniDaModerare(): array { return FSegnalazione::loadByStato(ESegnalazione::STATO_APERTA); }
 
-    // Creazione entita: i metodi restituiscono l'oggetto aggiornato con id generato.
-    // I mapper spesso restituiscono true/id/false; la facciata uniforma il risultato per i Control.
+    /* Metodi per il salvataggio delle entità nel database. FPersistentManager delega il salvataggio ai 
+    * mapper Foundation specifici, ma uniforma il ritorno verso i controller: se il salvataggio va a buon 
+    * fine, ritorna l'oggetto appena salvato (con eventuale id generato dal DB), altrimenti ritorna false.
+    */
     public static function storeAttrezzatura(EAttrezzatura $entity): EAttrezzatura|false { return self::storeAndReturn($entity, static fn (EAttrezzatura $item): bool|int => FAttrezzatura::store($item), 'setIdAttrezzatura'); }
     public static function storeMenu(EMenu $entity): EMenu|false { return self::storeAndReturn($entity, static fn (EMenu $item): bool|int => FMenu::store($item), 'setIdMenu'); }
     public static function storePiatto(EPiatto $entity): EPiatto|false { return self::storeAndReturn($entity, static fn (EPiatto $item): bool|int => FPiatto::store($item), 'setIdPiatto'); }
@@ -222,7 +230,13 @@ class FPersistentManager
     public static function storeRecensioneChef(ERecensioneChef $entity): ERecensioneChef|false { return self::storeAndReturn($entity, static fn (ERecensioneChef $item): bool|int => FRecensioneChef::store($item), 'setIdRecensione'); }
     public static function storeRecensioneGhostKitchen(ERecensioneGhostKitchen $entity): ERecensioneGhostKitchen|false { return self::storeAndReturn($entity, static fn (ERecensioneGhostKitchen $item): bool|int => FRecensioneGhostKitchen::store($item), 'setIdRecensione'); }
 
-    // Aggiornamento ed eliminazione logica/fisica delle entita operative.
+    /* Metodi per aggiornare o eliminare entità operative già presenti nel database. Gli update 
+     * modificano record esistenti, mentre i delete rimuovono record dal database. Anche in questo 
+     * caso, FPersistentManager delega il lavoro ai mapper Foundation specifici, ma uniforma il ritorno 
+     * verso i controller: se l'operazione va a buon fine, ritorna l'oggetto aggiornato (per gli update) 
+     * o true (per i delete), altrimenti ritorna false.  
+     *
+    */
     public static function updateAttrezzatura(EAttrezzatura $entity): EAttrezzatura|false { return self::updateAndReturn($entity, static fn (EAttrezzatura $item): bool => FAttrezzatura::update($item)); }
     public static function deleteAttrezzatura(int $idAttrezzatura): bool { return FAttrezzatura::delete($idAttrezzatura); }
     public static function updateMenu(EMenu $entity): EMenu|false { return self::updateAndReturn($entity, static fn (EMenu $item): bool => FMenu::update($item)); }
@@ -240,8 +254,12 @@ class FPersistentManager
     public static function updateRecensioneChef(ERecensioneChef $entity): ERecensioneChef|false { return self::updateAndReturn($entity, static fn (ERecensioneChef $item): bool => FRecensioneChef::update($item)); }
     public static function updateRecensioneGhostKitchen(ERecensioneGhostKitchen $entity): ERecensioneGhostKitchen|false { return self::updateAndReturn($entity, static fn (ERecensioneGhostKitchen $item): bool => FRecensioneGhostKitchen::update($item)); }
 
-    // Query applicative usate dai Control: ricerca, disponibilita, prenotazioni, recensioni e dashboard.
-    // Sono operazioni piu vicine ai casi d'uso rispetto al semplice load/store/update.
+    /*
+     * Operazioni usate dai controller per realizzare casi d'uso completi dell'app.
+     * A differenza di load/store/update, questi metodi applicano filtri, controlli
+     * o calcoli specifici: ricerca chef, verifica disponibilita, pagamenti,
+     * recensioni, segnalazioni, richieste e statistiche dashboard.
+     */
     public static function cercaChef(string $localita, string $tipologiaCucina, float $budgetMax, int $valutazioneMin): array { return FChef::search($localita, $tipologiaCucina, $budgetMax, $valutazioneMin); }
     public static function cercaGhostKitchen(string $localita, float $budgetMax, int $valutazioneMin): array { return FGhostKitchen::search($localita, $budgetMax, $valutazioneMin); }
     public static function verificaDisponibilitaChef(int $idChef, string $data, string $oraInizio, string $oraFine): bool { return FDisponibilitaChef::verificaDisponibilita($idChef, $data, $oraInizio, $oraFine); }

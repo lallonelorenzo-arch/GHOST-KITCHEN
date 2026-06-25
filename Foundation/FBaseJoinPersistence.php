@@ -1,5 +1,5 @@
 <?php
-declare(strict_types=1);
+declare(strict_types=1);    // Controllo rigido dei tipi dato
 
 require_once __DIR__ . '/FConnectionDB.php';
 require_once __DIR__ . '/../Entity/EPrenotazione.php';
@@ -7,13 +7,14 @@ require_once __DIR__ . '/../Entity/EPrenotazione.php';
 /**
  * @internal Helper tecnico della Foundation. Non usare dai Control.
  *
- * Centralizza le operazioni comuni alle entita con tabella base + tabella figlia.
- * Nel progetto e usato soprattutto per le prenotazioni:
- * `prenotazioni` contiene i campi comuni, mentre le tabelle specializzate
- * aggiungono i dettagli chef o ghost kitchen.
+ * Ha il compito di evitare di riscrivere sempre le stesse operazoni quando una entity è salvata su più 
+ * tabelle collegate. Esempio: le prenotazioni. La tabella Prenotazioni contiene i campi comuni a tutti i 
+ * tipi di prenotazione, tabella prenotazioni_chef e tabella prenotazioni_ghost_kitchen hanno solo i dati 
+ * specifici della prenotazione chef/ghost kitchen. 
  */
 class FBaseJoinPersistence
 {
+    // Restituisce la connessione PDO condivisa dalla Foundation.
     public static function connection(): PDO { return FConnectionDB::getInstance()->getConnection(); }
 
     // Verifica esistenza di un record su una tabella/pk indicata dal mapper chiamante.
@@ -26,7 +27,7 @@ class FBaseJoinPersistence
         });
     }
 
-    // Carica una riga grezza della tabella base; la hydrate concreta resta nei mapper specifici.
+    // Carica una riga grezza della tabella base (Prenotazioni).
     public static function loadBase(int $id, string $table, string $pk): ?array
     {
         return self::run('load base', static function () use ($id, $table, $pk): ?array {
@@ -37,7 +38,7 @@ class FBaseJoinPersistence
         });
     }
 
-    // Cancella dalla tabella base: le FK con cascade gestiscono le righe figlie quando previste.
+    // Cancella dalla tabella base (Prenotazioni) e ritorna true se almeno una riga è stata cancellata.
     public static function deleteBase(int $id, string $table, string $pk): bool
     {
         return self::run('delete base', static function () use ($id, $table, $pk): bool {

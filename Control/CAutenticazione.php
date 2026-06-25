@@ -4,13 +4,22 @@ declare(strict_types=1);
 require_once __DIR__ . '/../Foundation/FPersistentManager.php';
 require_once __DIR__ . '/../Foundation/FSession.php';
 
+/*
+ * Controller dell'autenticazione e del profilo utente.
+ * Riceve input dai form, usa FPersistentManager per leggere/salvare su DB
+ * e usa FSession per mantenere aggiornati i dati dell'utente loggato.
+ * Mostra la pagina di login, verifica le credenziali, effettua logout, visualizza il profilo 
+ * dell'utente loggato e gestisce le modifiche al profilo (dati personali, foto, password...)
+ */
 class CAutenticazione
 {
+    // Limiti per upload foto profilo: 2 MB e soli formati immagine gestiti dalla view.
     private const MAX_PROFILE_PHOTO_SIZE = 2097152;
     private const PROFILE_PHOTO_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
 
     public function mostraLogin(): array
     {
+        // Dati iniziali della pagina login: nessun errore e campo email vuoto.
         return [
             'email' => '',
             'errore' => null,
@@ -19,6 +28,7 @@ class CAutenticazione
 
     public function profilo(array $accesso, array $query = []): array
     {
+        // Il contesto $accesso arriva dal FrontController e descrive l'utente corrente.
         if (($accesso['isLogged'] ?? false) !== true) {
             return [
                 'messaggioAccesso' => 'Accedi per visualizzare il tuo profilo.',
@@ -29,6 +39,7 @@ class CAutenticazione
         }
 
         $section = strtolower(trim((string) ($query['section'] ?? 'profilo')));
+        // Whitelist delle sezioni visibili nel profilo: evita tab non previste nella view.
         if (!in_array($section, ['profilo', 'sicurezza', 'notifiche', 'pagamenti'], true)) {
             $section = 'profilo';
         }
@@ -53,6 +64,7 @@ class CAutenticazione
             ];
         }
 
+        // Un solo endpoint POST gestisce piu azioni del profilo, distinte dal campo "azione".
         if ((string) ($post['azione'] ?? '') === 'foto') {
             return $this->aggiornaFotoProfilo($accesso, $files);
         }
@@ -70,6 +82,7 @@ class CAutenticazione
         }
 
         try {
+            // Aggiornamento dati anagrafici: carica l'Entity, modifica i campi e salva.
             $utente = FPersistentManager::loadUtente((int) $accesso['idUtente']);
             if ($utente === null) {
                 return $this->esitoProfilo('Profilo non aggiornato', 'Profilo utente non trovato.', false);
@@ -78,10 +91,12 @@ class CAutenticazione
             $nome = trim((string) ($post['nome'] ?? ''));
             $cognome = trim((string) ($post['cognome'] ?? ''));
             $email = trim((string) ($post['email'] ?? ''));
+            // Nome, cognome ed email sono il minimo necessario per mantenere valido il profilo.
             if ($nome === '' || $cognome === '' || $email === '') {
                 return $this->esitoProfilo('Profilo non aggiornato', 'Nome, cognome ed email sono obbligatori.', false);
             }
 
+            // I setter dell'Entity applicano eventuali validazioni di dominio.
             $utente->setNome($nome);
             $utente->setCognome($cognome);
             $utente->setEmail($email);
@@ -93,6 +108,7 @@ class CAutenticazione
             $utente->setCitta($citta);
             $utente->setLocalita($citta);
             $provincia = strtoupper($this->validateProfileText((string) ($post['provincia'] ?? ''), 'Provincia', 2));
+            // La provincia viene accettata solo se esiste tra le sigle italiane previste.
             if ($provincia !== '' && !EUtente::isProvinciaItaliana($provincia)) {
                 throw new InvalidArgumentException('Seleziona una provincia valida.');
             }
@@ -104,6 +120,7 @@ class CAutenticazione
                 return $this->esitoProfilo('Profilo non aggiornato', 'Non e stato possibile salvare le informazioni.', false);
             }
 
+            // Dopo il salvataggio aggiorna anche la sessione, cosi navbar/profilo mostrano dati nuovi.
             FSession::updateUtenteData([
                 'nome' => $utente->getNome(),
                 'cognome' => $utente->getCognome(),
@@ -132,11 +149,13 @@ class CAutenticazione
         }
 
         try {
+            // $_FILES contiene metadati e percorso temporaneo del file appena caricato.
             $file = $files['fotoProfilo'] ?? null;
             if (!is_array($file)) {
                 return $this->esitoProfilo('Foto non aggiornata', 'Seleziona una foto valida.', false);
             }
 
+            // Prima salva fisicamente il file, poi aggiorna il percorso nella Entity utente.
             $path = $this->storeProfilePhoto($file);
             $utente = FPersistentManager::loadUtente((int) $accesso['idUtente']);
             if ($utente === null) {
@@ -148,6 +167,7 @@ class CAutenticazione
                 return $this->esitoProfilo('Foto non aggiornata', 'Non e stato possibile salvare la foto.', false);
             }
 
+            // La sessione conserva il percorso foto per mostrarlo subito nell'interfaccia.
             FSession::setFotoProfilo($path);
             return $this->esitoProfilo('Foto aggiornata', 'La foto profilo e stata aggiornata.', true);
         } catch (InvalidArgumentException $exception) {
@@ -160,6 +180,7 @@ class CAutenticazione
 
     public function login(array $dati): array
     {
+        // Normalizza l'email per confronti coerenti e lascia la password invariata.
         $email = strtolower(trim((string) ($dati['email'] ?? '')));
         $password = (string) ($dati['password'] ?? '');
 
@@ -171,6 +192,7 @@ class CAutenticazione
             ];
         }
 
+        // FPersistentManager verifica credenziali, recupera ruoli e popola FSession.
         if (!FPersistentManager::login($email, $password)) {
             return [
                 'successo' => false,
@@ -184,12 +206,14 @@ class CAutenticazione
 
     public function logout(): void
     {
+        // Rimuove utente e token CSRF dalla sessione.
         FSession::logout();
     }
 
     private function aggiornaPassword(array $accesso, array $post): array
     {
         try {
+            // Per cambiare password serve l'utente aggiornato dal DB, incluso l'hash salvato.
             $utente = FPersistentManager::loadUtente((int) $accesso['idUtente']);
             if ($utente === null) {
                 return $this->esitoProfilo('Password non aggiornata', 'Profilo utente non trovato.', false, '/profilo?section=sicurezza');
@@ -199,6 +223,7 @@ class CAutenticazione
             $nuova = (string) ($post['nuovaPassword'] ?? '');
             $conferma = (string) ($post['confermaPassword'] ?? '');
 
+            // password_verify confronta la password in chiaro con l'hash memorizzato.
             if (!password_verify($attuale, $utente->getPasswordHash())) {
                 return $this->esitoProfilo('Password non aggiornata', 'La password attuale non e corretta.', false, '/profilo?section=sicurezza');
             }
@@ -211,6 +236,7 @@ class CAutenticazione
                 return $this->esitoProfilo('Password non aggiornata', 'La conferma password non corrisponde.', false, '/profilo?section=sicurezza');
             }
 
+            // La nuova password non viene mai salvata in chiaro: si salva solo l'hash.
             $utente->setPasswordHash(password_hash($nuova, PASSWORD_DEFAULT));
             if (FPersistentManager::updateUtente($utente) === false) {
                 return $this->esitoProfilo('Password non aggiornata', 'Non e stato possibile salvare la nuova password.', false, '/profilo?section=sicurezza');
@@ -225,6 +251,7 @@ class CAutenticazione
 
     private function validateProfileText(string $value, string $label, int $maxLength): string
     {
+        // Helper condiviso per campi testuali liberi del profilo: trim, lunghezza e caratteri di controllo.
         $value = trim($value);
         $length = function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
         if ($length > $maxLength) {
@@ -240,15 +267,18 @@ class CAutenticazione
     private function aggiungiRuolo(array $accesso, array $post): array
     {
         try {
+            // Permette a un utente esistente di diventare anche chef o gestore.
             $idUtente = (int) ($accesso['idUtente'] ?? 0);
             $ruolo = strtolower(trim((string) ($post['ruolo'] ?? '')));
             $ruoli = $accesso['ruoli'] ?? [];
 
+            // Il ruolo deve essere professionale, non gia presente e legato a un utente valido.
             if ($idUtente <= 0 || !in_array($ruolo, ['chef', 'gestore'], true) || in_array($ruolo, $ruoli, true)) {
                 return $this->esitoProfilo('Ruolo non aggiornato', 'Richiesta ruolo non valida.', false);
             }
 
             if ($ruolo === 'chef') {
+                // Per attivare il ruolo chef servono i dati professionali minimi.
                 $specializzazione = trim((string) ($post['specializzazione'] ?? ''));
                 $tipologiaCucina = trim((string) ($post['tipologiaCucina'] ?? ''));
                 if ($specializzazione === '' || $tipologiaCucina === '') {
@@ -262,6 +292,7 @@ class CAutenticazione
                     'anni_esperienza' => max(0, min(EChef::MAX_ANNI_ESPERIENZA, (int) ($post['anniEsperienza'] ?? 0))),
                 ]);
             } else {
+                // Per il ruolo gestore viene creata anche una ghost kitchen iniziale.
                 $nome = trim((string) ($post['nomeGhostKitchen'] ?? ''));
                 $descrizione = trim((string) ($post['descrizioneGhostKitchen'] ?? ''));
                 $indirizzo = trim((string) ($post['indirizzoGhostKitchen'] ?? ''));
@@ -283,6 +314,7 @@ class CAutenticazione
                 ]);
             }
 
+            // Dopo avere modificato i ruoli nel DB, rigenera i dati sessione con il nuovo ruolo attivo.
             $utente = FPersistentManager::loadUtente($idUtente);
             if ($utente !== null) {
                 FSession::login([
@@ -304,10 +336,12 @@ class CAutenticazione
     private function rimuoviRuolo(array $accesso, array $post): array
     {
         try {
+            // La rimozione riguarda solo ruoli professionali, non il ruolo cliente di base.
             $idUtente = (int) ($accesso['idUtente'] ?? 0);
             $ruolo = strtolower(trim((string) ($post['ruolo'] ?? '')));
             $utente = $idUtente > 0 ? FPersistentManager::loadUtente($idUtente) : null;
             $ruoli = $utente !== null ? FPersistentManager::getRuoliUtente($idUtente) : [];
+            // Mantiene solo i ruoli rilevanti per decidere se la rimozione e consentita.
             $ruoli = array_values(array_filter($ruoli, static fn (string $item): bool => in_array($item, ['chef', 'gestore', 'cliente'], true)));
 
             if ($utente === null || !in_array($ruolo, ['chef', 'gestore'], true) || !in_array($ruolo, $ruoli, true)) {
@@ -318,6 +352,7 @@ class CAutenticazione
                 return $this->esitoProfilo('Ruolo non rimosso', 'Conferma esplicitamente la disattivazione del ruolo.', false);
             }
 
+            // Nel progetto la rimozione e ammessa solo per account che hanno entrambi i ruoli professionali.
             if (!(in_array('chef', $ruoli, true) && in_array('gestore', $ruoli, true))) {
                 return $this->esitoProfilo('Ruolo non rimosso', 'La disattivazione e disponibile solo per account con ruolo chef e gestore.', false);
             }
@@ -325,6 +360,7 @@ class CAutenticazione
             FPersistentManager::removeRuoloProfessionale($idUtente, $ruolo);
 
             if ($utente !== null) {
+                // Ricarica i ruoli rimasti e sceglie un ruolo attivo ancora valido.
                 $ruoliAggiornati = FPersistentManager::getRuoliUtente($idUtente);
                 $ruoloAttivo = in_array('chef', $ruoliAggiornati, true)
                     ? 'chef'
@@ -349,6 +385,7 @@ class CAutenticazione
 
     private function storicoPagamenti(int $idUtente): array
     {
+        // Prepara una struttura gia pronta per la view: pagamento + etichette leggibili.
         $items = [];
         foreach (FPersistentManager::loadPagamentiByUtente($idUtente) as $pagamento) {
             $items[] = [
@@ -364,6 +401,7 @@ class CAutenticazione
 
     private function descrizionePagamento(EPagamento $pagamento): string
     {
+        // Traduce il pagamento in una descrizione leggibile, recuperando chef o ghost kitchen collegati.
         $idPrenotazione = (int) $pagamento->getIdPrenotazione();
         if ($pagamento->getTipoPrenotazione() === EPagamento::PRENOTAZIONE_CHEF) {
             $prenotazione = FPersistentManager::loadPrenotazioneChef($idPrenotazione);
@@ -382,6 +420,7 @@ class CAutenticazione
     {
         $rawDate = $pagamento->getDataPagamento();
         if ($rawDate === '') {
+            // Se il pagamento non ha data propria, usa la data servizio della prenotazione.
             $idPrenotazione = (int) $pagamento->getIdPrenotazione();
             $prenotazione = $pagamento->getTipoPrenotazione() === EPagamento::PRENOTAZIONE_CHEF
                 ? FPersistentManager::loadPrenotazioneChef($idPrenotazione)
@@ -399,6 +438,7 @@ class CAutenticazione
 
     private function statoPrenotazionePagamento(EPagamento $pagamento): string
     {
+        // Recupera lo stato della prenotazione a cui appartiene il pagamento.
         $idPrenotazione = (int) $pagamento->getIdPrenotazione();
         $prenotazione = $pagamento->getTipoPrenotazione() === EPagamento::PRENOTAZIONE_CHEF
             ? FPersistentManager::loadPrenotazioneChef($idPrenotazione)
@@ -409,6 +449,7 @@ class CAutenticazione
 
     private function storeProfilePhoto(array $file): string
     {
+        // Validazione upload: errore PHP, dimensione, estensione e MIME reale del file.
         if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
             throw new InvalidArgumentException('Upload non valido.');
         }
@@ -428,11 +469,13 @@ class CAutenticazione
             throw new InvalidArgumentException('Il file caricato non e una immagine valida.');
         }
 
+        // Le foto profilo vengono salvate sotto public/uploads/profili.
         $uploadDir = dirname(__DIR__) . '/public/uploads/profili';
         if (!is_dir($uploadDir) && !mkdir($uploadDir, 0775, true) && !is_dir($uploadDir)) {
             throw new RuntimeException('Cartella upload non disponibile.');
         }
 
+        // Nome casuale: evita collisioni e non espone il nome originale caricato dall'utente.
         $fileName = 'profilo_' . (int) random_int(100000, 999999) . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
         $target = $uploadDir . '/' . $fileName;
         if (!move_uploaded_file((string) $file['tmp_name'], $target)) {
@@ -444,6 +487,7 @@ class CAutenticazione
 
     private function esitoProfilo(string $titolo, string $messaggio, bool $successo, string $ritorno = '/profilo'): array
     {
+        // Formato unico per le risposte mostrate dal template richiesta_esito.
         return [
             'titolo' => $titolo,
             'messaggio' => $messaggio,

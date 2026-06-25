@@ -5,15 +5,18 @@ require_once __DIR__ . '/ViewHelpers.php';
 require_once __DIR__ . '/../Foundation/FSession.php';
 
 class ViewRenderer
-{
+{   
+    // Metodo per mostrare una pagina HTML completa basata su un template e dati forniti.
     public static function render(string $template, array $data = [], array $shared = []): void
     {
-        $templateFile = __DIR__ . '/templates/' . $template . '.php';
+        $templateFile = __DIR__ . '/templates/' . $template . '.php';   // Costruzione del percorso del file template basato sul nome fornito.
         if (!is_file($templateFile)) {
             throw new RuntimeException('Template View non trovato.');
         }
 
         $GLOBALS['view_base_url'] = (string) ($shared['baseUrl'] ?? '');
+
+        // Unione di dati condivisi e specifici della pagina per l'estrazione in variabili locali.
         $viewData = array_merge($shared, $data);
         extract($viewData, EXTR_SKIP);
 
@@ -23,10 +26,11 @@ class ViewRenderer
         require __DIR__ . '/templates/layout.php';
         $html = (string) ob_get_clean();
 
-        echo self::injectCsrfInputs($html);
+        echo self::injectCsrfInputs($html); // Passo l'HTML alla funzione per inserire i token CSRF.
     }
 
-    // Protezione centralizzata: ogni form POST renderizzato riceve un token CSRF.
+    // Metodo per la protezione i form POST contro attacchi CSRF, inserendo un input nascosto con 
+    // il token CSRF in ogni form POST.
     private static function injectCsrfInputs(string $html): string
     {
         return (string) preg_replace_callback(
